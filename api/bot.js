@@ -8,11 +8,12 @@ if (!admin.apps.length) {
         credential: admin.credential.cert(serviceAccount)
     });
 }
+const db = admin.firestore(); // <--- ဒါလေး ထည့်ပေးပါ!
 
 // Telegram Bot Initialization
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 const adminIds = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(id => id.trim()) : [];
-// Admin Check Function
+
 function isAdmin(userId) {
     return adminIds.includes(userId.toString());
 }
@@ -36,6 +37,7 @@ bot.start(async (ctx) => {
                   `🎲 First Pick: ${data.firstPick}\n\n` +
                   `👉 အချက်အလက်များအတိုင်း ပွဲစဆော့ပြီးလျှင် အနိုင်ရသော SS ကို တင်ပေးပါ။`, { parse_mode: 'Markdown' });
     } catch (e) {
+        console.error(e); // Error ကို log ထုတ်ထားမှ သိရမယ်
         ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။");
     }
 });
@@ -70,12 +72,15 @@ bot.action(/reject_.+/, async (ctx) => {
     await ctx.editMessageCaption("❌ ဤရလဒ်မှာ မမှန်ကန်ပါ။");
 });
 
+// Vercel Serverless Function Export
 module.exports = async (req, res) => {
     try {
-        await bot.handleUpdate(req.body, res);
+        await bot.handleUpdate(req.body); 
         res.status(200).send('OK');
     } catch (err) {
         console.error(err);
-        res.status(500).send('Internal Server Error');
+        if (!res.headersSent) {
+            res.status(500).send('Internal Server Error');
+        }
     }
 };
