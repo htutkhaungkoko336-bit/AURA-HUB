@@ -1,0 +1,347 @@
+* { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+body { background-color: #000; color: #fff; margin: 0; padding: 0; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
+
+.app-container, .sub-page { width: 100%; max-width: 450px; height: 100%; padding: 15px; display: flex; flex-direction: column; }
+
+/* Header & Modal Styles */
+.header-box { width: 100%; border: 1px solid #c9a66b; border-radius: 8px; text-align: center; padding: 8px; background: linear-gradient(180deg, #1a1e2e 0%, #000 100%); margin-bottom: 10px; }
+.header-box h1 { font-size: 1.1rem; color: #c9a66b; margin: 0 0 4px 0; }
+.header-box p { font-size: 0.6rem; color: #aaa; margin: 0; }
+
+/* Map Section */
+.map-carousel { display: flex; align-items: center; gap: 10px; width: 100%; height: 190px; margin-bottom: 10px; padding-left: 45px; }
+.map-display { flex: 1; position: relative; border: 2px solid #c9a66b; border-radius: 12px; height: 100%; background: #111; overflow: hidden; cursor: pointer; }
+.map-img-container img { width: 100%; height: 100%; object-fit: cover; }
+.map-tag { position: absolute; bottom: 0; width: 100%; background: rgba(0,0,0,0.8); color: #f1e4b9; text-align: center; padding: 8px; font-weight: bold; font-size: 0.9rem; }
+
+.arrow { background: none; border: 1px solid #c9a66b; color: #c9a66b; font-size: 1.2rem; cursor: pointer; border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+.arrow:active { background: #c9a66b; color: #000; }
+
+/* Bracket Styles */
+.bracket-card { width: 100%; background: #0a0a0a; border: 1px solid #333; border-radius: 12px; padding: 8px; margin-bottom: 8px; flex-grow: 0.8; }
+.bracket-header { display: flex; align-items: center; margin-bottom: 8px; }
+.bracket-header .line { flex: 1; height: 2.5px; background: #c9a66b; }
+.bracket-header span { margin: 0 12px; color: #c9a66b; font-size: 1.3rem; font-weight: 900; }
+.bracket-body { display: flex; justify-content: space-around; align-items: center; height: calc(100% - 25px); }
+.side { display: flex; flex-direction: column; gap: 4px; padding: 0 5px; }
+.team { background: #000; border: 1px solid #c9a66b; font-size: 0.65rem; font-weight: bold; padding: 5px 4px; width: 80px; text-align: center; border-radius: 4px; color: #f1e4b9; }
+.final-box { width: 40px; height: 30px; border: 1px solid #f1e4b9; border-radius: 6px; background: #111; display: flex; justify-content: center; align-items: center; font-size: 0.8rem; font-weight: 900; color: #FFD700; }
+
+/* Room Card Styles */
+.room-container { display: flex; flex-direction: column; gap: 12px; margin: 20px 0; overflow-y: auto; }
+.room-card { background: linear-gradient(90deg, #1a1e2e 0%, #111 100%); border: 1px solid #c9a66b; border-radius: 10px; padding: 15px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+.room-price { font-weight: bold; color: #f1e4b9; font-size: 1.1rem; }
+.room-status { font-size: 0.7rem; color: #c9a66b; border: 1px solid #c9a66b; padding: 4px 8px; border-radius: 4px; }
+
+/* Modal Styles */
+.modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); }
+.modal-content { background: #111; margin: 20% auto; padding: 25px; border: 2px solid #c9a66b; width: 85%; border-radius: 15px; color: #f1e4b9; position: relative; text-align: center; }
+.close-btn { position: absolute; right: 15px; top: 10px; color: #c9a66b; font-size: 28px; cursor: pointer; }
+
+.rule-btn { width: 100%; padding: 12px; background: #000; border: 2px solid #c9a66b; color: #f1e4b9; border-radius: 8px; font-weight: bold; margin-top: auto; cursor: pointer; }
+/* Bracket Body ကို အမြင့်သေချာသတ်မှတ်ပေးမယ် */
+.bracket-body {
+    display: flex;
+    justify-content: space-between; /* ဘယ်၊ ညာ အစွန်းတွေကို တွန်းထုတ်မယ် */
+    align-items: center;
+    height: 180px; /* အမြင့်ကို ညှိပေးထားတယ် */
+    padding: 10px 0;
+}
+
+/* Side တစ်ဖက်စီမှာရှိတဲ့ Team Pair တွေကို အကွာအဝေး ညီအောင်လုပ်မယ် */
+.side { 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: space-around; /* Box အစုအဖွဲ့ ၂ ခုကြား အကွာအဝေး ညီစေဖို့ */
+    height: 100%;
+    flex: 1; /* ဘေးတစ်ဖက်စီကို ညီတူညီမျှ နေရာယူစေမယ် */
+}
+
+/* Player Box စာလုံးနဲ့ size ကို ညှိမယ် */
+.team {
+    background: #000;
+    border: 1px solid #c9a66b;
+    font-size: 0.7rem;
+    font-weight: bold;
+    padding: 6px 0;
+    width: 90px; /* Box width ကို နည်းနည်းတိုးလိုက်တယ် */
+    text-align: center;
+    border-radius: 4px;
+    color: #f1e4b9;
+    margin: 2px auto; /* Box တွေကို အလယ်တည့်တည့် ရောက်စေဖို့ */
+}
+
+/* 5vs5 ဖြစ်တဲ့အတွက် ၃ ယောက်တွဲနဲ့ ၂ ယောက်တွဲကြား အကွာအဝေး */
+.team-pair { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 4px; 
+}
+
+/* VS Box ကို အလယ်တည့်တည့်မှာ ထားမယ် */
+.center-final {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 0.5; /* VS Box က နေရာအများကြီး မယူအောင် */
+}
+/* Registration Area Styling */
+.registration-area { display: flex; flex-direction: column; gap: 12px; padding: 5px; overflow-y: auto; }
+
+.sq-header { display: flex; gap: 15px; align-items: center; }
+.logo-box { width: 70px; height: 70px; border: 2px dashed #c9a66b; border-radius: 8px; position: relative; display: flex; justify-content: center; align-items: center; text-align: center; font-size: 0.6rem; cursor: pointer; overflow: hidden; }
+
+.input-box { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+.input-box label { font-size: 0.7rem; color: #c9a66b; font-weight: bold; }
+.input-box input, .player-row input, #kpay-no { 
+    background: #111; border: 1px solid #333; color: #fff; padding: 8px; border-radius: 5px; font-size: 0.8rem;
+}
+.input-box input:focus, .player-row input:focus { border-color: #c9a66b; outline: none; }
+
+/* Two-Column Grid */
+.player-grid-container { display: flex; flex-direction: column; gap: 5px; }
+.grid-header { display: flex; justify-content: space-between; font-size: 0.65rem; color: #aaa; padding: 0 5px; }
+.player-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+/* Mini Lobby Section */
+.mini-lobby { background: #111; border: 1px solid #c9a66b55; border-radius: 8px; padding: 10px; margin-top: 5px; }
+.mini-lobby h3 { font-size: 0.7rem; margin: 0 0 5px 0; color: #c9a66b; text-align: center; }
+.lobby-item { font-size: 0.75rem; color: #f1e4b9; border-left: 3px solid #c9a66b; padding-left: 8px; }
+
+.gold-btn { background: linear-gradient(90deg, #c9a66b, #f1e4b9) !important; color: #000 !important; border: none !important; }
+/* K-Pay Name နဲ့ Number ကို တစ်တန်းတည်း ထားရန် */
+.kpay-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* တန်းတူ နှစ်ကွက်ခွဲမယ် */
+    gap: 10px; /* ကြားထဲမှာ အကွာအဝေး ထားမယ် */
+    width: 100%;
+}
+
+.input-box {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.input-box label {
+    font-size: 0.65rem;
+    color: #c9a66b;
+    font-weight: bold;
+}
+
+.input-box input {
+    width: 100%;
+    background: #111;
+    border: 1px solid #333;
+    color: #fff;
+    padding: 10px;
+    border-radius: 5px;
+    font-size: 0.8rem;
+}
+/* Rule Box Style for Room Selection Page */
+.mini-rule-box {
+    background: rgba(201, 166, 107, 0.1);
+    border: 1px solid #c9a66b;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+/* Checkbox Style */
+#read-check {
+    accent-color: #c9a66b;
+}
+
+.gold-btn {
+    background: linear-gradient(90deg, #c9a66b, #f1e4b9);
+    color: #000;
+    border: none;
+    font-weight: bold;
+}
+/* Room Page ထဲက Back ခလုတ်ကို အလယ်ပို့ရန် */
+#page-room-select .rule-btn {
+    display: block;      /* Block element အဖြစ်ပြောင်းမယ် */
+    width: 90%;          /* ခလုတ် အကျယ်ကို ၉၀ ရာခိုင်နှုန်း ထားမယ် */
+    margin: 15px auto;   /* auto margin သုံးပြီး အလယ် ပို့မယ် */
+    text-align: center;  /* စာသားကို အလယ်ပို့မယ် */
+}
+.loader {
+    border: 4px solid #333;
+    border-top: 4px solid #c9a66b;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+}
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+.lobby-card {
+    background: linear-gradient(145deg, #1a1a1a, #2a2a2a);
+    border: 1px solid #c9a66b;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+.lobby-team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 40%;
+}
+
+.lobby-logo {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px solid #c9a66b;
+    object-fit: cover;
+    background: #000;
+}
+
+.vs-circle {
+    background: #c9a66b;
+    color: #000;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.8rem;
+}
+.tab-btn {
+    background: transparent;
+    border: none;
+    color: #666;
+    font-weight: bold;
+    font-size: 0.9rem;
+    padding: 8px 20px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.tab-btn.active {
+    background: linear-gradient(to bottom, #f1e4b9, #c9a66b);
+    color: #000;
+    border-radius: 6px;
+}
+
+.match-card {
+    background: #0a0a0a;
+    border: 1px solid #333;
+    border-radius: 12px;
+    margin-bottom: 15px;
+    overflow: hidden;
+}
+
+.match-header {
+    background: linear-gradient(90deg, #c9a66b, #f1e4b9);
+    color: #000;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.match-body {
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.plus-join-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid #c9a66b;
+    background: transparent;
+    color: #c9a66b;
+    font-size: 1.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+#spin-container {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #111;
+    padding: 25px;
+    border-radius: 20px;
+    border: 3px solid #c9a66b;
+    z-index: 10000;
+    width: 260px;
+    text-align: center;
+    box-shadow: 0 0 30px rgba(0,0,0,1);
+}
+
+.wheel-design {
+    width: 200px;
+    height: 200px;
+    border-radius: 50%;
+    border: 8px solid #333;
+    position: relative;
+    margin: 0 auto;
+    background: conic-gradient(
+        #1a237e 0deg 180deg, 
+        #b71c1c 180deg 360deg
+    );
+    /* အစမှာ မြန်ပြီး အဆုံးမှာ တဖြည်းဖြည်း နှေးသွားစေမယ့် speed curve */
+    transition: transform 6s cubic-bezier(0.1, 0, 0, 1); 
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.wheel-label {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    /* စာသားကို အလယ်မှာ မထားဘဲ အပေါ်ကပ်ထားမယ် */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; 
+    padding-top: 20px; /* စက်ဝိုင်းအနားကနေ အတွင်းကို နည်းနည်းဝင်မယ် */
+    color: white;
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    box-sizing: border-box;
+}
+
+/* Team A (Blue area ဘက်ကို လှည့်မယ်) */
+.label-a {
+    /* စက်ဝိုင်းကို 90 ဒီဂရီ လှည့်လိုက်ရင် အပေါ်ရောက်နေတဲ့စာသားက Blue area ထဲ ရောက်သွားမယ် */
+    transform: rotate(90deg);
+}
+
+/* Team B (Red area ဘက်ကို လှည့်မယ်) */
+.label-b {
+    /* စက်ဝိုင်းကို 270 ဒီဂရီ လှည့်လိုက်ရင် အပေါ်ရောက်နေတဲ့စာသားက Red area ထဲ ရောက်သွားမယ် */
+    transform: rotate(270deg);
+}
+.pointer {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-top: 25px solid #FFD700;
+    z-index: 10001;
+}

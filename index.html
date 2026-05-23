@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aura Hub | MLBB Tournament</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- 1. WELCOME NOTIFICATION POPUP -->
+    <div id="welcome-popup" class="modal" style="display: flex;">
+        <div class="modal-content">
+            <h2 style="color:#c9a66b">WELCOME TO AURA HUB</h2>
+            <div class="rules-text" style="font-size: 0.8rem; text-align: left; margin: 15px 0;">
+                <p>• Tournament မစတင်မီ စည်းကမ်းချက်များကို ဖတ်ပေးပါ။</p>
+                <p>• Mode တစ်ခုကို ရွေးချယ်ပြီး ဆက်လက်လုပ်ဆောင်ပါ။</p>
+                <p>• ကစားသမားအချက်အလက်များကို မှန်ကန်စွာဖြည့်သွင်းပါ။</p>
+            </div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
+                <input type="checkbox" id="read-check" style="width: 20px; height: 20px; cursor: pointer;">
+                <label for="read-check" style="color:#fff; font-size: 0.9rem;">I have read all rules</label>
+            </div>
+            <button class="rule-btn gold-btn" onclick="closeWelcome()" style="margin-top: 15px; width: 100%;">Continue to Hub</button>
+        </div>
+    </div>
+
+    <!-- 2. DASHBOARD PAGE -->
+    <div class="app-container" id="main-dashboard" style="opacity: 0.5; pointer-events: none;">
+        <div class="header-box">
+            <h1>AURA HUB</h1>
+            <p>MLBB ELITE TOURNAMENT</p>
+        </div>
+
+        <div class="map-carousel">
+            <div class="map-display" onclick="goToRooms()">
+                <div class="map-img-container">
+                    <img id="mapImg" src="5vs5.png" alt="Map Preview">
+                </div>
+                <div class="map-tag">5vs5 Mode</div>
+            </div>
+            <div class="right-control">
+                <button class="arrow" onclick="nextMap()">❯</button>
+                <div class="count-badge">+1</div>
+            </div>
+        </div>
+
+        <div class="bracket-card">
+            <div class="bracket-header">
+                <div class="line"></div>
+                <span id="preview-title">5vs5 Preview</span>
+                <div class="line"></div>
+            </div>
+            <div class="bracket-body" id="bracket-preview">
+                <div class="side">
+                    <div class="team-pair" id="side-a-list">
+                        <div class="team">Player 1</div>
+                        <div class="team">Player 2</div>
+                        <div class="team">Player 3</div>
+                        <div class="team">Player 4</div>
+                        <div class="team">Player 5</div>
+                    </div>
+                </div>
+                <div class="center-final"><div class="final-box">vs</div></div>
+                <div class="side">
+                    <div class="team-pair" id="side-b-list">
+                        <div class="team">Player 1</div>
+                        <div class="team">Player 2</div>
+                        <div class="team">Player 3</div>    
+                        <div class="team">Player 4</div>
+                        <div class="team">Player 5</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. ROOM SELECTION PAGE -->
+    <div id="page-room-select" class="sub-page" style="display: none;">
+        <div class="header-box">
+            <h1 id="selected-mode-title">SELECT ROOM</h1>
+            <p>CHOOSE YOUR ENTRY FEE</p>
+        </div>
+        <div id="room-rule-box" style="background: rgba(201, 166, 107, 0.1); border: 1px solid #c9a66b; border-radius: 8px; padding: 12px; margin: 0 15px 15px 15px;">
+            <h4 style="margin: 0 0 5px 0; color: #c9a66b; font-size: 0.8rem;">ROOM RULES</h4>
+            <p id="rule-text-content" style="font-size: 0.7rem; margin: 0; color: #ccc; line-height: 1.4;">Rules will load here...</p>
+        </div>
+        <div class="room-container">
+            <div class="room-card" onclick="joinRoom(1000)"><span class="room-price">1000 Ks</span><span class="room-status">Join</span></div>
+            <div class="room-card" onclick="joinRoom(2000)"><span class="room-price">2000 Ks</span><span class="room-status">Join</span></div>
+            <div class="room-card" onclick="joinRoom(3000)"><span class="room-price">3000 Ks</span><span class="room-status">Join</span></div>
+            <div class="room-card" onclick="joinRoom(5000)"><span class="room-price">5000 Ks</span><span class="room-status">Join</span></div>
+            <div class="room-card" onclick="joinRoom(10000)"><span class="room-price">10000 Ks</span><span class="room-status">Join</span></div>
+        </div>
+        <button class="rule-btn" onclick="goBack()" style="margin-top: 20px; width: 90%; margin-left: auto; margin-right: auto; display: block;">Back to Dashboard</button>
+    </div>
+
+    <!-- 4. 5VS5 REGISTRATION PAGE -->
+    <div id="page-5vs5" class="sub-page" style="display: none;">
+        <div class="header-box">
+            <h1>5VS5 BATTLE ROOM</h1>
+            <p id="fee-5vs5">Entry Fee: 0 Ks</p>
+        </div>
+        <div class="registration-area">
+            <div class="sq-header">
+                <div class="logo-box">
+                    <input type="file" id="sqLogo" hidden accept="image/*" onchange="previewLogo(event)">
+                    <label for="sqLogo" id="logoLabel">➕<br>Logo</label>
+                    <img id="logoPreview" src="#" style="display:none; width:100%; height:100%; object-fit:cover;">
+                </div>
+                <div class="input-box">
+                    <label>SQUAD NAME</label>
+                    <input type="text" id="squad-name" placeholder="Enter Squad Name">
+                </div>
+            </div>
+            <div class="player-grid-container">
+                <div class="player-row"><input type="text" placeholder="Player 1"><input type="number" placeholder="ID"></div>
+                <div class="player-row"><input type="text" placeholder="Player 2"><input type="number" placeholder="ID"></div>
+                <div class="player-row"><input type="text" placeholder="Player 3"><input type="number" placeholder="ID"></div>
+                <div class="player-row"><input type="text" placeholder="Player 4"><input type="number" placeholder="ID"></div>
+                <div class="player-row"><input type="text" placeholder="Player 5"><input type="number" placeholder="ID"></div>
+            </div>
+            <div class="kpay-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                <div class="input-box"><label>K-PAY NAME</label><input type="text" id="kpay-name" placeholder="Name"></div>
+                <div class="input-box"><label>K-PAY PHONE</label><input type="number" id="kpay-no" placeholder="09xxx"></div>
+            </div>       
+            
+            <!-- RE-ADDED: LOBBY PREVIEW -->
+            <div class="mini-lobby" style="margin-top: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                <h3 style="font-size: 0.7rem; color: #c9a66b; margin: 0 0 5px 0;">LIVE LOBBY PREVIEW</h3>
+                <div class="lobby-item" style="font-size: 0.65rem; color: #aaa;">#0124 - Waiting for Opponent (1/2)</div>
+            </div>
+
+            <button class="rule-btn gold-btn" style="margin-top: 20px;" onclick="goToPayment()">Confirm & Pay</button>
+            <button class="rule-btn" onclick="leaveRoom()" style="margin-top: 10px;">Back to Selection</button>
+        </div>
+    </div>
+
+    <!-- 5. 1VS1 REGISTRATION PAGE -->
+    <div id="page-1vs1" class="sub-page" style="display: none;">
+        <div class="header-box">
+            <h1>1VS1 SOLO ROOM</h1>
+            <p id="fee-1vs1">Entry Fee: 0 Ks</p>
+        </div>
+        <div class="registration-area">
+            <div class="player-row"><input type="text" placeholder="Solo Player Name"><input type="number" placeholder="MLBB ID"></div>
+            <div class="kpay-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+                <div class="input-box"><label>K-PAY NAME</label><input type="text" id="kpay-name-solo" placeholder="Name"></div>
+                <div class="input-box"><label>K-PAY PHONE</label><input type="number" id="kpay-no-solo" placeholder="09xxx"></div>
+            </div>
+
+            <!-- RE-ADDED: LOBBY PREVIEW -->
+            <div class="mini-lobby" style="margin-top: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+                <h3 style="font-size: 0.7rem; color: #c9a66b; margin: 0 0 5px 0;">LIVE LOBBY PREVIEW</h3>
+                <div class="lobby-item" style="font-size: 0.65rem; color: #aaa;">#0125 - Searching for Match...</div>
+            </div>
+
+            <button class="rule-btn gold-btn" style="margin-top: 20px;" onclick="goToPayment()">Confirm To Pay</button>
+            <button class="rule-btn" onclick="leaveRoom()" style="margin-top: 10px;">Back to Selection</button> 
+        </div>
+    </div>
+
+<!-- 6. FINAL PAYMENT PROOF PAGE (Medium Size & Side-by-Side) -->
+<div id="page-payment-proof" class="sub-page" style="display: none; flex-direction: column; align-items: center;">
+    <div class="header-box" style="margin-bottom: 15px;">
+        <h2 style="color:#c9a66b; font-size: 1.5rem;">Payment Proof</h2>
+    </div>
+
+    <!-- Side-by-Side Container -->
+    <div style="display: flex; gap: 15px; align-items: flex-start; justify-content: center; width: 100%; max-width: 380px; background: rgba(255,255,255,0.03); padding: 15px; border-radius: 12px; border: 1px solid #333;">
+        
+        <!-- Left Side: QR Code Area -->
+        <div style="flex: 1; text-align: center;">
+            <p style="color:#c9a66b; font-size: 0.65rem; font-weight: bold; margin-bottom: 8px;">SCAN TO PAY</p>
+            <div style="background: #fff; padding: 5px; display: inline-block; border-radius: 8px;">
+                <img src="kpay-qr.png" alt="Kpay QR" style="width: 110px; height: 110px; display: block;">
+            </div>
+            <div style="margin-top: 8px; text-align: left; font-size: 0.6rem; color: #ccc;">
+                <p>Name: <span style="color:#f1e4b9">Aura Admin</span></p>
+                <p>No: <span style="color:#f1e4b9">09xxxxxxxxx</span></p>
+            </div>
+        </div>
+
+        <!-- Right Side: Upload Box Area -->
+        <div style="flex: 1; text-align: center;">
+            <p style="color:#c9a66b; font-size: 0.65rem; font-weight: bold; margin-bottom: 8px;">UPLOAD SLIP</p>
+            <div onclick="document.getElementById('ssFile').click()" 
+                 style="border: 2px dashed #c9a66b; width: 110px; height: 110px; display: flex; align-items: center; justify-content: center; border-radius: 8px; cursor: pointer; background: rgba(201, 166, 107, 0.05); margin: 0 auto; position: relative; overflow: hidden;">
+                
+                <div id="ss-placeholder">
+                    <span style="font-size: 1.5rem;">📸</span>
+                </div>
+                
+                <img id="ssPreview" style="display:none; width: 100%; height: 100%; object-fit: cover;">
+                <input type="file" id="ssFile" hidden accept="image/*" onchange="previewScreenshot(event)">
+            </div>
+            <p style="font-size: 0.55rem; color: #888; margin-top: 8px;">Tap to select screenshot</p>
+        </div>
+    </div>
+
+    <!-- Buttons Area -->
+    <div style="width: 100%; max-width: 380px; margin-top: 20px;">
+        <button type="button" id="submit-btn" class="rule-btn gold-btn" style="width:100%;" onclick="submitProof()">Submit Proof</button>
+        <button class="rule-btn" onclick="backToRegistration()" style="width:100%; margin-top:8px; font-size: 0.8rem; border: 1px solid #444;">Back to Form</button>
+    </div>
+    
+    <!-- Waiting Message -->
+    <div id="waiting-msg" style="display:none; text-align:center; margin-top:15px; color: #c9a66b;">
+        <p style="font-size: 0.75rem;">Verifying your payment... (1 min)</p>
+        <div class="loader" style="margin-top: 8px;"></div>
+    </div>
+</div>
+<!-- 5. WAITING ROOM PAGE (အသစ်ထည့်မယ့် UI) -->
+<div id="page-match-center" class="sub-page" style="display: none; flex-direction: column; background: #000;">
+    <div class="match-tabs" style="display: flex; justify-content: space-around; background: #111; padding: 12px; border-bottom: 1px solid #333;">
+        <button class="tab-btn active" onclick="switchTab('waiting', this)">Waiting</button>
+        <button class="tab-btn" onclick="switchTab('playing', this)">Playing</button>
+        <button class="tab-btn" onclick="switchTab('result', this)">Result</button>
+    </div>
+
+    <div id="match-content" style="flex: 1; overflow-y: auto; padding: 15px;">
+        </div>
+
+    <div style="padding: 20px; background: #000;">
+        <div class="create-room-card" onclick="createNewRoom()" style="border: 1px solid #c9a66b; padding: 18px; border-radius: 12px; text-align: center; cursor: pointer; background: rgba(201,166,107,0.05);">
+            <span style="color: #c9a66b; font-weight: bold; letter-spacing: 1px;">New room. <span style="font-size: 1.2rem; vertical-align: middle;">⊕</span></span>
+        </div>
+    </div>
+</div>
+<div id="page-playing-lobby" class="sub-page" style="display: none; flex-direction: column; background: #000;">
+    <div class="header-box">
+        <h1 id="match-fee-display" style="color:#c9a66b;">MATCH FOUND</h1>
+        <p>CONFIRM TO GET TELEGRAM LINK</p>
+    </div>
+
+    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 20px;">
+        
+        <div style="display: flex; justify-content: space-around; align-items: flex-start; padding: 20px 10px; background: rgba(201,166,107,0.03); border-radius: 15px; border: 1px solid #333;">
+            
+            <div id="team-a-side" style="text-align: center; width: 45%;">
+                <div style="position: relative; display: inline-block;">
+                    <img id="p-team-a-logo" src="https://i.ibb.co/4pGm0Zf/default-logo.png" style="width: 75px; height: 75px; border-radius: 50%; border: 2px solid #c9a66b; padding: 3px;">
+                    <div id="p-team-a-ready-badge" style="display:none; position: absolute; bottom: -5px; right: -5px; background: #00ff00; color: #000; font-size: 0.6rem; font-weight: bold; padding: 2px 6px; border-radius: 10px;">READY</div>
+                </div>
+                <h4 id="p-team-a-name" style="color: #f1e4b9; margin: 10px 0 5px 0; font-size: 0.9rem;">Team A</h4>
+                <div id="p-team-a-players" style="font-size: 0.7rem; color: #aaa; line-height: 1.6; text-align: center;"></div>
+            </div>
+
+            <div style="align-self: center;">
+                <div class="vs-circle">VS</div>
+            </div>
+
+            <div id="team-b-side" style="text-align: center; width: 45%;">
+                <div style="position: relative; display: inline-block;">
+                    <img id="p-team-b-logo" src="https://i.ibb.co/4pGm0Zf/default-logo.png" style="width: 75px; height: 75px; border-radius: 50%; border: 2px solid #444; padding: 3px;">
+                    <div id="p-team-b-ready-badge" style="display:none; position: absolute; bottom: -5px; right: -5px; background: #00ff00; color: #000; font-size: 0.6rem; font-weight: bold; padding: 2px 6px; border-radius: 10px;">READY</div>
+                </div>
+                <h4 id="p-team-b-name" style="color: #f1e4b9; margin: 10px 0 5px 0; font-size: 0.9rem;">Team B</h4>
+                <div id="p-team-b-players" style="font-size: 0.7rem; color: #aaa; line-height: 1.6; text-align: center;"></div>
+            </div>
+        </div>
+
+        <div id="match-status-msg" style="text-align: center; color: #c9a66b; font-size: 0.8rem; font-style: italic;">
+            Waiting for both teams to confirm...
+        </div>
+    </div>
+
+    <div style="margin-top: auto; padding-bottom: 20px;">
+        <button id="ready-btn" class="rule-btn gold-btn" style="width: 100%; margin-bottom: 10px;" onclick="setReady()">CONFIRM (READY)</button>
+        <button id="cancel-match-btn" class="rule-btn" style="width: 100%; border-color: #444; color: #888;" onclick="cancelMatch()">CANCEL MATCH</button>
+    </div>
+</div>
+<div id="spin-container" style="display:none; text-align:center;">
+    <div class="pointer"></div>
+    <div id="main-wheel" class="wheel-design">
+        <div class="wheel-label label-a">Team 1</div>
+        <div class="wheel-label label-b">Team 2</div>
+    </div>
+    <div id="spin-result" style="color:#c9a66b; margin-top:20px; font-weight:bold;">
+        Who gets the FIRST PICK?
+    </div>
+</div><!-- Firebase SDK v8 ကိုပဲ သုံးပါမယ် -->
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+<script>
+  // Firebase Configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyCqIFh8-OzlDPQAqboKHaq8-Jx_4jlVd4M",
+    authDomain: "mlbb-matchmaking.firebaseapp.com",
+    projectId: "mlbb-matchmaking",
+    storageBucket: "mlbb-matchmaking.firebasestorage.app",
+    messagingSenderId: "539846137130",
+    appId: "1:539846137130:web:ca37efdb188d14e664ba53"
+  };
+
+  // Initialize Firebase (Version 8 format)
+  if (!firebase.apps.length) {
+    firebase.initializeApp(firebaseConfig);
+  }
+  const db = firebase.firestore();
+</script>
+
+<!-- script.js ကို config ရဲ့ အောက်မှာ ထားပါ -->
+<script src="script.js"></script>
+</body>
+</html>
