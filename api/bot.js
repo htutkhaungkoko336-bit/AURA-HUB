@@ -8,12 +8,10 @@ if (!admin.apps.length) {
         credential: admin.credential.cert(serviceAccount)
     });
 }
-const db = admin.firestore();
 
-// Telegraf Initialization
-const bot = new Telegraf(process.env.BOT_TOKEN);
+// Telegram Bot Initialization
+const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 const adminIds = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(id => id.trim()) : [];
-
 // Admin Check Function
 function isAdmin(userId) {
     return adminIds.includes(userId.toString());
@@ -72,7 +70,6 @@ bot.action(/reject_.+/, async (ctx) => {
     await ctx.editMessageCaption("❌ ဤရလဒ်မှာ မမှန်ကန်ပါ။");
 });
 
-// Vercel Serverless Function Export
 module.exports = async (req, res) => {
     try {
         await bot.handleUpdate(req.body, res);
