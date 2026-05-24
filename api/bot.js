@@ -31,17 +31,18 @@ bot.start(async (ctx) => {
         if (!matchDoc.exists) return ctx.reply("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
 
         const data = matchDoc.data();
+        
+        // Database ထဲက field နာမည်အတိုင်း ပြင်ရေးလိုက်ပါ
         ctx.reply(`✅ *ပွဲစဉ်အချက်အလက်*\n\n` +
-                  `🏆 Team A: ${data.teamA.name}\n` +
-                  `🏆 Team B: ${data.teamB.name}\n` +
-                  `🎲 First Pick: ${data.firstPick}\n\n` +
+                  `🏆 Team A: ${data.teamA}\n` + 
+                  `🏆 Team B: ${data.teamB}\n` +
+                  `🎲 First Pick Winner: ${data.firstPickWinner}\n\n` +
                   `👉 အချက်အလက်များအတိုင်း ပွဲစဆော့ပြီးလျှင် အနိုင်ရသော SS ကို တင်ပေးပါ။`, { parse_mode: 'Markdown' });
     } catch (e) {
-        console.error(e); // Error ကို log ထုတ်ထားမှ သိရမယ်
+        console.error(e);
         ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။");
     }
 });
-
 bot.on('photo', async (ctx) => {
     if (isAdmin(ctx.from.id)) return;
 
