@@ -203,30 +203,23 @@ bot.on('photo', async (ctx) => {
     ctx.reply("✅ ပုံတင်ပြပြီးပါပြီ။ Admin စစ်ဆေးနေပါသည်၊ ခဏစောင့်ပေးပါ။");
 });
 
-// 3. Admin Actions
+// 3. Admin Actions (Confirm လုပ်ရင် Bot ထွက်သွားမည့် Logic)
 bot.action(/confirm_.+/, async (ctx) => {
     const docId = ctx.callbackQuery.data.split('_')[1];
-    // လိုအပ်ရင် docId ကို သုံးပြီး Firestore ကနေ photoId ပြန်ထုတ်နိုင်တယ်
-    await ctx.answerCbQuery("အတည်ပြုပြီးပါပြီ");
-    await ctx.editMessageCaption("✅ ဤရလဒ်ကို အတည်ပြုပြီးပါပြီ။");
-});
+    
+    // ၁။ Admin အား အကြောင်းကြားခြင်း
+    await ctx.answerCbQuery("အတည်ပြုပြီးပါပြီ။ Bot ထွက်ခွာသွားပါမည်။");
+    await ctx.editMessageCaption("✅ ဤရလဒ်ကို အတည်ပြုပြီးပါပြီ။ ပွဲစဉ်ပြီးဆုံးသွားပါပြီ။");
 
-bot.action(/reject_.+/, async (ctx) => {
-    await ctx.answerCbQuery("ပယ်ချပြီးပါပြီ");
-    await ctx.editMessageCaption("❌ ဤရလဒ်မှာ မမှန်ကန်ပါ။");
-});
-// Vercel Serverless Function Export
-module.exports = async (req, res) => {
+    // ၂။ Group ထဲမှ Bot ထွက်သွားခြင်း
+    // ဒါက Group Chat ထဲမှာဆိုရင် အဆင်ပြေသွားပါပြီ
     try {
-        await bot.handleUpdate(req.body); 
-        res.status(200).send('OK');
+        await ctx.reply("🏆 ပွဲစဉ်ပြီးဆုံးပါပြီ။ AURA HUB အား အားပေးမှုအတွက် ကျေးဇူးတင်ပါသည်။ Bot ထွက်ခွာသွားပါမည်။");
+        await ctx.telegram.leaveChat(ctx.chat.id);
     } catch (err) {
-        console.error(err);
-        if (!res.headersSent) {
-            res.status(500).send('Internal Server Error');
-        }
+        console.error("Bot could not leave chat:", err);
     }
-};
+});
 // Vercel Serverless Function Export
 module.exports = async (req, res) => {
     try {
