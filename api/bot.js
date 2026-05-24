@@ -32,17 +32,32 @@ bot.start(async (ctx) => {
 
         const data = matchDoc.data();
         
-        // Database ထဲက field နာမည်အတိုင်း ပြင်ရေးလိုက်ပါ
-        ctx.reply(`✅ *ပွဲစဉ်အချက်အလက်*\n\n` +
-                  `🏆 Team A: ${data.teamA}\n` + 
-                  `🏆 Team B: ${data.teamB}\n` +
-                  `🎲 First Pick Winner: ${data.firstPickWinner}\n\n` +
-                  `👉 အချက်အလက်များအတိုင်း ပွဲစဆော့ပြီးလျှင် အနိုင်ရသော SS ကို တင်ပေးပါ။`, { parse_mode: 'Markdown' });
+        // ဒီနေရာမှာ မင်းစိတ်ကြိုက် စာသားတွေကို ပြင်ရေးပါ
+        const customMessage = `
+✅ *Match Information*
+
+🏆 Team A: ${data.teamA}
+👤 Squad Leader: ${data.leaderA_Info}
+
+VS
+
+🏆 Team B: ${data.teamB}
+👤 Squad Leader: ${data.leaderB_Info}
+
+🎲 First Pick Team: ${data.firstPickWinner}
+
+---
+💡 *မှတ်ချက်:* ${data.note || "ပွဲစဆော့ပြီးလျှင် အနိုင်ရသော SS ကို တင်ပေးပါ။"}
+📞 အကူအညီလိုပါက Admin ကို ဆက်သွယ်ပါ။
+`;
+
+        ctx.reply(customMessage, { parse_mode: 'Markdown' });
     } catch (e) {
         console.error(e);
         ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။");
     }
 });
+
 bot.on('photo', async (ctx) => {
     if (isAdmin(ctx.from.id)) return;
 
