@@ -76,41 +76,58 @@ VS
 
 // 2. Photo Handling (Firebase Session ကို သုံးထားသည်)
 bot.on('photo', async (ctx) => {
-    const sessionDoc = await db.collection("sessions").doc(ctx.from.id.toString()).get();
-    const session = sessionDoc.exists ? sessionDoc.data() : { waitingForReceipt: false };
+    const sessionDoc = await db.collection("sessions").doc(ctx.from.id.toString()).get();
+    const session = sessionDoc.exists ? sessionDoc.data() : { waitingForReceipt: false };
 
-    // Admin က Confirm ပြီးနောက် ငွေလွှဲပြေစာ ပို့ခြင်း
-    if (isAdmin(ctx.from.id) && session.waitingForReceipt) {
-        const photoId = ctx.message.photo.pop().file_id;
-        await ctx.telegram.sendPhoto(session.targetChatId, photoId, {
-            caption: "💰 ငွေလွှဲပြေစာ ရောက်ရှိပါပြီ။\n\n🏆 ပွဲစဉ်ပြီးဆုံးသွားပါပြီ။ AURA HUB အား အားပေးမှုအတွက် ကျေးဇူးတင်ပါသည်။ Bot ထွက်ခွာသွားပါမည်။"
-        });
-        await ctx.telegram.leaveChat(session.targetChatId);
-        await db.collection("sessions").doc(ctx.from.id.toString()).delete();
-        return;
-    }
+    if (isAdmin(ctx.from.id) && session.waitingForReceipt) {
+        const photoId = ctx.message.photo.pop().file_id;
+        
+        // အခု session.targetChatId က User ID ဖြစ်နေပြီမို့ User ဆီရောက်မယ်
+        await ctx.telegram.sendPhoto(session.targetChatId, photoId, {
+            caption: "💰 ငွေလွှဲပြေစာ ရောက်ရှိပါပြီ။\n\n🏆 ပွဲစဉ်ပြီးဆုံးသွားပါပြီ။ AURA HUB အား အားပေးမှုအတွက် ကျေးဇူးတင်ပါသည်။"
+        });
+        
+        await db.collection("sessions").doc(ctx.from.id.toString()).delete();
+        return;
+    }
 
-    if (isAdmin(ctx.from.id)) return;
-    const photoId = ctx.message.photo.pop().file_id;
-    const docRef = await db.collection("pending_photos").add({ photoId, userId: ctx.from.id, timestamp: new Date() });
-    
-    for (const adminId of adminIds) {
-        await bot.telegram.sendPhoto(adminId, photoId, {
-            caption: "📸 *ရလဒ် Screenshot*",
-            reply_markup: Markup.inlineKeyboard([
-                Markup.button.callback('✅ Confirm', `confirm_${docRef.id}`),
-                Markup.button.callback('❌ Reject', `reject_${docRef.id}`)
-            ]).reply_markup
-        });
-    }
-    ctx.reply("✅ ပုံတင်ပြပြီးပါပြီ။ Admin စစ်ဆေးနေပါသည်၊ ခဏစောင့်ပေးပါ။");
-});
+    if (isAdmin(ctx.from.id)) return;
+    
+    // User က ပုံပို့ရင် userId ကို အမြဲသိမ်းထားမယ်
+    const photoId = ctx.message.photo.pop().file_id;
+    const docRef = await db.collection("pending_photos").add({ 
+        photoId, 
+        userId: ctx.from.id, 
+        timestamp: new Date() 
+    });
+    
+    for (const adminId of adminIds) {
+        await bot.telegram.sendPhoto(adminId, photoId, {
+            caption: "📸 *ရလဒ် Screenshot*",
+            reply_markup: Markup.inlineKeyboard([
+                Markup.button.callback('✅ Confirm', `confirm_${docRef.id}`),
+                Markup.button.callback('❌ Reject', `reject_${docRef.id}`)
+            ]).reply_markup
+        });
+    }
+    ctx.reply("✅ ပုံတင်ပြပြီးပါပြီ။ Admin စစ်ဆေးနေပါသည်၊ ခဏစောင့်ပေးပါ။");
+});// 3. Admin Actions (Confirm/Reject)
+bot.action(/confirm_(.+)/, async (ctx) => {
+    const docId = ctx.match[1]; // Regex ကနေ doc ID ကို ယူမယ်
+    const doc = await db.collection("pending_photos").doc(docId).get();
+    
+    if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက် ရှာမတွေ့ပါ။");
+    
+    const userId = doc.data().userId; // ပုံတင်ထားတဲ့ User ရဲ့ ID ကို ယူမယ်
 
-// 3. Admin Actions (Confirm/Reject)
-bot.action(/confirm_.+/, async (ctx) => {
-    await ctx.answerCbQuery("ပြေစာပို့ရန် စောင့်ဆိုင်းနေပါသည်...");
-    await ctx.editMessageCaption("✅ အတည်ပြုသည်။ ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ပို့ပေးပါ။");
-    await db.collection("sessions").doc(ctx.from.id.toString()).set({ waitingForReceipt: true, targetChatId: ctx.chat.id });
+    await ctx.answerCbQuery("ပြေစာပို့ရန် စောင့်ဆိုင်းနေပါသည်...");
+    await ctx.editMessageCaption("✅ အတည်ပြုသည်။ ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ပို့ပေးပါ။");
+    
+    // session ထဲမှာ Admin ရဲ့ ID နဲ့ User ရဲ့ ID ကို တွဲမှတ်ထားမယ်
+    await db.collection("sessions").doc(ctx.from.id.toString()).set({ 
+        waitingForReceipt: true, 
+        targetChatId: userId // <--- ဒီနေရာမှာ User ID ဖြစ်သွားပြီ
+    });
 });
 
 bot.action(/reject_.+/, async (ctx) => {
