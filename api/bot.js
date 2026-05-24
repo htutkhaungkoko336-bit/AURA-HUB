@@ -19,6 +19,7 @@ function isAdmin(userId) {
 }
 
 // 1. Start Command
+// 1. Start Command
 bot.start(async (ctx) => {
     const userId = ctx.from.id.toString();
     if (isAdmin(userId)) return ctx.reply("👋 Admin Panel သို့ ကြိုဆိုပါသည်။");
@@ -29,26 +30,39 @@ bot.start(async (ctx) => {
     try {
         const matchDoc = await db.collection("matches").doc(matchId).get();
         if (!matchDoc.exists) return ctx.reply("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
+        const matchData = matchDoc.data();
 
-        const data = matchDoc.data();
-        
-        // ဒီနေရာမှာ မင်းစိတ်ကြိုက် စာသားတွေကို ပြင်ရေးပါ
+        // Registration collection ထဲက Data ယူမယ်
+        const leaderADoc = await db.collection("registrations").doc(matchData.teamA_LeaderId).get();
+        const leaderBDoc = await db.collection("registrations").doc(matchData.teamB_LeaderId).get();
+
+        const leaderA = leaderADoc.exists ? leaderADoc.data() : null;
+        const leaderB = leaderBDoc.exists ? leaderBDoc.data() : null;
+
+        // Player 0 ရဲ့ id, name နဲ့ Kpay Ph No ကို ဆွဲထုတ်မယ်
+        // (Array index 0 ကို သုံးထားပါတယ်)
+        const pA = leaderA?.players?.[0] || { id: "N/A", name: "N/A" };
+        const pB = leaderB?.players?.[0] || { id: "N/A", name: "N/A" };
+
         const customMessage = `
 ✅ *Match Information*
 
-🏆 Team A: ${data.teamA}
-👤 Squad Leader: ${data.leaderA_Info}
+🏆 Team A: ${matchData.teamA}
+👤 Player Name: ${pA.name}
+🆔 ID No: ${pA.id}
+📞 K-Pay Ph: ${leaderA?.kpayPhone || "N/A"}
 
 VS
 
-🏆 Team B: ${data.teamB}
-👤 Squad Leader: ${data.leaderB_Info}
+🏆 Team B: ${matchData.teamB}
+👤 Player Name: ${pB.name}
+🆔 ID No: ${pB.id}
+📞 K-Pay Ph: ${leaderB?.kpayPhone || "N/A"}
 
-🎲 First Pick Team: ${data.firstPickWinner}
+🎲 First Pick Team: ${matchData.firstPickWinner}
 
 ---
-💡 *မှတ်ချက်:* ${data.note || "ပွဲစဆော့ပြီးလျှင် အနိုင်ရသော SS ကို တင်ပေးပါ။"}
-📞 အကူအညီလိုပါက Admin ကို ဆက်သွယ်ပါ။
+👉 _ပွဲစဆော့ပြီးလျှင် အနိုင်ရသော SS ကို တင်ပေးပါ။_
 `;
 
         ctx.reply(customMessage, { parse_mode: 'Markdown' });
@@ -57,7 +71,6 @@ VS
         ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။");
     }
 });
-
 bot.on('photo', async (ctx) => {
     if (isAdmin(ctx.from.id)) return;
 
