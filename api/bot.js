@@ -42,19 +42,27 @@ bot.start(async (ctx) => {
     }
 });
 
-// 2. Photo Handler
 bot.on('photo', async (ctx) => {
     if (isAdmin(ctx.from.id)) return;
 
     const photoId = ctx.message.photo.pop().file_id;
     
+    // ပုံကို Firestore မှာ သိမ်းပြီး Document ID ရယူမယ်
+    const docRef = await db.collection("pending_photos").add({
+        photoId: photoId,
+        userId: ctx.from.id,
+        timestamp: new Date()
+    });
+    
+    const docId = docRef.id; // ဒါက ၆၄ လုံးထက် အများကြီး ပိုတိုတယ်
+
     for (const adminId of adminIds) {
         await bot.telegram.sendPhoto(adminId, photoId, {
             caption: "📸 *ရလဒ် Screenshot အသစ် ရောက်ရှိသည်*",
             parse_mode: 'Markdown',
             reply_markup: Markup.inlineKeyboard([
-                Markup.button.callback('✅ Confirm', `confirm_${photoId}`),
-                Markup.button.callback('❌ Reject', `reject_${photoId}`)
+                Markup.button.callback('✅ Confirm', `confirm_${docId}`),
+                Markup.button.callback('❌ Reject', `reject_${docId}`)
             ]).reply_markup
         });
     }
@@ -63,6 +71,8 @@ bot.on('photo', async (ctx) => {
 
 // 3. Admin Actions
 bot.action(/confirm_.+/, async (ctx) => {
+    const docId = ctx.callbackQuery.data.split('_')[1];
+    // လိုအပ်ရင် docId ကို သုံးပြီး Firestore ကနေ photoId ပြန်ထုတ်နိုင်တယ်
     await ctx.answerCbQuery("အတည်ပြုပြီးပါပြီ");
     await ctx.editMessageCaption("✅ ဤရလဒ်ကို အတည်ပြုပြီးပါပြီ။");
 });
@@ -71,7 +81,6 @@ bot.action(/reject_.+/, async (ctx) => {
     await ctx.answerCbQuery("ပယ်ချပြီးပါပြီ");
     await ctx.editMessageCaption("❌ ဤရလဒ်မှာ မမှန်ကန်ပါ။");
 });
-
 // Vercel Serverless Function Export
 module.exports = async (req, res) => {
     try {
