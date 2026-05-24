@@ -17,8 +17,6 @@ const adminIds = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(id
 function isAdmin(userId) {
     return adminIds.includes(userId.toString());
 }
-
-// 1. Start Command
 // 1. Start Command
 bot.start(async (ctx) => {
     const userId = ctx.from.id.toString();
@@ -36,13 +34,16 @@ bot.start(async (ctx) => {
         const leaderADoc = await db.collection("registrations").doc(matchData.teamA_LeaderId).get();
         const leaderBDoc = await db.collection("registrations").doc(matchData.teamB_LeaderId).get();
 
-        const leaderA = leaderADoc.exists ? leaderADoc.data() : null;
-        const leaderB = leaderBDoc.exists ? leaderBDoc.data() : null;
+        const leaderA = leaderADoc.exists ? leaderADoc.data() : {};
+        const leaderB = leaderBDoc.exists ? leaderBDoc.data() : {};
 
-        // Player 0 ရဲ့ id, name နဲ့ Kpay Ph No ကို ဆွဲထုတ်မယ်
-        // (Array index 0 ကို သုံးထားပါတယ်)
-        const pA = leaderA?.players?.[0] || { id: "N/A", name: "N/A" };
-        const pB = leaderB?.players?.[0] || { id: "N/A", name: "N/A" };
+        // အရေးကြီးဆုံးအပိုင်း: Array ထဲက data ကို ဆွဲထုတ်ခြင်း
+        // မင်းရဲ့ db screenshot မှာ players က array ဖြစ်ပြီး index 0 ထဲမှာ id နဲ့ name ရှိတယ်
+        const playersA = leaderA.players || [];
+        const playersB = leaderB.players || [];
+        
+        const pA = playersA[0] || { name: "N/A", id: "N/A" };
+        const pB = playersB[0] || { name: "N/A", id: "N/A" };
 
         const customMessage = `
 ✅ *Match Information*
@@ -50,14 +51,14 @@ bot.start(async (ctx) => {
 🏆 Team A: ${matchData.teamA}
 👤 Player Name: ${pA.name}
 🆔 ID No: ${pA.id}
-📞 K-Pay Ph: ${leaderA?.kpayPhone || "N/A"}
+📞 K-Pay Ph: ${leaderA.kpayPhone || "N/A"}
 
 VS
 
 🏆 Team B: ${matchData.teamB}
 👤 Player Name: ${pB.name}
 🆔 ID No: ${pB.id}
-📞 K-Pay Ph: ${leaderB?.kpayPhone || "N/A"}
+📞 K-Pay Ph: ${leaderB.kpayPhone || "N/A"}
 
 🎲 First Pick Team: ${matchData.firstPickWinner}
 
@@ -67,10 +68,11 @@ VS
 
         ctx.reply(customMessage, { parse_mode: 'Markdown' });
     } catch (e) {
-        console.error(e);
+        console.error("Error fetching data:", e);
         ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။");
     }
 });
+
 bot.on('photo', async (ctx) => {
     if (isAdmin(ctx.from.id)) return;
 
