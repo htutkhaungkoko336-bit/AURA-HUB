@@ -1,6 +1,6 @@
-const { Telegraf, Markup } = require('telegraf');
+const { Telegraf, Markup, session } = require('telegraf');
+const LocalSession = require('telegraf-session-local'); // <--- ဒါလေး သေချာထည့်ပါ
 const admin = require('firebase-admin');
-
 // Firebase Initialization
 if (!admin.apps.length) {
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
@@ -10,19 +10,18 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 
-// Telegram Bot Initialization
+// Bot Initialization
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
-const adminIds = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(id => id.trim()) : [];
+bot.use((new LocalSession({ database: 'session.json' })).middleware()); // Session ထည့်သွင်းခြင်း
 
+const adminIds = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(id => id.trim()) : [];
 function isAdmin(userId) {
     return adminIds.includes(userId.toString());
 }
 
 // 1. Start Command
 bot.start(async (ctx) => {
-    const userId = ctx.from.id.toString();
-    if (isAdmin(userId)) return ctx.reply("👋 Admin Panel သို့ ကြိုဆိုပါသည်။");
-
+    if (isAdmin(ctx.from.id)) return ctx.reply("👋 Admin Panel သို့ ကြိုဆိုပါသည်။");
     const matchId = ctx.startPayload;
     if (!matchId) return ctx.reply("🔥 AURA HUB Matchmaking Bot သို့ ကြိုဆိုပါသည်။");
 
@@ -37,59 +36,39 @@ bot.start(async (ctx) => {
         const leaderA = leaderADoc.exists ? leaderADoc.data() : {};
         const leaderB = leaderBDoc.exists ? leaderBDoc.data() : {};
 
-        const playersA = leaderA.players || [];
-        const playersB = leaderB.players || [];
-        
-        const pA = playersA[0] || { name: "N/A", id: "N/A" };
-        const pB = playersB[0] || { name: "N/A", id: "N/A" };
+        const pA = (leaderA.players || [])[0] || { name: "N/A", id: "N/A" };
+        const pB = (leaderB.players || [])[0] || { name: "N/A", id: "N/A" };
 
-        const customMessage = `
-✅ *Match Information*
-
-🏆 Team A: ${matchData.teamA}
-👤 Player Name: ${pA.name}
-🆔 ID No: ${pA.id}
-📞 K-Pay Ph: ${leaderA.kpayPhone || "N/A"}
-
-VS
-
-🏆 Team B: ${matchData.teamB}
-👤 Player Name: ${pB.name}
-🆔 ID No: ${pB.id}
-📞 K-Pay Ph: ${leaderB.kpayPhone || "N/A"}
-
-🎲 First Pick Team: ${matchData.firstPickWinner}
-
----
-👉 _ပွဲစဆော့ပြီးလျှင် အနိုင်ရသော SS ကို တင်ပေးပါ။_
-`;
+        const customMessage = `✅ *Match Information*\n\n🏆 Team A: ${matchData.teamA}\n👤 Name: ${pA.name}\n🆔 ID: ${pA.id}\n📞 Ph: ${leaderA.kpayPhone || "N/A"}\n\nVS\n\n🏆 Team B: ${matchData.teamB}\n👤 Name: ${pB.name}\n🆔 ID: ${pB.id}\n📞 Ph: ${leaderB.kpayPhone || "N/A"}\n\n🎲 First Pick: ${matchData.firstPickWinner}\n\n--- \n👉 _ပွဲစဆော့ပြီးလျှင် အနိုင်ရသော SS ကို တင်ပေးပါ။_`;
         ctx.reply(customMessage, { parse_mode: 'Markdown' });
     } catch (e) {
-        console.error("Error fetching data:", e);
         ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။");
     }
 });
 
 // 2. Photo Handling
 bot.on('photo', async (ctx) => {
+    // Admin က Confirm ပြီးနောက် ငွေလွှဲပြေစာ ပို့ခြင်း
+    if (isAdmin(ctx.from.id) && ctx.session.waitingForReceipt) {
+        const photoId = ctx.message.photo.pop().file_id;
+        await ctx.telegram.sendPhoto(ctx.session.targetChatId, photoId, {
+            caption: "💰 ငွေလွှဲပြေစာ ရောက်ရှိပါပြီ။\n\n🏆 ပွဲစဉ်ပြီးဆုံးသွားပါပြီ။ AURA HUB အား အားပေးမှုအတွက် ကျေးဇူးတင်ပါသည်။ Bot ထွက်ခွာသွားပါမည်။"
+        });
+        await ctx.telegram.leaveChat(ctx.session.targetChatId);
+        ctx.session.waitingForReceipt = false;
+        return;
+    }
+
     if (isAdmin(ctx.from.id)) return;
-
     const photoId = ctx.message.photo.pop().file_id;
-    const docRef = await db.collection("pending_photos").add({
-        photoId: photoId,
-        userId: ctx.from.id,
-        timestamp: new Date()
-    });
+    const docRef = await db.collection("pending_photos").add({ photoId, userId: ctx.from.id, timestamp: new Date() });
     
-    const docId = docRef.id;
-
     for (const adminId of adminIds) {
         await bot.telegram.sendPhoto(adminId, photoId, {
-            caption: "📸 *ရလဒ် Screenshot အသစ် ရောက်ရှိသည်*",
-            parse_mode: 'Markdown',
+            caption: "📸 *ရလဒ် Screenshot*",
             reply_markup: Markup.inlineKeyboard([
-                Markup.button.callback('✅ Confirm', `confirm_${docId}`),
-                Markup.button.callback('❌ Reject', `reject_${docId}`)
+                Markup.button.callback('✅ Confirm', `confirm_${docRef.id}`),
+                Markup.button.callback('❌ Reject', `reject_${docRef.id}`)
             ]).reply_markup
         });
     }
@@ -98,16 +77,10 @@ bot.on('photo', async (ctx) => {
 
 // 3. Admin Actions
 bot.action(/confirm_.+/, async (ctx) => {
-    const docId = ctx.callbackQuery.data.split('_')[1];
-    await ctx.answerCbQuery("အတည်ပြုပြီးပါပြီ။");
-    await ctx.editMessageCaption("✅ ဤရလဒ်ကို အတည်ပြုပြီးပါပြီ။ ပွဲစဉ်ပြီးဆုံးသွားပါပြီ။");
-
-    try {
-        await ctx.reply("🏆 ပွဲစဉ်ပြီးဆုံးပါပြီ။ AURA HUB အား အားပေးမှုအတွက် ကျေးဇူးတင်ပါသည်။ Bot ထွက်ခွာသွားပါမည်။");
-        await ctx.telegram.leaveChat(ctx.chat.id);
-    } catch (err) {
-        console.error("Bot could not leave chat:", err);
-    }
+    await ctx.answerCbQuery("ပြေစာပို့ရန် စောင့်ဆိုင်းနေပါသည်...");
+    await ctx.editMessageCaption("✅ အတည်ပြုသည်။ ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ပို့ပေးပါ။");
+    ctx.session.waitingForReceipt = true;
+    ctx.session.targetChatId = ctx.chat.id; // Confirm နှိပ်တဲ့ Group ID ကို သိမ်းထားမယ်
 });
 
 bot.action(/reject_.+/, async (ctx) => {
@@ -115,13 +88,7 @@ bot.action(/reject_.+/, async (ctx) => {
     await ctx.editMessageCaption("❌ ဤရလဒ်မှာ မမှန်ကန်ပါ။");
 });
 
-// Vercel Serverless Function
 module.exports = async (req, res) => {
-    try {
-        await bot.handleUpdate(req.body); 
-        res.status(200).send('OK');
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Internal Server Error');
-    }
+    try { await bot.handleUpdate(req.body); res.status(200).send('OK'); }
+    catch (err) { console.error(err); res.status(500).send('Internal Server Error'); }
 };
