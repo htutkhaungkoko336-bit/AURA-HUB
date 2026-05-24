@@ -37,12 +37,17 @@ bot.start(async (ctx) => {
         const leaderA = leaderADoc.exists ? leaderADoc.data() : {};
         const leaderB = leaderBDoc.exists ? leaderBDoc.data() : {};
 
-        const playersA = leaderA.players || [];
-        const playersB = leaderB.players || [];
-        
-        // Player Name နှင့် ID များကို စာရင်းလိုက်ထုတ်ပေးခြင်း
-        const listPlayers = (players) => players.map(p => `👤 ${p.name}\n🆔 ${p.id}`).join('\n\n');
+        // Object ကို handle လုပ်ပေးမယ့် function
+        const listPlayers = (playersObj) => {
+            if (!playersObj) return "N/A";
+            return Object.keys(playersObj)
+                .map(key => `👤 ${playersObj[key].name}\n🆔 ${playersObj[key].id}`)
+                .join('\n\n');
+        };
 
+        const playersA = leaderA.players || {};
+        const playersB = leaderB.players || {};
+        
         const customMessage = `✅ *Match Information*\n\n🏆 Team A: ${matchData.teamA}\n${listPlayers(playersA)}\n📞 K-Pay Ph: ${leaderA.kpayPhone || "N/A"}\n\nVS\n\n🏆 Team B: ${matchData.teamB}\n${listPlayers(playersB)}\n📞 K-Pay Ph: ${leaderB.kpayPhone || "N/A"}\n\n🎲 First Pick Team: ${matchData.firstPickWinner}\n\n---\n👉 _ပွဲစဆော့ပြီးလျှင် အနိုင်ရသော SS ကို တင်ပေးပါ။_`;
         
         ctx.reply(customMessage, { parse_mode: 'Markdown' });
