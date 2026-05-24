@@ -1,5 +1,4 @@
-const { Telegraf, Markup, session } = require('telegraf');
-const LocalSession = require('telegraf-session-local');
+const { Telegraf, Markup } = require('telegraf');
 const admin = require('firebase-admin');
 
 // Firebase Initialization
@@ -13,14 +12,13 @@ const db = admin.firestore();
 
 // Telegram Bot Initialization
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
-bot.use((new LocalSession({ database: 'session.json' })).middleware());
-
 const adminIds = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(id => id.trim()) : [];
+
 function isAdmin(userId) {
     return adminIds.includes(userId.toString());
 }
 
-// 1. Start Command
+// 1. Start Command (Match Information + Player IDs)
 bot.start(async (ctx) => {
     const userId = ctx.from.id.toString();
     if (isAdmin(userId)) return ctx.reply("👋 Admin Panel သို့ ကြိုဆိုပါသည်။");
@@ -42,46 +40,31 @@ bot.start(async (ctx) => {
         const playersA = leaderA.players || [];
         const playersB = leaderB.players || [];
         
-        const pA = playersA[0] || { name: "N/A", id: "N/A" };
-        const pB = playersB[0] || { name: "N/A", id: "N/A" };
+        // Player Name နှင့် ID များကို စာရင်းလိုက်ထုတ်ပေးခြင်း
+        const listPlayers = (players) => players.map(p => `👤 ${p.name}\n🆔 ${p.id}`).join('\n\n');
 
-        const customMessage = `
-✅ *Match Information*
-
-🏆 Team A: ${matchData.teamA}
-👤 Player Name: ${pA.name}
-🆔 ID No: ${pA.id}
-📞 K-Pay Ph: ${leaderA.kpayPhone || "N/A"}
-
-VS
-
-🏆 Team B: ${matchData.teamB}
-👤 Player Name: ${pB.name}
-🆔 ID No: ${pB.id}
-📞 K-Pay Ph: ${leaderB.kpayPhone || "N/A"}
-
-🎲 First Pick Team: ${matchData.firstPickWinner}
-
----
-👉 _ပွဲစဆော့ပြီးလျှင် အနိုင်ရသော SS ကို တင်ပေးပါ။_
-`;
+        const customMessage = `✅ *Match Information*\n\n🏆 Team A: ${matchData.teamA}\n${listPlayers(playersA)}\n📞 K-Pay Ph: ${leaderA.kpayPhone || "N/A"}\n\nVS\n\n🏆 Team B: ${matchData.teamB}\n${listPlayers(playersB)}\n📞 K-Pay Ph: ${leaderB.kpayPhone || "N/A"}\n\n🎲 First Pick Team: ${matchData.firstPickWinner}\n\n---\n👉 _ပွဲစဆော့ပြီးလျှင် အနိုင်ရသော SS ကို တင်ပေးပါ။_`;
+        
         ctx.reply(customMessage, { parse_mode: 'Markdown' });
     } catch (e) {
         console.error("Error fetching data:", e);
         ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။");
     }
-}); 
+});
 
-// 2. Photo Handling (Start Command အပြင်မှာ ထုတ်ရေးထားပါပြီ)
+// 2. Photo Handling (Firebase Session ကို သုံးထားသည်)
 bot.on('photo', async (ctx) => {
+    const sessionDoc = await db.collection("sessions").doc(ctx.from.id.toString()).get();
+    const session = sessionDoc.exists ? sessionDoc.data() : { waitingForReceipt: false };
+
     // Admin က Confirm ပြီးနောက် ငွေလွှဲပြေစာ ပို့ခြင်း
-    if (isAdmin(ctx.from.id) && ctx.session && ctx.session.waitingForReceipt) {
+    if (isAdmin(ctx.from.id) && session.waitingForReceipt) {
         const photoId = ctx.message.photo.pop().file_id;
-        await ctx.telegram.sendPhoto(ctx.session.targetChatId, photoId, {
+        await ctx.telegram.sendPhoto(session.targetChatId, photoId, {
             caption: "💰 ငွေလွှဲပြေစာ ရောက်ရှိပါပြီ။\n\n🏆 ပွဲစဉ်ပြီးဆုံးသွားပါပြီ။ AURA HUB အား အားပေးမှုအတွက် ကျေးဇူးတင်ပါသည်။ Bot ထွက်ခွာသွားပါမည်။"
         });
-        await ctx.telegram.leaveChat(ctx.session.targetChatId);
-        ctx.session.waitingForReceipt = false;
+        await ctx.telegram.leaveChat(session.targetChatId);
+        await db.collection("sessions").doc(ctx.from.id.toString()).delete();
         return;
     }
 
@@ -101,12 +84,11 @@ bot.on('photo', async (ctx) => {
     ctx.reply("✅ ပုံတင်ပြပြီးပါပြီ။ Admin စစ်ဆေးနေပါသည်၊ ခဏစောင့်ပေးပါ။");
 });
 
-// 3. Admin Actions
+// 3. Admin Actions (Confirm/Reject)
 bot.action(/confirm_.+/, async (ctx) => {
     await ctx.answerCbQuery("ပြေစာပို့ရန် စောင့်ဆိုင်းနေပါသည်...");
     await ctx.editMessageCaption("✅ အတည်ပြုသည်။ ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ပို့ပေးပါ။");
-    ctx.session.waitingForReceipt = true;
-    ctx.session.targetChatId = ctx.chat.id;
+    await db.collection("sessions").doc(ctx.from.id.toString()).set({ waitingForReceipt: true, targetChatId: ctx.chat.id });
 });
 
 bot.action(/reject_.+/, async (ctx) => {
