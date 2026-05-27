@@ -37,33 +37,38 @@ try {
         const leaderA = leaderADoc.exists ? leaderADoc.data() : { players: [] };
         const leaderB = leaderBDoc.exists ? leaderBDoc.data() : { players: [] };
 
-        // Player 1 (Leader) ရဲ့ ID ကိုပဲ ယူမယ်
-        const leaderA_ID = leaderA.players && leaderA.players[0] ? leaderA.players[0].id : "N/A";
-        const leaderB_ID = leaderB.players && leaderB.players[0] ? leaderB.players[0].id : "N/A";
+        // Leader (ပထမဆုံးလူ) ရဲ့ အချက်အလက်
+        const pA_Leader = leaderA.players && leaderA.players[0] ? leaderA.players[0] : { name: "N/A", id: "N/A" };
+        const pB_Leader = leaderB.players && leaderB.players[0] ? leaderB.players[0] : { name: "N/A", id: "N/A" };
 
-        // Player List ကို 1, 2, 3 အစား စတစ်ကာလေးနဲ့ ပြမယ်
+        // Leader ကို ချန်ပြီး ကျန်တဲ့ Player တွေကိုပဲ ပြမယ့် function
         const renderPlayers = (players) => {
-            return players.map(p => `👤 ${p.name}`).join('\n');
+            if (players.length <= 1) return "<i>(နောက်ထပ် Players မရှိပါ)</i>";
+            return players.slice(1).map(p => `👤 ${p.name}`).join('\n');
         };
 
         const customMessage = `
-<b>✅ Match Information</b>
+<b>✅ MATCH INFORMATION</b>
 
-<b>🏆 Team A: ${matchData.teamA}</b>
-🆔 Leader ID: ${leaderA_ID}
+━━━━━━━━━━━━━━
+<b>🏆 TEAM A: ${matchData.teamA}</b>
+👤 Leader: ${pA_Leader.name} (ID: ${pA_Leader.id})
 📞 K-Pay Ph: ${leaderA.kpayPhone || "N/A"}
 
-<b>Players:</b>
+<b>👥 Players:</b>
 ${renderPlayers(leaderA.players || [])}
+━━━━━━━━━━━━━━
 
-<b>VS</b>
+              <b>🔥 V S 🔥</b>
 
-<b>🏆 Team B: ${matchData.teamB}</b>
-🆔 Leader ID: ${leaderB_ID}
+━━━━━━━━━━━━━━
+<b>🏆 TEAM B: ${matchData.teamB}</b>
+👤 Leader: ${pB_Leader.name} (ID: ${pB_Leader.id})
 📞 K-Pay Ph: ${leaderB.kpayPhone || "N/A"}
 
-<b>Players:</b>
+<b>👥 Players:</b>
 ${renderPlayers(leaderB.players || [])}
+━━━━━━━━━━━━━━
 
 🎲 First Pick Team: ${matchData.firstPickWinner}
 
@@ -71,7 +76,6 @@ ${renderPlayers(leaderB.players || [])}
 👉 <i>ပွဲစဆော့ပြီးလျှင် အနိုင်ရသော SS ကို တင်ပေးပါ။</i>
 `;
 
-        // ခုနက error တက်လို့ HTML mode နဲ့ ပြန်ပို့ပါမယ်
         ctx.reply(customMessage, { parse_mode: 'HTML' });
     } catch (e) {
         console.error("Error fetching data:", e);
