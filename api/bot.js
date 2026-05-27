@@ -37,23 +37,35 @@ try {
         const leaderA = leaderADoc.exists ? leaderADoc.data() : { players: [] };
         const leaderB = leaderBDoc.exists ? leaderBDoc.data() : { players: [] };
 
-        // လူ ၁၀ ယောက်လုံးရဲ့ နာမည်တွေကို list လုပ်မယ်
+        // Player 1 (Leader) ရဲ့ ID ကို သီးသန့်ယူမယ်
+        const pA_Leader = leaderA.players && leaderA.players[0] ? leaderA.players[0] : { name: "N/A", id: "N/A" };
+        const pB_Leader = leaderB.players && leaderB.players[0] ? leaderB.players[0] : { name: "N/A", id: "N/A" };
+
+        // နံပါတ်စဉ်မပါဘဲ Player Name တွေကိုပဲ ပေါ်အောင်ပြင်မယ်
         const renderPlayers = (players) => {
-            return players.map((p, index) => `${index + 1}. ${p.name} (ID: ${p.id})`).join('\n');
+            return players.map(p => `👤 ${p.name}`).join('\n');
         };
 
         const customMessage = `
 ✅ *Match Information*
 
 🏆 Team A: ${matchData.teamA}
-${renderPlayers(leaderA.players || [])}
+👤 Leader: ${pA_Leader.name}
+🆔 Leader ID: ${pA_Leader.id}
 📞 K-Pay Ph: ${leaderA.kpayPhone || "N/A"}
+
+Players:
+${renderPlayers(leaderA.players || [])}
 
 VS
 
 🏆 Team B: ${matchData.teamB}
-${renderPlayers(leaderB.players || [])}
+👤 Leader: ${pB_Leader.name}
+🆔 Leader ID: ${pB_Leader.id}
 📞 K-Pay Ph: ${leaderB.kpayPhone || "N/A"}
+
+Players:
+${renderPlayers(leaderB.players || [])}
 
 🎲 First Pick Team: ${matchData.firstPickWinner}
 
@@ -67,7 +79,6 @@ ${renderPlayers(leaderB.players || [])}
         ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။");
     }
 });
-
 // 2. Photo Handling (Firebase Session ကို သုံးထားသည်)
 bot.on('photo', async (ctx) => {
     const sessionDoc = await db.collection("sessions").doc(ctx.from.id.toString()).get();
