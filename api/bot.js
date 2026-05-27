@@ -26,39 +26,33 @@ bot.start(async (ctx) => {
     const matchId = ctx.startPayload;
     if (!matchId) return ctx.reply("🔥 AURA HUB Matchmaking Bot သို့ ကြိုဆိုပါသည်။");
 
-    try {
-        const matchDoc = await db.collection("matches").doc(matchId).get();
-        if (!matchDoc.exists) return ctx.reply("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
-        const matchData = matchDoc.data();
+try {
+        const matchDoc = await db.collection("matches").doc(matchId).get();
+        if (!matchDoc.exists) return ctx.reply("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
+        const matchData = matchDoc.data();
 
-        // Registration collection ထဲက Data ယူမယ်
-        const leaderADoc = await db.collection("registrations").doc(matchData.teamA_LeaderId).get();
-        const leaderBDoc = await db.collection("registrations").doc(matchData.teamB_LeaderId).get();
+        const leaderADoc = await db.collection("registrations").doc(matchData.teamA_LeaderId).get();
+        const leaderBDoc = await db.collection("registrations").doc(matchData.teamB_LeaderId).get();
 
-        const leaderA = leaderADoc.exists ? leaderADoc.data() : {};
-        const leaderB = leaderBDoc.exists ? leaderBDoc.data() : {};
+        const leaderA = leaderADoc.exists ? leaderADoc.data() : { players: [] };
+        const leaderB = leaderBDoc.exists ? leaderBDoc.data() : { players: [] };
 
-        // အရေးကြီးဆုံးအပိုင်း: Array ထဲက data ကို ဆွဲထုတ်ခြင်း
-        // မင်းရဲ့ db screenshot မှာ players က array ဖြစ်ပြီး index 0 ထဲမှာ id နဲ့ name ရှိတယ်
-        const playersA = leaderA.players || [];
-        const playersB = leaderB.players || [];
-        
-        const pA = playersA[0] || { name: "N/A", id: "N/A" };
-        const pB = playersB[0] || { name: "N/A", id: "N/A" };
+        // လူ ၁၀ ယောက်လုံးရဲ့ နာမည်တွေကို list လုပ်မယ်
+        const renderPlayers = (players) => {
+            return players.map((p, index) => `${index + 1}. ${p.name} (ID: ${p.id})`).join('\n');
+        };
 
-        const customMessage = `
+        const customMessage = `
 ✅ *Match Information*
 
 🏆 Team A: ${matchData.teamA}
-👤 Player Name: ${pA.name}
-🆔 ID No: ${pA.id}
+${renderPlayers(leaderA.players || [])}
 📞 K-Pay Ph: ${leaderA.kpayPhone || "N/A"}
 
 VS
 
 🏆 Team B: ${matchData.teamB}
-👤 Player Name: ${pB.name}
-🆔 ID No: ${pB.id}
+${renderPlayers(leaderB.players || [])}
 📞 K-Pay Ph: ${leaderB.kpayPhone || "N/A"}
 
 🎲 First Pick Team: ${matchData.firstPickWinner}
@@ -67,11 +61,11 @@ VS
 👉 _ပွဲစဆော့ပြီးလျှင် အနိုင်ရသော SS ကို တင်ပေးပါ။_
 `;
 
-        ctx.reply(customMessage, { parse_mode: 'Markdown' });
-    } catch (e) {
-        console.error("Error fetching data:", e);
-        ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။");
-    }
+        ctx.reply(customMessage, { parse_mode: 'Markdown' });
+    } catch (e) {
+        console.error("Error fetching data:", e);
+        ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။");
+    }
 });
 
 // 2. Photo Handling (Firebase Session ကို သုံးထားသည်)
