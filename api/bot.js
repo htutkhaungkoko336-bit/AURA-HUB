@@ -37,43 +37,42 @@ try {
         const leaderA = leaderADoc.exists ? leaderADoc.data() : { players: [] };
         const leaderB = leaderBDoc.exists ? leaderBDoc.data() : { players: [] };
 
-        // Player 1 (Leader) ရဲ့ ID ကို သီးသန့်ယူမယ်
-        const pA_Leader = leaderA.players && leaderA.players[0] ? leaderA.players[0] : { name: "N/A", id: "N/A" };
-        const pB_Leader = leaderB.players && leaderB.players[0] ? leaderB.players[0] : { name: "N/A", id: "N/A" };
+        // Player 1 (Leader) ရဲ့ ID ကိုပဲ ယူမယ်
+        const leaderA_ID = leaderA.players && leaderA.players[0] ? leaderA.players[0].id : "N/A";
+        const leaderB_ID = leaderB.players && leaderB.players[0] ? leaderB.players[0].id : "N/A";
 
-        // နံပါတ်စဉ်မပါဘဲ Player Name တွေကိုပဲ ပေါ်အောင်ပြင်မယ်
+        // Player List ကို 1, 2, 3 အစား စတစ်ကာလေးနဲ့ ပြမယ်
         const renderPlayers = (players) => {
             return players.map(p => `👤 ${p.name}`).join('\n');
         };
 
         const customMessage = `
-✅ *Match Information*
+<b>✅ Match Information</b>
 
-🏆 Team A: ${matchData.teamA}
-👤 Leader: ${pA_Leader.name}
-🆔 Leader ID: ${pA_Leader.id}
+<b>🏆 Team A: ${matchData.teamA}</b>
+🆔 Leader ID: ${leaderA_ID}
 📞 K-Pay Ph: ${leaderA.kpayPhone || "N/A"}
 
-Players:
+<b>Players:</b>
 ${renderPlayers(leaderA.players || [])}
 
-VS
+<b>VS</b>
 
-🏆 Team B: ${matchData.teamB}
-👤 Leader: ${pB_Leader.name}
-🆔 Leader ID: ${pB_Leader.id}
+<b>🏆 Team B: ${matchData.teamB}</b>
+🆔 Leader ID: ${leaderB_ID}
 📞 K-Pay Ph: ${leaderB.kpayPhone || "N/A"}
 
-Players:
+<b>Players:</b>
 ${renderPlayers(leaderB.players || [])}
 
 🎲 First Pick Team: ${matchData.firstPickWinner}
 
 ---
-👉 _ပွဲစဆော့ပြီးလျှင် အနိုင်ရသော SS ကို တင်ပေးပါ။_
+👉 <i>ပွဲစဆော့ပြီးလျှင် အနိုင်ရသော SS ကို တင်ပေးပါ။</i>
 `;
 
-        ctx.reply(customMessage, { parse_mode: 'Markdown' });
+        // ခုနက error တက်လို့ HTML mode နဲ့ ပြန်ပို့ပါမယ်
+        ctx.reply(customMessage, { parse_mode: 'HTML' });
     } catch (e) {
         console.error("Error fetching data:", e);
         ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။");
