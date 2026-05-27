@@ -138,9 +138,24 @@ bot.action(/confirm_(.+)/, async (ctx) => {
     });
 });
 
-bot.action(/reject_.+/, async (ctx) => {
-    await ctx.answerCbQuery("ပယ်ချပြီးပါပြီ");
-    await ctx.editMessageCaption("❌ ဤရလဒ်မှာ မမှန်ကန်ပါ။");
+bot.action(/reject_(.+)/, async (ctx) => {
+    const docId = ctx.match[1]; // Regex ကနေ doc ID ကို ယူမယ်
+    const doc = await db.collection("pending_photos").doc(docId).get();
+    
+    if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက် ရှာမတွေ့ပါ။");
+    
+    const userId = doc.data().userId; // ပုံတင်ထားတဲ့ User ရဲ့ ID ကို ယူမယ်
+
+    // ၁။ User ဆီကို Reject ဖြစ်ကြောင်းနဲ့ Screenshot ပြန်တင်ဖို့ စာပို့မယ်
+    try {
+        await ctx.telegram.sendMessage(userId, "❌ *ဝမ်းနည်းပါသည်။* သင်တင်လိုက်သော Screenshot မှာ စစ်ဆေးမှု မအောင်မြင်ပါ။ ကျေးဇူးပြု၍ ပွဲစဉ်ရလဒ် အမှန် (SS) ကို ပြန်လည်တင်ပြပေးပါ။", { parse_mode: 'Markdown' });
+    } catch (e) {
+        console.error("Failed to send rejection msg to user:", e);
+    }
+
+    // ၂။ Admin ရဲ့ Message ကို ပြင်ပေးမယ်
+    await ctx.answerCbQuery("ပယ်ချပြီးပါပြီ");
+    await ctx.editMessageCaption("❌ ဤရလဒ်မှာ မမှန်ကန်ပါ။ (User ထံသို့ ပြန်လည်တင်ပြရန် အကြောင်းကြားပြီးပါပြီ)");
 });
 
 module.exports = async (req, res) => {
