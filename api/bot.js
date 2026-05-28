@@ -70,22 +70,20 @@ bot.on('photo', async (ctx) => {
         timestamp: new Date() 
     });
     
-    // Admin ဆီသို့ ပုံပို့ခြင်း
-    for (const adminId of adminIds) {
-        await bot.telegram.sendPhoto(adminId, photoId, {
-            caption: "📸 *ရလဒ် Screenshot*",
-            parse_mode: 'Markdown',
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: '🔍 View Match Info', callback_data: `view_${docRef.id}` }],
-                    [
-                        { text: '✅ Confirm', callback_data: `confirm_${docRef.id}` },
-                        { text: '❌ Reject', callback_data: `reject_${docRef.id}` }
-                    ]
-                ]
-            }
-        });
-    }
+// Admin ဆီသို့ ပုံပို့ခြင်း (ဒီအပိုင်းကို အစားထိုးပါ)
+for (const adminId of adminIds) {
+    await bot.telegram.sendPhoto(adminId, photoId, {
+        caption: "📸 *ရလဒ် Screenshot*",
+        parse_mode: 'Markdown',
+        ...Markup.inlineKeyboard([
+            [Markup.button.callback('🔍 View Match Info', `view_${docRef.id}`)],
+            [
+                Markup.button.callback('✅ Confirm', `confirm_${docRef.id}`),
+                Markup.button.callback('❌ Reject', `reject_${docRef.id}`)
+            ]
+        ])
+    });
+}
     ctx.reply("✅ ပုံတင်ပြပြီးပါပြီ။ Admin စစ်ဆေးနေပါသည်၊ ခဏစောင့်ပေးပါ။");
 });
 // 3. View Match Info Logic
