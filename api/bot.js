@@ -38,33 +38,55 @@ bot.start(async (ctx) => {
     } catch (e) { ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။"); }
 });
 
-// 2. Photo Handling
+// 2. Photo Handling (အခု ဒီအပိုင်းကို အစားထိုးပါ)
 bot.on('photo', async (ctx) => {
-    if (isAdmin(ctx.from.id)) { /* မူလ receipt logic */ return; }
-
+    // Admin receipt logic အပိုင်း
     const sessionDoc = await db.collection("sessions").doc(ctx.from.id.toString()).get();
-    const matchId = sessionDoc.exists ? sessionDoc.data().currentMatchId : null;
+    const session = sessionDoc.exists ? sessionDoc.data() : { waitingForReceipt: false };
+
+    if (isAdmin(ctx.from.id) && session.waitingForReceipt) {
+        const photoId = ctx.message.photo.pop().file_id;
+        await ctx.telegram.sendPhoto(session.targetChatId, photoId, {
+            caption: "💰 ငွေလွှဲပြေစာ ရောက်ရှိပါပြီ။\n\n🏆 ပွဲစဉ်ပြီးဆုံးသွားပါပြီ။ AURA HUB အား အားပေးမှုအတွက် ကျေးဇူးတင်ပါသည်။"
+        });
+        await db.collection("sessions").doc(ctx.from.id.toString()).delete();
+        return;
+    }
+
+    if (isAdmin(ctx.from.id)) return;
+    
+    // User ပုံတင်ခြင်း logic
+    const sessionDocUser = await db.collection("sessions").doc(ctx.from.id.toString()).get();
+    const matchId = sessionDocUser.exists ? sessionDocUser.data().currentMatchId : null;
     
     if (!matchId) return ctx.reply("❌ ပွဲစဉ် ID မတွေ့ရှိပါ။ ကျေးဇူးပြု၍ Link မှတစ်ဆင့် ပြန်ဝင်ပေးပါ။");
 
     const photoId = ctx.message.photo.pop().file_id;
     const docRef = await db.collection("pending_photos").add({ 
-        photoId, userId: ctx.from.id, matchId, timestamp: new Date() 
+        photoId, 
+        userId: ctx.from.id, 
+        matchId, 
+        timestamp: new Date() 
     });
     
+    // Admin ဆီသို့ Button များပါသော ပုံပို့ခြင်း
     for (const adminId of adminIds) {
         await bot.telegram.sendPhoto(adminId, photoId, {
             caption: "📸 *ရလဒ် Screenshot*",
             parse_mode: 'Markdown',
-            reply_markup: Markup.inlineKeyboard([
-                [Markup.button.callback('🔍 View Match Info', `view_${docRef.id}`)],
-                [Markup.button.callback('✅ Confirm', `confirm_${docRef.id}`), Markup.button.callback('❌ Reject', `reject_${docRef.id}`)]
-            ]).reply_markup
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: '🔍 View Match Info', callback_data: `view_${docRef.id}` }],
+                    [
+                        { text: '✅ Confirm', callback_data: `confirm_${docRef.id}` },
+                        { text: '❌ Reject', callback_data: `reject_${docRef.id}` }
+                    ]
+                ]
+            }
         });
     }
     ctx.reply("✅ ပုံတင်ပြပြီးပါပြီ။ Admin စစ်ဆေးနေပါသည်၊ ခဏစောင့်ပေးပါ။");
 });
-
 // 3. View Match Info Logic
 bot.action(/view_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
