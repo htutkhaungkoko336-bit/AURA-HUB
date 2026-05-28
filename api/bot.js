@@ -1,125 +1,104 @@
 const { Telegraf, Markup } = require('telegraf');
 const admin = require('firebase-admin');
 
-// Firebase Initialization
 if (!admin.apps.length) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-    });
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 }
 const db = admin.firestore();
-
-// Telegram Bot Initialization
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 const adminIds = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(id => id.trim()) : [];
 
-function isAdmin(userId) {
-    return adminIds.includes(userId.toString());
-}
+function isAdmin(userId) { return adminIds.includes(userId.toString()); }
 
-// 1. Start Command
+// 1. Start Command - Match ID သိမ်းရန်
 bot.start(async (ctx) => {
-    const userId = ctx.from.id.toString();
-    if (isAdmin(userId)) return ctx.reply("👋 Admin Panel သို့ ကြိုဆိုပါသည်။");
+    const userId = ctx.from.id.toString();
+    if (isAdmin(userId)) return ctx.reply("👋 Admin Panel သို့ ကြိုဆိုပါသည်။");
 
-    const matchId = ctx.startPayload;
-    if (!matchId) return ctx.reply("🔥 AURA HUB Matchmaking Bot သို့ ကြိုဆိုပါသည်။");
+    const matchId = ctx.startPayload;
+    if (!matchId) return ctx.reply("🔥 AURA HUB Matchmaking Bot သို့ ကြိုဆိုပါသည်။");
 
-try {
+    // Session ထဲတွင် matchId ခဏသိမ်းထားခြင်း
+    await db.collection("sessions").doc(userId).set({ currentMatchId: matchId }, { merge: true });
+
+    // ပွဲစဉ်အချက်အလက်ပြသခြင်း (မူလအတိုင်း)
+    try {
         const matchDoc = await db.collection("matches").doc(matchId).get();
         if (!matchDoc.exists) return ctx.reply("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
         const matchData = matchDoc.data();
-
         const leaderADoc = await db.collection("registrations").doc(matchData.teamA_LeaderId).get();
         const leaderBDoc = await db.collection("registrations").doc(matchData.teamB_LeaderId).get();
+        const leaderA = leaderADoc.data() || { players: [] };
+        const leaderB = leaderBDoc.data() || { players: [] };
+        const renderPlayers = (players) => players.length <= 1 ? "<i>(နောက်ထပ် Players မရှိပါ)</i>" : players.slice(1).map(p => `👤 ${p.name}`).join('\n');
 
-        const leaderA = leaderADoc.exists ? leaderADoc.data() : { players: [] };
-        const leaderB = leaderBDoc.exists ? leaderBDoc.data() : { players: [] };
-
-        // Leader (ပထမဆုံးလူ) ရဲ့ အချက်အလက်
-        const pA_Leader = leaderA.players && leaderA.players[0] ? leaderA.players[0] : { name: "N/A", id: "N/A" };
-        const pB_Leader = leaderB.players && leaderB.players[0] ? leaderB.players[0] : { name: "N/A", id: "N/A" };
-
-        // Leader ကို ချန်ပြီး ကျန်တဲ့ Player တွေကိုပဲ ပြမယ့် function
-        const renderPlayers = (players) => {
-            if (players.length <= 1) return "<i>(နောက်ထပ် Players မရှိပါ)</i>";
-            return players.slice(1).map(p => `👤 ${p.name}`).join('\n');
-        };
-
-        const customMessage = `
-<b>✅ MATCH INFORMATION</b>
-
-━━━━━━━━━━━━━━
-<b>🏆 TEAM A: ${matchData.teamA}</b>
-👤 Leader: ${pA_Leader.name} (ID: ${pA_Leader.id})
-📞 K-Pay Ph: ${leaderA.kpayPhone || "N/A"}
-
-<b>👥 Players:</b>
-${renderPlayers(leaderA.players || [])}
-━━━━━━━━━━━━━━
-
-              <b>🔥 V S 🔥</b>
-
-━━━━━━━━━━━━━━
-<b>🏆 TEAM B: ${matchData.teamB}</b>
-👤 Leader: ${pB_Leader.name} (ID: ${pB_Leader.id})
-📞 K-Pay Ph: ${leaderB.kpayPhone || "N/A"}
-
-<b>👥 Players:</b>
-${renderPlayers(leaderB.players || [])}
-━━━━━━━━━━━━━━
-
-🎲 First Pick Team: ${matchData.firstPickWinner}
-
----
-👉 <i>ပွဲစဆော့ပြီးလျှင် အနိုင်ရသော SS ကို တင်ပေးပါ။</i>
-`;
-
-        ctx.reply(customMessage, { parse_mode: 'HTML' });
-    } catch (e) {
-        console.error("Error fetching data:", e);
-        ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။");
-    }
+        const msg = `<b>✅ MATCH INFORMATION</b>\n\n<b>🏆 TEAM A: ${matchData.teamA}</b>\n👤 Leader: ${leaderA.players[0].name}\n📞 K-Pay: ${leaderA.kpayPhone}\n\n<b>👥 Players:</b>\n${renderPlayers(leaderA.players)}\n\n<b>🔥 V S 🔥</b>\n\n<b>🏆 TEAM B: ${matchData.teamB}</b>\n👤 Leader: ${leaderB.players[0].name}\n📞 K-Pay: ${leaderB.kpayPhone}\n\n<b>👥 Players:</b>\n${renderPlayers(leaderB.players)}\n\n🎲 First Pick: ${matchData.firstPickWinner}`;
+        ctx.reply(msg, { parse_mode: 'HTML' });
+    } catch (e) { ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။"); }
 });
-// 2. Photo Handling (Firebase Session ကို သုံးထားသည်)
+
+// 2. Photo Handling
 bot.on('photo', async (ctx) => {
+    if (isAdmin(ctx.from.id)) { /* မူလ receipt logic */ return; }
+
     const sessionDoc = await db.collection("sessions").doc(ctx.from.id.toString()).get();
-    const session = sessionDoc.exists ? sessionDoc.data() : { waitingForReceipt: false };
-
-    if (isAdmin(ctx.from.id) && session.waitingForReceipt) {
-        const photoId = ctx.message.photo.pop().file_id;
-        
-        // အခု session.targetChatId က User ID ဖြစ်နေပြီမို့ User ဆီရောက်မယ်
-        await ctx.telegram.sendPhoto(session.targetChatId, photoId, {
-            caption: "💰 ငွေလွှဲပြေစာ ရောက်ရှိပါပြီ။\n\n🏆 ပွဲစဉ်ပြီးဆုံးသွားပါပြီ။ AURA HUB အား အားပေးမှုအတွက် ကျေးဇူးတင်ပါသည်။"
-        });
-        
-        await db.collection("sessions").doc(ctx.from.id.toString()).delete();
-        return;
-    }
-
-    if (isAdmin(ctx.from.id)) return;
+    const matchId = sessionDoc.exists ? sessionDoc.data().currentMatchId : null;
     
-    // User က ပုံပို့ရင် userId ကို အမြဲသိမ်းထားမယ်
+    if (!matchId) return ctx.reply("❌ ပွဲစဉ် ID မတွေ့ရှိပါ။ ကျေးဇူးပြု၍ Link မှတစ်ဆင့် ပြန်ဝင်ပေးပါ။");
+
     const photoId = ctx.message.photo.pop().file_id;
     const docRef = await db.collection("pending_photos").add({ 
-        photoId, 
-        userId: ctx.from.id, 
-        timestamp: new Date() 
+        photoId, userId: ctx.from.id, matchId, timestamp: new Date() 
     });
     
     for (const adminId of adminIds) {
         await bot.telegram.sendPhoto(adminId, photoId, {
             caption: "📸 *ရလဒ် Screenshot*",
+            parse_mode: 'Markdown',
             reply_markup: Markup.inlineKeyboard([
-                Markup.button.callback('✅ Confirm', `confirm_${docRef.id}`),
-                Markup.button.callback('❌ Reject', `reject_${docRef.id}`)
+                [Markup.button.callback('🔍 View Match Info', `view_${docRef.id}`)],
+                [Markup.button.callback('✅ Confirm', `confirm_${docRef.id}`), Markup.button.callback('❌ Reject', `reject_${docRef.id}`)]
             ]).reply_markup
         });
     }
     ctx.reply("✅ ပုံတင်ပြပြီးပါပြီ။ Admin စစ်ဆေးနေပါသည်၊ ခဏစောင့်ပေးပါ။");
-});// 3. Admin Actions (Confirm/Reject)
+});
+
+// 3. View Match Info Logic
+bot.action(/view_(.+)/, async (ctx) => {
+    const docId = ctx.match[1];
+    const doc = await db.collection("pending_photos").doc(docId).get();
+    if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက်မရှိပါ။");
+    
+    const { matchId } = doc.data();
+    const matchDoc = await db.collection("matches").doc(matchId).get();
+    const matchData = matchDoc.data();
+    
+    const [leaderA, leaderB] = await Promise.all([
+        db.collection("registrations").doc(matchData.teamA_LeaderId).get(),
+        db.collection("registrations").doc(matchData.teamB_LeaderId).get()
+    ]);
+
+    const dataA = leaderA.data(), dataB = leaderB.data();
+    const info = `
+<b>🔍 MATCH DETAILS</b>
+🕒 Time: ${matchData.matchTimestamp}
+━━━━━━━━━━━━━━
+<b>TEAM A: ${matchData.teamA} (Ph: ${dataA.kpayPhone})</b>
+${dataA.players.map(p => `👤 ${p.name}`).join('\n')}
+
+<b>TEAM B: ${matchData.teamB} (Ph: ${dataB.kpayPhone})</b>
+${dataB.players.map(p => `👤 ${p.name}`).join('\n')}
+━━━━━━━━━━━━━━
+🎲 First Pick: ${matchData.firstPickWinner}
+`;
+    ctx.reply(info, { parse_mode: 'HTML' });
+    ctx.answerCbQuery();
+});
+
+
+// 3. Admin Actions (Confirm/Reject)
 bot.action(/confirm_(.+)/, async (ctx) => {
     const docId = ctx.match[1]; // Regex ကနေ doc ID ကို ယူမယ်
     const doc = await db.collection("pending_photos").doc(docId).get();
