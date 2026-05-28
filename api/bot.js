@@ -39,6 +39,7 @@ bot.start(async (ctx) => {
 });
 
 // 2. Photo Handling (အခု ဒီအပိုင်းကို အစားထိုးပါ)
+// 2. Photo Handling (အခု ဒီအပိုင်းကို အစားထိုးပါ)
 bot.on('photo', async (ctx) => {
     // Admin receipt logic အပိုင်း
     const sessionDoc = await db.collection("sessions").doc(ctx.from.id.toString()).get();
@@ -69,7 +70,7 @@ bot.on('photo', async (ctx) => {
         timestamp: new Date() 
     });
     
-    // Admin ဆီသို့ Button များပါသော ပုံပို့ခြင်း
+    // Admin ဆီသို့ ပုံပို့ခြင်း
     for (const adminId of adminIds) {
         await bot.telegram.sendPhoto(adminId, photoId, {
             caption: "📸 *ရလဒ် Screenshot*",
