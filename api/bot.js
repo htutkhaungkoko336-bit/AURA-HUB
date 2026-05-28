@@ -11,7 +11,7 @@ const adminIds = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(id
 
 function isAdmin(userId) { return adminIds.includes(userId.toString()); }
 
-// 1. Start Command - Match ID သိမ်းရန်
+// 1. Start Command
 bot.start(async (ctx) => {
     const userId = ctx.from.id.toString();
     if (isAdmin(userId)) return ctx.reply("👋 Admin Panel သို့ ကြိုဆိုပါသည်။");
@@ -19,10 +19,8 @@ bot.start(async (ctx) => {
     const matchId = ctx.startPayload;
     if (!matchId) return ctx.reply("🔥 AURA HUB Matchmaking Bot သို့ ကြိုဆိုပါသည်။");
 
-    // Session ထဲတွင် matchId ခဏသိမ်းထားခြင်း
     await db.collection("sessions").doc(userId).set({ currentMatchId: matchId }, { merge: true });
 
-    // ပွဲစဉ်အချက်အလက်ပြသခြင်း (မူလအတိုင်း)
     try {
         const matchDoc = await db.collection("matches").doc(matchId).get();
         if (!matchDoc.exists) return ctx.reply("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
@@ -38,13 +36,12 @@ bot.start(async (ctx) => {
     } catch (e) { ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။"); }
 });
 
-// 2. Photo Handling (အခု ဒီအပိုင်းကို အစားထိုးပါ)
-// 2. Photo Handling (အခု ဒီအပိုင်းကို အစားထိုးပါ)
+// 2. Photo Handling
 bot.on('photo', async (ctx) => {
-    // Admin receipt logic အပိုင်း
     const sessionDoc = await db.collection("sessions").doc(ctx.from.id.toString()).get();
     const session = sessionDoc.exists ? sessionDoc.data() : { waitingForReceipt: false };
 
+    // Admin receipt logic
     if (isAdmin(ctx.from.id) && session.waitingForReceipt) {
         const photoId = ctx.message.photo.pop().file_id;
         await ctx.telegram.sendPhoto(session.targetChatId, photoId, {
@@ -56,37 +53,34 @@ bot.on('photo', async (ctx) => {
 
     if (isAdmin(ctx.from.id)) return;
     
-    // User ပုံတင်ခြင်း logic
-    const sessionDocUser = await db.collection("sessions").doc(ctx.from.id.toString()).get();
-    const matchId = sessionDocUser.exists ? sessionDocUser.data().currentMatchId : null;
-    
+    // User photo logic
+    const matchId = session.currentMatchId;
     if (!matchId) return ctx.reply("❌ ပွဲစဉ် ID မတွေ့ရှိပါ။ ကျေးဇူးပြု၍ Link မှတစ်ဆင့် ပြန်ဝင်ပေးပါ။");
 
     const photoId = ctx.message.photo.pop().file_id;
     const docRef = await db.collection("pending_photos").add({ 
         photoId, 
         userId: ctx.from.id, 
-        matchId, 
+        matchId: matchId, 
         timestamp: new Date() 
     });
     
-// Admin ဆီသို့ ပုံပို့ခြင်း (ဒီအပိုင်းကို အစားထိုးပါ)
-for (const adminId of adminIds) {
-    await bot.telegram.sendPhoto(adminId, photoId, {
-        caption: "📸 *ရလဒ် Screenshot*",
-        parse_mode: 'Markdown',
-        ...Markup.inlineKeyboard([
-            [Markup.button.callback('🔍 View Match Info', `view_${docRef.id}`)],
-            [
-                Markup.button.callback('✅ Confirm', `confirm_${docRef.id}`),
-                Markup.button.callback('❌ Reject', `reject_${docRef.id}`)
-            ]
-        ])
-    });
-}
+    for (const adminId of adminIds) {
+        await bot.telegram.sendPhoto(adminId, photoId, {
+            caption: "📸 *ရလဒ် Screenshot*",
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: '🔍 View Match Info', callback_data: `view_${docRef.id}` }],
+                    [{ text: '✅ Confirm', callback_data: `confirm_${docRef.id}` }, { text: '❌ Reject', callback_data: `reject_${docRef.id}` }]
+                ]
+            }
+        });
+    }
     ctx.reply("✅ ပုံတင်ပြပြီးပါပြီ။ Admin စစ်ဆေးနေပါသည်၊ ခဏစောင့်ပေးပါ။");
 });
-// 3. View Match Info Logic
+
+// 3. View Match Info
 bot.action(/view_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
     const doc = await db.collection("pending_photos").doc(docId).get();
@@ -102,61 +96,38 @@ bot.action(/view_(.+)/, async (ctx) => {
     ]);
 
     const dataA = leaderA.data(), dataB = leaderB.data();
-    const info = `
-<b>🔍 MATCH DETAILS</b>
-🕒 Time: ${matchData.matchTimestamp}
-━━━━━━━━━━━━━━
-<b>TEAM A: ${matchData.teamA} (Ph: ${dataA.kpayPhone})</b>
-${dataA.players.map(p => `👤 ${p.name}`).join('\n')}
-
-<b>TEAM B: ${matchData.teamB} (Ph: ${dataB.kpayPhone})</b>
-${dataB.players.map(p => `👤 ${p.name}`).join('\n')}
-━━━━━━━━━━━━━━
-🎲 First Pick: ${matchData.firstPickWinner}
-`;
+    const info = `<b>🔍 MATCH DETAILS</b>\n🕒 Time: ${matchData.matchTimestamp}\n━━━━━━━━━━━━━━\n<b>TEAM A: ${matchData.teamA} (Ph: ${dataA.kpayPhone})</b>\n${dataA.players.map(p => `👤 ${p.name}`).join('\n')}\n\n<b>TEAM B: ${matchData.teamB} (Ph: ${dataB.kpayPhone})</b>\n${dataB.players.map(p => `👤 ${p.name}`).join('\n')}\n━━━━━━━━━━━━━━\n🎲 First Pick: ${matchData.firstPickWinner}`;
+    
     ctx.reply(info, { parse_mode: 'HTML' });
     ctx.answerCbQuery();
 });
 
-
-// 3. Admin Actions (Confirm/Reject)
+// 4. Admin Actions (Confirm/Reject)
 bot.action(/confirm_(.+)/, async (ctx) => {
-    const docId = ctx.match[1]; // Regex ကနေ doc ID ကို ယူမယ်
+    const docId = ctx.match[1];
     const doc = await db.collection("pending_photos").doc(docId).get();
-    
     if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက် ရှာမတွေ့ပါ။");
     
-    const userId = doc.data().userId; // ပုံတင်ထားတဲ့ User ရဲ့ ID ကို ယူမယ်
-
+    const userId = doc.data().userId;
     await ctx.answerCbQuery("ပြေစာပို့ရန် စောင့်ဆိုင်းနေပါသည်...");
     await ctx.editMessageCaption("✅ အတည်ပြုသည်။ ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ပို့ပေးပါ။");
-    
-    // session ထဲမှာ Admin ရဲ့ ID နဲ့ User ရဲ့ ID ကို တွဲမှတ်ထားမယ်
-    await db.collection("sessions").doc(ctx.from.id.toString()).set({ 
-        waitingForReceipt: true, 
-        targetChatId: userId // <--- ဒီနေရာမှာ User ID ဖြစ်သွားပြီ
-    });
+    await db.collection("sessions").doc(ctx.from.id.toString()).set({ waitingForReceipt: true, targetChatId: userId });
 });
 
 bot.action(/reject_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
     const doc = await db.collection("pending_photos").doc(docId).get();
-    
     if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက် ရှာမတွေ့ပါ။");
     
-    const userId = doc.data().userId; 
-
-    // User ဆီကို Reject ဖြစ်ကြောင်းနဲ့ ပုံအသစ်ပြန်တင်ဖို့ စာပို့မယ်
+    const userId = doc.data().userId;
     try {
         await ctx.telegram.sendMessage(userId, "❌ *ဝမ်းနည်းပါသည်။* သင်တင်လိုက်သော Screenshot မှာ စစ်ဆေးမှု မအောင်မြင်ပါ။ ကျေးဇူးပြု၍ ပွဲစဉ်ရလဒ် အမှန် (SS) ကို Bot ထဲသို့ ပြန်လည်တင်ပြပေးပါ။", { parse_mode: 'Markdown' });
-    } catch (e) {
-        console.error("Failed to send rejection msg:", e);
-    }
-
+    } catch (e) { console.error(e); }
     await ctx.answerCbQuery("ပယ်ချပြီးပါပြီ");
     await ctx.editMessageCaption("❌ ဤရလဒ်မှာ မမှန်ကန်ပါ။ (User ထံသို့ ပုံအသစ်တင်ရန် အကြောင်းကြားပြီးပါပြီ)");
 });
+
 module.exports = async (req, res) => {
-    try { await bot.handleUpdate(req.body); res.status(200).send('OK'); }
-    catch (err) { console.error(err); res.status(500).send('Internal Server Error'); }
-}; 
+    try { await bot.handleUpdate(req.body); res.status(200).send('OK'); }
+    catch (err) { console.error(err); res.status(500).send('Internal Server Error'); }
+};
