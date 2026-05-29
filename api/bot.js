@@ -88,20 +88,38 @@ bot.action(/view_(.+)/, async (ctx) => {
     
     const { matchId } = doc.data();
     const matchDoc = await db.collection("matches").doc(matchId).get();
+    if (!matchDoc.exists) return ctx.answerCbQuery("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
+    
     const matchData = matchDoc.data();
     
+    // Timestamp ကို ပြောင်းလဲခြင်း (Firebase Timestamp မှ Date သို့)
+    const matchTime = matchData.matchTimestamp && matchData.matchTimestamp.toDate 
+        ? matchData.matchTimestamp.toDate().toLocaleString('my-MM') 
+        : "မသတ်မှတ်ရသေးပါ";
+
     const [leaderA, leaderB] = await Promise.all([
         db.collection("registrations").doc(matchData.teamA_LeaderId).get(),
         db.collection("registrations").doc(matchData.teamB_LeaderId).get()
     ]);
 
     const dataA = leaderA.data(), dataB = leaderB.data();
-    const info = `<b>🔍 MATCH DETAILS</b>\n🕒 Time: ${matchData.matchTimestamp}\n━━━━━━━━━━━━━━\n<b>TEAM A: ${matchData.teamA} (Ph: ${dataA.kpayPhone})</b>\n${dataA.players.map(p => `👤 ${p.name}`).join('\n')}\n\n<b>TEAM B: ${matchData.teamB} (Ph: ${dataB.kpayPhone})</b>\n${dataB.players.map(p => `👤 ${p.name}`).join('\n')}\n━━━━━━━━━━━━━━\n🎲 First Pick: ${matchData.firstPickWinner}`;
+    
+    // Fee နှင့် Time ကို ထည့်သွင်းထားသော Message
+    const info = `<b>🔍 MATCH DETAILS</b>
+🕒 Time: ${matchTime}
+💰 Fee: ${matchData.fee || 0}
+━━━━━━━━━━━━━━
+<b>TEAM A: ${matchData.teamA} (Ph: ${dataA.kpayPhone})</b>
+${dataA.players.map(p => `👤 ${p.name}`).join('\n')}
+
+<b>TEAM B: ${matchData.teamB} (Ph: ${dataB.kpayPhone})</b>
+${dataB.players.map(p => `👤 ${p.name}`).join('\n')}
+━━━━━━━━━━━━━━
+🎲 First Pick: ${matchData.firstPickWinner}`;
     
     ctx.reply(info, { parse_mode: 'HTML' });
     ctx.answerCbQuery();
 });
-
 // 4. Admin Actions (Confirm/Reject)
 bot.action(/confirm_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
