@@ -2,8 +2,8 @@ const { Telegraf, Markup } = require('telegraf');
 const admin = require('firebase-admin');
 
 if (!admin.apps.length) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 }
 const db = admin.firestore();
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
@@ -13,39 +13,39 @@ function isAdmin(userId) { return adminIds.includes(userId.toString()); }
 
 // 1. Start Command
 bot.start(async (ctx) => {
-    const userId = ctx.from.id.toString();
-    if (isAdmin(userId)) return ctx.reply("👋 Admin Panel သို့ ကြိုဆိုပါသည်။");
+    const userId = ctx.from.id.toString();
+    if (isAdmin(userId)) return ctx.reply("👋 Admin Panel သို့ ကြိုဆိုပါသည်။");
 
-    const matchId = ctx.startPayload;
-    if (!matchId) return ctx.reply("🔥 AURA HUB Matchmaking Bot သို့ ကြိုဆိုပါသည်။");
+    const matchId = ctx.startPayload;
+    if (!matchId) return ctx.reply("🔥 AURA HUB Matchmaking Bot သို့ ကြိုဆိုပါသည်။");
 
-    await db.collection("sessions").doc(userId).set({ currentMatchId: matchId }, { merge: true });
+    await db.collection("sessions").doc(userId).set({ currentMatchId: matchId }, { merge: true });
 
-    try {
-        const matchDoc = await db.collection("matches").doc(matchId).get();
-        if (!matchDoc.exists) return ctx.reply("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
-        const matchData = matchDoc.data();
-        
-        const [leaderADoc, leaderBDoc] = await Promise.all([
-            db.collection("registrations").doc(matchData.teamA_LeaderId).get(),
-            db.collection("registrations").doc(matchData.teamB_LeaderId).get()
-        ]);
-        
-        const dataA = leaderADoc.data() || { players: [], kpayPhone: "မရှိပါ" };
-        const dataB = leaderBDoc.data() || { players: [], kpayPhone: "မရှိပါ" };
+    try {
+        const matchDoc = await db.collection("matches").doc(matchId).get();
+        if (!matchDoc.exists) return ctx.reply("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
+        const matchData = matchDoc.data();
+        
+        const [leaderADoc, leaderBDoc] = await Promise.all([
+            db.collection("registrations").doc(matchData.teamA_LeaderId).get(),
+            db.collection("registrations").doc(matchData.teamB_LeaderId).get()
+        ]);
+        
+        const dataA = leaderADoc.data() || { players: [], kpayPhone: "မရှိပါ" };
+        const dataB = leaderBDoc.data() || { players: [], kpayPhone: "မရှိပါ" };
 
-        // အရေးကြီး: Leader ID အဖြစ် players[0].id ကို ယူခြင်း
-        const leaderAId = dataA.players && dataA.players[0] ? dataA.players[0].id : "မရှိပါ";
-        const leaderBId = dataB.players && dataB.players[0] ? dataB.players[0].id : "မရှိပါ";
+        // အရေးကြီး: Leader ID အဖြစ် players[0].id ကို ယူခြင်း
+        const leaderAId = dataA.players && dataA.players[0] ? dataA.players[0].id : "မရှိပါ";
+        const leaderBId = dataB.players && dataB.players[0] ? dataB.players[0].id : "မရှိပါ";
 
-        const renderPlayers = (players) => players.map(p => `👤 ${p.name}`).join('\n');
+        const renderPlayers = (players) => players.map(p => `👤 ${p.name}`).join('\n');
 
-        const footer = `━━━━━━━━━━━━━━
+        const footer = `━━━━━━━━━━━━━━
 📢 <b>AURA HUB Official</b>
 💬 မေးမြန်းလိုသည်များရှိပါက Admin ထံ ဆက်သွယ်ပါ။
 ⚡️ စည်းကမ်းချက်များကို လိုက်နာပေးကြပါရန် မေတ္တာရပ်ခံအပ်ပါသည်။`;
 
-        const msg = `<b>🔍 MATCH DETAILS</b>
+        const msg = `<b>🔍 MATCH DETAILS</b>
 
 💰 <b>Fee:</b> ${matchData.fee || 0}
 ━━━━━━━━━━━━━━
@@ -63,93 +63,93 @@ ${renderPlayers(dataB.players)}
 
 ${footer}`;
 
-        ctx.reply(msg, { parse_mode: 'HTML' });
-    } catch (e) { 
-        console.error(e);
-        ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။"); 
-    }
+        ctx.reply(msg, { parse_mode: 'HTML' });
+    } catch (e) { 
+        console.error(e);
+        ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။"); 
+    }
 });
 // 2. Photo Handling
 bot.on('photo', async (ctx) => {
-    const sessionDoc = await db.collection("sessions").doc(ctx.from.id.toString()).get();
-    const session = sessionDoc.exists ? sessionDoc.data() : { waitingForReceipt: false };
+    const sessionDoc = await db.collection("sessions").doc(ctx.from.id.toString()).get();
+    const session = sessionDoc.exists ? sessionDoc.data() : { waitingForReceipt: false };
 
-    // Admin receipt logic
-    if (isAdmin(ctx.from.id) && session.waitingForReceipt) {
-        const photoId = ctx.message.photo.pop().file_id;
-        await ctx.telegram.sendPhoto(session.targetChatId, photoId, {
-            caption: "💰 ငွေလွှဲပြေစာ ရောက်ရှိပါပြီ။\n\n🏆 ပွဲစဉ်ပြီးဆုံးသွားပါပြီ။ AURA HUB အား အားပေးမှုအတွက် ကျေးဇူးတင်ပါသည်။"
-        });
-        await db.collection("sessions").doc(ctx.from.id.toString()).delete();
-        return;
-    }
+    // Admin receipt logic
+    if (isAdmin(ctx.from.id) && session.waitingForReceipt) {
+        const photoId = ctx.message.photo.pop().file_id;
+        await ctx.telegram.sendPhoto(session.targetChatId, photoId, {
+            caption: "💰 ငွေလွှဲပြေစာ ရောက်ရှိပါပြီ။\n\n🏆 ပွဲစဉ်ပြီးဆုံးသွားပါပြီ။ AURA HUB အား အားပေးမှုအတွက် ကျေးဇူးတင်ပါသည်။"
+        });
+        await db.collection("sessions").doc(ctx.from.id.toString()).delete();
+        return;
+    }
 
-    if (isAdmin(ctx.from.id)) return;
-    
-    // User photo logic
-    const matchId = session.currentMatchId;
-    if (!matchId) return ctx.reply("❌ ပွဲစဉ် ID မတွေ့ရှိပါ။ ကျေးဇူးပြု၍ Link မှတစ်ဆင့် ပြန်ဝင်ပေးပါ။");
+    if (isAdmin(ctx.from.id)) return;
+    
+    // User photo logic
+    const matchId = session.currentMatchId;
+    if (!matchId) return ctx.reply("❌ ပွဲစဉ် ID မတွေ့ရှိပါ။ ကျေးဇူးပြု၍ Link မှတစ်ဆင့် ပြန်ဝင်ပေးပါ။");
 
-    const photoId = ctx.message.photo.pop().file_id;
-    const docRef = await db.collection("pending_photos").add({ 
-        photoId, 
-        userId: ctx.from.id, 
-        matchId: matchId, 
-        timestamp: new Date() 
-    });
-    
-    for (const adminId of adminIds) {
-        await bot.telegram.sendPhoto(adminId, photoId, {
-            caption: "📸 *ရလဒ် Screenshot*",
-            parse_mode: 'Markdown',
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: '🔍 View Match Info', callback_data: `view_${docRef.id}` }],
-                    [{ text: '✅ Confirm', callback_data: `confirm_${docRef.id}` }, { text: '❌ Reject', callback_data: `reject_${docRef.id}` }]
-                ]
-            }
-        });
-    }
-    ctx.reply("✅ ပုံတင်ပြပြီးပါပြီ။ Admin စစ်ဆေးနေပါသည်၊ ခဏစောင့်ပေးပါ။");
+    const photoId = ctx.message.photo.pop().file_id;
+    const docRef = await db.collection("pending_photos").add({ 
+        photoId, 
+        userId: ctx.from.id, 
+        matchId: matchId, 
+        timestamp: new Date() 
+    });
+    
+    for (const adminId of adminIds) {
+        await bot.telegram.sendPhoto(adminId, photoId, {
+            caption: "📸 *ရလဒ် Screenshot*",
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: '🔍 View Match Info', callback_data: `view_${docRef.id}` }],
+                    [{ text: '✅ Confirm', callback_data: `confirm_${docRef.id}` }, { text: '❌ Reject', callback_data: `reject_${docRef.id}` }]
+                ]
+            }
+        });
+    }
+    ctx.reply("✅ ပုံတင်ပြပြီးပါပြီ။ Admin စစ်ဆေးနေပါသည်၊ ခဏစောင့်ပေးပါ။");
 });
 
 // 3. View Match Info Logic
 bot.action(/view_(.+)/, async (ctx) => {
-    const docId = ctx.match[1];
-    const doc = await db.collection("pending_photos").doc(docId).get();
-    if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက်မရှိပါ။");
-    
-    const { matchId } = doc.data();
-    const matchDoc = await db.collection("matches").doc(matchId).get();
-    if (!matchDoc.exists) return ctx.answerCbQuery("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
-    
-    const matchData = matchDoc.data();
-    
-    let displayTime = "မသတ်မှတ်ရသေးပါ";
-    if (matchData.matchTimestamp && typeof matchData.matchTimestamp.toDate === 'function') {
-        displayTime = matchData.matchTimestamp.toDate().toLocaleString('my-MM', {
-            timeZone: 'Asia/Yangon',
-            hour12: false
-        });
-    }
+    const docId = ctx.match[1];
+    const doc = await db.collection("pending_photos").doc(docId).get();
+    if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက်မရှိပါ။");
+    
+    const { matchId } = doc.data();
+    const matchDoc = await db.collection("matches").doc(matchId).get();
+    if (!matchDoc.exists) return ctx.answerCbQuery("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
+    
+    const matchData = matchDoc.data();
+    
+    let displayTime = "မသတ်မှတ်ရသေးပါ";
+    if (matchData.matchTimestamp && typeof matchData.matchTimestamp.toDate === 'function') {
+        displayTime = matchData.matchTimestamp.toDate().toLocaleString('my-MM', {
+            timeZone: 'Asia/Yangon',
+            hour12: false
+        });
+    }
 
-    const [leaderA, leaderB] = await Promise.all([
-        db.collection("registrations").doc(matchData.teamA_LeaderId).get(),
-        db.collection("registrations").doc(matchData.teamB_LeaderId).get()
-    ]);
+    const [leaderA, leaderB] = await Promise.all([
+        db.collection("registrations").doc(matchData.teamA_LeaderId).get(),
+        db.collection("registrations").doc(matchData.teamB_LeaderId).get()
+    ]);
 
-    const dataA = leaderA.data();
-    const dataB = leaderB.data();
-    
-    // ID များ ထုတ်ယူခြင်း
-    const leaderAId = dataA.players && dataA.players[0] ? dataA.players[0].id : "မရှိပါ";
-    const leaderBId = dataB.players && dataB.players[0] ? dataB.players[0].id : "မရှိပါ";
+    const dataA = leaderA.data();
+    const dataB = leaderB.data();
+    
+    // ID များ ထုတ်ယူခြင်း
+    const leaderAId = dataA.players && dataA.players[0] ? dataA.players[0].id : "မရှိပါ";
+    const leaderBId = dataB.players && dataB.players[0] ? dataB.players[0].id : "မရှိပါ";
 
-    // K-Pay Phone များ ထုတ်ယူခြင်း (Field name ကို kpayPhone ဟု သတ်မှတ်ထားသည်)
-    const kpayA = dataA.kpayPhone || "မပါရှိပါ";
-    const kpayB = dataB.kpayPhone || "မပါရှိပါ";
+    // K-Pay Phone များ ထုတ်ယူခြင်း (Field name ကို kpayPhone ဟု သတ်မှတ်ထားသည်)
+    const kpayA = dataA.kpayPhone || "မပါရှိပါ";
+    const kpayB = dataB.kpayPhone || "မပါရှိပါ";
 
-    const info = `<b>🔍 MATCH DETAILS</b>
+    const info = `<b>🔍 MATCH DETAILS</b>
 🕒 Time: ${displayTime}
 💰 Fee: ${matchData.fee || 0}
 ━━━━━━━━━━━━━━
@@ -165,37 +165,37 @@ ${dataB.players.map(p => `👤 ${p.name}`).join('\n')}
 ━━━━━━━━━━━━━━
 🎲 First Pick: ${matchData.firstPickWinner}
 `;
-    
-    ctx.reply(info, { parse_mode: 'HTML' });
-    ctx.answerCbQuery();
+    
+    ctx.reply(info, { parse_mode: 'HTML' });
+    ctx.answerCbQuery();
 });
 
 // 4. Admin Actions (Confirm/Reject)
 bot.action(/confirm_(.+)/, async (ctx) => {
-    const docId = ctx.match[1];
-    const doc = await db.collection("pending_photos").doc(docId).get();
-    if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက် ရှာမတွေ့ပါ။");
-    
-    const userId = doc.data().userId;
-    await ctx.answerCbQuery("ပြေစာပို့ရန် စောင့်ဆိုင်းနေပါသည်...");
-    await ctx.editMessageCaption("✅ အတည်ပြုသည်။ ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ပို့ပေးပါ။");
-    await db.collection("sessions").doc(ctx.from.id.toString()).set({ waitingForReceipt: true, targetChatId: userId });
+    const docId = ctx.match[1];
+    const doc = await db.collection("pending_photos").doc(docId).get();
+    if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက် ရှာမတွေ့ပါ။");
+    
+    const userId = doc.data().userId;
+    await ctx.answerCbQuery("ပြေစာပို့ရန် စောင့်ဆိုင်းနေပါသည်...");
+    await ctx.editMessageCaption("✅ အတည်ပြုသည်။ ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ပို့ပေးပါ။");
+    await db.collection("sessions").doc(ctx.from.id.toString()).set({ waitingForReceipt: true, targetChatId: userId });
 });
 
 bot.action(/reject_(.+)/, async (ctx) => {
-    const docId = ctx.match[1];
-    const doc = await db.collection("pending_photos").doc(docId).get();
-    if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက် ရှာမတွေ့ပါ။");
-    
-    const userId = doc.data().userId;
-    try {
-        await ctx.telegram.sendMessage(userId, "❌ *ဝမ်းနည်းပါသည်။* သင်တင်လိုက်သော Screenshot မှာ စစ်ဆေးမှု မအောင်မြင်ပါ။ ကျေးဇူးပြု၍ ပွဲစဉ်ရလဒ် အမှန် (SS) ကို Bot ထဲသို့ ပြန်လည်တင်ပြပေးပါ။", { parse_mode: 'Markdown' });
-    } catch (e) { console.error(e); }
-    await ctx.answerCbQuery("ပယ်ချပြီးပါပြီ");
-    await ctx.editMessageCaption("❌ ဤရလဒ်မှာ မမှန်ကန်ပါ။ (User ထံသို့ ပုံအသစ်တင်ရန် အကြောင်းကြားပြီးပါပြီ)");
+    const docId = ctx.match[1];
+    const doc = await db.collection("pending_photos").doc(docId).get();
+    if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက် ရှာမတွေ့ပါ။");
+    
+    const userId = doc.data().userId;
+    try {
+        await ctx.telegram.sendMessage(userId, "❌ *ဝမ်းနည်းပါသည်။* သင်တင်လိုက်သော Screenshot မှာ စစ်ဆေးမှု မအောင်မြင်ပါ။ ကျေးဇူးပြု၍ ပွဲစဉ်ရလဒ် အမှန် (SS) ကို Bot ထဲသို့ ပြန်လည်တင်ပြပေးပါ။", { parse_mode: 'Markdown' });
+    } catch (e) { console.error(e); }
+    await ctx.answerCbQuery("ပယ်ချပြီးပါပြီ");
+    await ctx.editMessageCaption("❌ ဤရလဒ်မှာ မမှန်ကန်ပါ။ (User ထံသို့ ပုံအသစ်တင်ရန် အကြောင်းကြားပြီးပါပြီ)");
 });
 
 module.exports = async (req, res) => {
-    try { await bot.handleUpdate(req.body); res.status(200).send('OK'); }
-    catch (err) { console.error(err); res.status(500).send('Internal Server Error'); }
+    try { await bot.handleUpdate(req.body); res.status(200).send('OK'); }
+    catch (err) { console.error(err); res.status(500).send('Internal Server Error'); }
 };
