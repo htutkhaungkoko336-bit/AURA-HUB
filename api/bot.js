@@ -113,7 +113,7 @@ bot.on('photo', async (ctx) => {
     ctx.reply("✅ ပုံတင်ပြပြီးပါပြီ။ Admin စစ်ဆေးနေပါသည်၊ ခဏစောင့်ပေးပါ။");
 });
 
-// 3. View Match Info Logic တွင် အစားထိုးရန်
+// 3. View Match Info Logic
 bot.action(/view_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
     const doc = await db.collection("pending_photos").doc(docId).get();
@@ -125,8 +125,6 @@ bot.action(/view_(.+)/, async (ctx) => {
     
     const matchData = matchDoc.data();
     
-    // ဒီနေရာမှာ matchTimestamp ကို Date အဖြစ် ပြောင်းပါ
-    // Firestore Timestamp ဖြစ်နေရင် .toDate() ခေါ်ပြီးမှ readable string ပြောင်းပါ
     let displayTime = "မသတ်မှတ်ရသေးပါ";
     if (matchData.matchTimestamp && typeof matchData.matchTimestamp.toDate === 'function') {
         displayTime = matchData.matchTimestamp.toDate().toLocaleString('my-MM', {
@@ -140,23 +138,38 @@ bot.action(/view_(.+)/, async (ctx) => {
         db.collection("registrations").doc(matchData.teamB_LeaderId).get()
     ]);
 
-    const dataA = leaderA.data(), dataB = leaderB.data();
-    const info = `
-<b>🔍 MATCH DETAILS</b>
+    const dataA = leaderA.data();
+    const dataB = leaderB.data();
+    
+    // ID များ ထုတ်ယူခြင်း
+    const leaderAId = dataA.players && dataA.players[0] ? dataA.players[0].id : "မရှိပါ";
+    const leaderBId = dataB.players && dataB.players[0] ? dataB.players[0].id : "မရှိပါ";
+
+    // K-Pay Phone များ ထုတ်ယူခြင်း (Field name ကို kpayPhone ဟု သတ်မှတ်ထားသည်)
+    const kpayA = dataA.kpayPhone || "မပါရှိပါ";
+    const kpayB = dataB.kpayPhone || "မပါရှိပါ";
+
+    const info = `<b>🔍 MATCH DETAILS</b>
 🕒 Time: ${displayTime}
 💰 Fee: ${matchData.fee || 0}
 ━━━━━━━━━━━━━━
-<b>TEAM A: ${matchData.teamA} (Ph: ${dataA.kpayPhone})</b>
+<b>🏆 TEAM A: ${matchData.teamA}</b>
+👤 Leader: ${dataA.players[0].name} (ID: <code>${leaderAId}</code>)
+📞 K-Pay: <code>${kpayA}</code>
 ${dataA.players.map(p => `👤 ${p.name}`).join('\n')}
 
-<b>TEAM B: ${matchData.teamB} (Ph: ${dataB.kpayPhone})</b>
+<b>🏆 TEAM B: ${matchData.teamB}</b>
+👤 Leader: ${dataB.players[0].name} (ID: <code>${leaderBId}</code>)
+📞 K-Pay: <code>${kpayB}</code>
 ${dataB.players.map(p => `👤 ${p.name}`).join('\n')}
 ━━━━━━━━━━━━━━
 🎲 First Pick: ${matchData.firstPickWinner}
 `;
+    
     ctx.reply(info, { parse_mode: 'HTML' });
     ctx.answerCbQuery();
 });
+
 // 4. Admin Actions (Confirm/Reject)
 bot.action(/confirm_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
