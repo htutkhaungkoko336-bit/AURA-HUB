@@ -25,15 +25,46 @@ bot.start(async (ctx) => {
         const matchDoc = await db.collection("matches").doc(matchId).get();
         if (!matchDoc.exists) return ctx.reply("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
         const matchData = matchDoc.data();
-        const leaderADoc = await db.collection("registrations").doc(matchData.teamA_LeaderId).get();
-        const leaderBDoc = await db.collection("registrations").doc(matchData.teamB_LeaderId).get();
-        const leaderA = leaderADoc.data() || { players: [] };
-        const leaderB = leaderBDoc.data() || { players: [] };
-        const renderPlayers = (players) => players.length <= 1 ? "<i>(နောက်ထပ် Players မရှိပါ)</i>" : players.slice(1).map(p => `👤 ${p.name}`).join('\n');
+        
+        const [leaderADoc, leaderBDoc] = await Promise.all([
+            db.collection("registrations").doc(matchData.teamA_LeaderId).get(),
+            db.collection("registrations").doc(matchData.teamB_LeaderId).get()
+        ]);
+        
+        const dataA = leaderADoc.data() || { players: [], kpayPhone: "မရှိပါ" };
+        const dataB = leaderBDoc.data() || { players: [], kpayPhone: "မရှိပါ" };
 
-        const msg = `<b>✅ MATCH INFORMATION</b>\n\n<b>🏆 TEAM A: ${matchData.teamA}</b>\n👤 Leader: ${leaderA.players[0].name}\n📞 K-Pay: ${leaderA.kpayPhone}\n\n<b>👥 Players:</b>\n${renderPlayers(leaderA.players)}\n\n<b>🔥 V S 🔥</b>\n\n<b>🏆 TEAM B: ${matchData.teamB}</b>\n👤 Leader: ${leaderB.players[0].name}\n📞 K-Pay: ${leaderB.kpayPhone}\n\n<b>👥 Players:</b>\n${renderPlayers(leaderB.players)}\n\n🎲 First Pick: ${matchData.firstPickWinner}`;
+        const renderPlayers = (players) => players.map(p => `👤 ${p.name}`).join('\n');
+
+        // ဒီနေရာမှာ မင်းရေးချင်တဲ့ စာသားကို ထည့်ပါ
+        const footer = `━━━━━━━━━━━━━━
+📢 <b>AURA HUB Official</b>
+💬 မေးမြန်းလိုသည်များရှိပါက Admin ထံ ဆက်သွယ်ပါ။
+⚡️ စည်းကမ်းချက်များကို လိုက်နာပေးကြပါရန် မေတ္တာရပ်ခံအပ်ပါသည်။`;
+
+        const msg = `<b>🔍 MATCH DETAILS</b>
+
+💰 <b>Fee:</b> ${matchData.fee || 0}
+━━━━━━━━━━━━━━
+<b>🏆 TEAM A: ${matchData.teamA}</b>
+👤 Leader: ${dataA.players[0].name} (ID: <code>${matchData.teamA_LeaderId}</code>)
+📞 Ph: ${dataA.kpayPhone}
+${renderPlayers(dataA.players)}
+
+<b>🏆 TEAM B: ${matchData.teamB}</b>
+👤 Leader: ${dataB.players[0].name} (ID: <code>${matchData.teamB_LeaderId}</code>)
+📞 Ph: ${dataB.kpayPhone}
+${renderPlayers(dataB.players)}
+━━━━━━━━━━━━━━
+🎲 <b>First Pick:</b> ${matchData.firstPickWinner}
+
+${footer}`; // ဒီနေရာမှာ ပေါင်းထည့်လိုက်တာပါ
+
         ctx.reply(msg, { parse_mode: 'HTML' });
-    } catch (e) { ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။"); }
+    } catch (e) { 
+        console.error(e);
+        ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။"); 
+    }
 });
 
 // 2. Photo Handling
