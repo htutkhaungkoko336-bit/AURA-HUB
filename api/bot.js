@@ -80,7 +80,7 @@ bot.on('photo', async (ctx) => {
     ctx.reply("✅ ပုံတင်ပြပြီးပါပြီ။ Admin စစ်ဆေးနေပါသည်၊ ခဏစောင့်ပေးပါ။");
 });
 
-// 3. View Match Info
+// 3. View Match Info Logic တွင် အစားထိုးရန်
 bot.action(/view_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
     const doc = await db.collection("pending_photos").doc(docId).get();
@@ -92,10 +92,15 @@ bot.action(/view_(.+)/, async (ctx) => {
     
     const matchData = matchDoc.data();
     
-    // Timestamp ကို ပြောင်းလဲခြင်း (Firebase Timestamp မှ Date သို့)
-    const matchTime = matchData.matchTimestamp && matchData.matchTimestamp.toDate 
-        ? matchData.matchTimestamp.toDate().toLocaleString('my-MM') 
-        : "မသတ်မှတ်ရသေးပါ";
+    // ဒီနေရာမှာ matchTimestamp ကို Date အဖြစ် ပြောင်းပါ
+    // Firestore Timestamp ဖြစ်နေရင် .toDate() ခေါ်ပြီးမှ readable string ပြောင်းပါ
+    let displayTime = "မသတ်မှတ်ရသေးပါ";
+    if (matchData.matchTimestamp && typeof matchData.matchTimestamp.toDate === 'function') {
+        displayTime = matchData.matchTimestamp.toDate().toLocaleString('my-MM', {
+            timeZone: 'Asia/Yangon',
+            hour12: false
+        });
+    }
 
     const [leaderA, leaderB] = await Promise.all([
         db.collection("registrations").doc(matchData.teamA_LeaderId).get(),
@@ -103,10 +108,9 @@ bot.action(/view_(.+)/, async (ctx) => {
     ]);
 
     const dataA = leaderA.data(), dataB = leaderB.data();
-    
-    // Fee နှင့် Time ကို ထည့်သွင်းထားသော Message
-    const info = `<b>🔍 MATCH DETAILS</b>
-🕒 Time: ${matchTime}
+    const info = `
+<b>🔍 MATCH DETAILS</b>
+🕒 Time: ${displayTime}
 💰 Fee: ${matchData.fee || 0}
 ━━━━━━━━━━━━━━
 <b>TEAM A: ${matchData.teamA} (Ph: ${dataA.kpayPhone})</b>
@@ -115,8 +119,8 @@ ${dataA.players.map(p => `👤 ${p.name}`).join('\n')}
 <b>TEAM B: ${matchData.teamB} (Ph: ${dataB.kpayPhone})</b>
 ${dataB.players.map(p => `👤 ${p.name}`).join('\n')}
 ━━━━━━━━━━━━━━
-🎲 First Pick: ${matchData.firstPickWinner}`;
-    
+🎲 First Pick: ${matchData.firstPickWinner}
+`;
     ctx.reply(info, { parse_mode: 'HTML' });
     ctx.answerCbQuery();
 });
