@@ -113,17 +113,18 @@ bot.on('photo', async (ctx) => {
     ctx.reply("✅ ပုံတင်ပြပြီးပါပြီ။ Admin စစ်ဆေးနေပါသည်၊ ခဏစောင့်ပေးပါ။");
 });
 
-// 3. View Match Info (Toggle Logic with Full Data)
+// 3. View Match Info (Toggle Logic with Full Data - FIXED)
 bot.action(/view_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
     const message = ctx.callbackQuery.message;
     
-    // Message ထဲမှာ "🔍 MATCH DETAILS" ဆိုတဲ့ စာသားပါနေလားစစ်မယ်
-    const isInfoVisible = message.text && message.text.includes("🔍 MATCH DETAILS");
+    // Photo Message များအတွက် caption ကို စစ်ဆေးပါ
+    const caption = message.caption || "";
+    const isInfoVisible = caption.includes("🔍 MATCH DETAILS");
 
     if (isInfoVisible) {
         // အချက်အလက်တွေ ပေါ်နေရင် ဖျောက်မယ် (ခလုတ်ပဲ ချန်ထားမယ်)
-        await ctx.editMessageText("📸 *ရလဒ် Screenshot*", {
+        await ctx.editMessageCaption("📸 *ရလဒ် Screenshot*", {
             parse_mode: 'Markdown',
             reply_markup: message.reply_markup
         });
@@ -160,7 +161,7 @@ bot.action(/view_(.+)/, async (ctx) => {
         const kpayA = dataA.kpayPhone || "မပါရှိပါ";
         const kpayB = dataB.kpayPhone || "မပါရှိပါ";
 
-        // သင်လိုချင်တဲ့ Data အပြည့်အစုံ
+        // သင်လိုချင်တဲ့ Data အပြည့်အစုံ (အထက်ပါအတိုင်းအတိအကျ)
         const info = `<b>🔍 MATCH DETAILS</b>
 🕒 Time: ${displayTime}
 💰 Fee: ${matchData.fee || 0}
@@ -177,8 +178,8 @@ ${dataB.players.map(p => `👤 ${p.name}`).join('\n')}
 ━━━━━━━━━━━━━━
 🎲 First Pick: ${matchData.firstPickWinner}`;
         
-        // အချက်အလက်ပြပြီး ခလုတ်ကို မပျောက်အောင် ထည့်ပေးထားတယ်
-        await ctx.editMessageText(info, {
+        // Photo Message ဖြစ်တဲ့အတွက် editMessageCaption ကိုသုံးပေးရပါမယ်
+        await ctx.editMessageCaption(info, {
             parse_mode: 'HTML',
             reply_markup: message.reply_markup
         });
