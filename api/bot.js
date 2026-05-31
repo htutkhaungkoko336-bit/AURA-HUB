@@ -124,76 +124,71 @@ bot.on('photo', async (ctx) => {
 });
 // 3. View Match Info (Toggle Logic with Full Data - FIXED)
 bot.action(/view_(.+)/, async (ctx) => {
-    const docId = ctx.match[1];
-    const message = ctx.callbackQuery.message;
-    
-    // Photo Message များအတွက် caption ကို စစ်ဆေးပါ
-    const caption = message.caption || "";
-    const isInfoVisible = caption.includes("🔍 MATCH DETAILS");
+    const docId = ctx.match[1];
+    const message = ctx.callbackQuery.message;
+    const caption = message.caption || "";
+    const isInfoVisible = caption.includes("🔍 MATCH DETAILS");
 
-    if (isInfoVisible) {
-        // အချက်အလက်တွေ ပေါ်နေရင် ဖျောက်မယ် (ခလုတ်ပဲ ချန်ထားမယ်)
-        await ctx.editMessageCaption("📸 *ရလဒ် Screenshot*", {
-            parse_mode: 'Markdown',
-            reply_markup: message.reply_markup
-        });
-    } else {
-        // အချက်အလက်တွေ ပေါ်လာအောင် လုပ်မယ်
-        const doc = await db.collection("pending_photos").doc(docId).get();
-        if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက်မရှိပါ။");
-        
-        const { matchId } = doc.data();
-        const matchDoc = await db.collection("matches").doc(matchId).get();
-        if (!matchDoc.exists) return ctx.answerCbQuery("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
-        
-        const matchData = matchDoc.data();
-        
-        let displayTime = "မသတ်မှတ်ရသေးပါ";
-        if (matchData.matchTimestamp && typeof matchData.matchTimestamp.toDate === 'function') {
-            displayTime = matchData.matchTimestamp.toDate().toLocaleString('my-MM', {
-                timeZone: 'Asia/Yangon',
-                hour12: false
-            });
-        }
+    // ခလုတ်တွေကို အမြဲတမ်း ပြန်သတ်မှတ်ပေးရပါမယ်
+    const keyboard = {
+        inline_keyboard: [
+            [{ text: isInfoVisible ? '🔍 Hide Details' : '🔍 View Match Info', callback_data: `view_${docId}` }],
+            [{ text: '✅ Confirm', callback_data: `confirm_${docId}` }, { text: '❌ Reject', callback_data: `reject_${docId}` }]
+        ]
+    };
 
-        const [leaderA, leaderB] = await Promise.all([
-            db.collection("registrations").doc(matchData.teamA_LeaderId).get(),
-            db.collection("registrations").doc(matchData.teamB_LeaderId).get()
-        ]);
+    if (isInfoVisible) {
+        // အချက်အလက် ပေါ်နေရင် ဖျောက်မယ် (ပုံနဲ့ ခလုတ်ပဲ ကျန်မယ်)
+        await ctx.editMessageCaption("📸 *ရလဒ် Screenshot*", {
+            parse_mode: 'Markdown',
+            reply_markup: keyboard
+        });
+    } else {
+        // အချက်အလက် ပေါ်လာအောင် လုပ်မယ်
+        const doc = await db.collection("pending_photos").doc(docId).get();
+        if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက်မရှိပါ။");
+        
+        const { matchId } = doc.data();
+        const matchDoc = await db.collection("matches").doc(matchId).get();
+        if (!matchDoc.exists) return ctx.answerCbQuery("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
+        
+        const matchData = matchDoc.data();
+        
+        // Data ဆွဲထုတ်ခြင်း (အရင်အတိုင်း)
+        const [leaderA, leaderB] = await Promise.all([
+            db.collection("registrations").doc(matchData.teamA_LeaderId).get(),
+            db.collection("registrations").doc(matchData.teamB_LeaderId).get()
+        ]);
 
-        const dataA = leaderA.data();
-        const dataB = leaderB.data();
-        
-        const leaderAId = dataA.players && dataA.players[0] ? dataA.players[0].id : "မရှိပါ";
-        const leaderBId = dataB.players && dataB.players[0] ? dataB.players[0].id : "မရှိပါ";
+        const dataA = leaderA.data();
+        const dataB = leaderB.data();
+        
+        const leaderAId = dataA.players && dataA.players[0] ? dataA.players[0].id : "မရှိပါ";
+        const leaderBId = dataB.players && dataB.players[0] ? dataB.players[0].id : "မရှိပါ";
 
-        const kpayA = dataA.kpayPhone || "မပါရှိပါ";
-        const kpayB = dataB.kpayPhone || "မပါရှိပါ";
-
-        // သင်လိုချင်တဲ့ Data အပြည့်အစုံ (အထက်ပါအတိုင်းအတိအကျ)
-        const info = `<b>🔍 MATCH DETAILS</b>
-🕒 Time: ${displayTime}
+        const info = `<b>🔍 MATCH DETAILS</b>
+🕒 Time: ${matchData.matchTimestamp ? matchData.matchTimestamp.toDate().toLocaleString('my-MM') : "N/A"}
 💰 Fee: ${matchData.fee || 0}
 ━━━━━━━━━━━━━━
 <b>🏆 TEAM A: ${matchData.teamA}</b>
 👤 Leader: ${dataA.players[0].name} (ID: <code>${leaderAId}</code>)
-📞 K-Pay: <code>${kpayA}</code>
+📞 K-Pay: <code>${dataA.kpayPhone || "မပါရှိပါ"}</code>
 ${dataA.players.map(p => `👤 ${p.name}`).join('\n')}
 
 <b>🏆 TEAM B: ${matchData.teamB}</b>
 👤 Leader: ${dataB.players[0].name} (ID: <code>${leaderBId}</code>)
-📞 K-Pay: <code>${kpayB}</code>
+📞 K-Pay: <code>${dataB.kpayPhone || "မပါရှိပါ"}</code>
 ${dataB.players.map(p => `👤 ${p.name}`).join('\n')}
 ━━━━━━━━━━━━━━
 🎲 First Pick: ${matchData.firstPickWinner}`;
-        
-        // Photo Message ဖြစ်တဲ့အတွက် editMessageCaption ကိုသုံးပေးရပါမယ်
-        await ctx.editMessageCaption(info, {
-            parse_mode: 'HTML',
-            reply_markup: message.reply_markup
-        });
-    }
-    ctx.answerCbQuery();
+        
+        // အချက်အလက်အပြည့်အစုံနဲ့ Edit လုပ်မယ်
+        await ctx.editMessageCaption(info, {
+            parse_mode: 'HTML',
+            reply_markup: keyboard
+        });
+    }
+    ctx.answerCbQuery();
 });
 
 // ၁။ Confirm နှိပ်လိုက်ရင် Team A လား B လား ရွေးခိုင်းမယ်
