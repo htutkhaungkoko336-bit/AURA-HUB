@@ -214,7 +214,12 @@ bot.action(/confirm_(.+)/, async (ctx) => {
     try {
         // ၃။ Firestore ထဲက Status တွေကို Update လုပ်မယ် (Result Tab အတွက်)
         // matchId ကို finished လုပ်မယ်
-        await db.collection("matches").doc(matchId).update({ status: "finished" });
+       await db.collection("matches").doc(matchId).update({ 
+    status: "finished",
+    // အနိုင်ရတဲ့အသင်းကို Admin က ဘယ်သူလဲဆိုတာ သိဖို့ 
+    // အခုလိုမျိုး winner: "teamA" (သို့) "teamB" ဆိုပြီး ထည့်ပေးလိုက်ပါ
+    winner: "teamA" // ဥပမာ - Team A နိုင်တယ်ဆိုပါစို့
+});
 
         // Team A နှင့် Team B ၏ Registrations များကို finished လုပ်မယ်
         // ဒီနေရာမှာ အနိုင်ရတဲ့အသင်းကို သတ်မှတ်ချက်အရ winStatus: "win" / "lose" ထည့်ပေးနိုင်ပါတယ်

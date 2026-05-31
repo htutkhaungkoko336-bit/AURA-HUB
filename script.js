@@ -362,44 +362,66 @@ function loadMatchRooms() {
             });
     }
 }
-function loadResultTab() {
+// အသစ်ပြင်ဆင်ထားသော loadResultTab Function
+async function loadResultTab() {
     const container = document.getElementById('match-content');
     container.innerHTML = '<p style="text-align:center; color:#444;">Loading Results...</p>';
 
-    db.collection("registrations")
+    // Registration အစား Matches ကိုပဲ query လုပ်ပါမယ်
+    db.collection("matches")
         .where("status", "==", "finished")
-        .orderBy("timestamp", "desc")
-        .onSnapshot((querySnapshot) => {
+        .orderBy("matchTimestamp", "desc")
+        .onSnapshot(async (snapshot) => {
             container.innerHTML = "";
-            if (querySnapshot.empty) {
+            if (snapshot.empty) {
                 container.innerHTML = '<p style="text-align:center; color:#333;">No results yet.</p>';
                 return;
             }
 
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                const isWin = data.winStatus === "win";
-                const color = isWin ? "#4caf50" : "#d32f2f";
+            for (const doc of snapshot.docs) {
+                const matchData = doc.data();
                 
-                container.innerHTML += `
-                <div class="match-card">
-                    <div class="match-header" style="background:${color}; color:#fff;">
-                        <span>${data.mode} - ${data.fee} Ks</span>
-                        <span>${isWin ? "VICTORY" : "DEFEAT"}</span>
-                    </div>
-                    <div class="match-body">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <img src="${data.squadLogo}" style="width:40px;height:40px;border-radius:50%; border:2px solid ${color}">
-                            <div>
-                                <div style="font-weight:bold;">${data.squadName || data.playerName}</div>
-                                <div style="font-size:0.7rem; color:#aaa;">${new Date(data.timestamp.toDate()).toLocaleDateString()}</div>
-                            </div>
-                        </div>
-                        <div style="font-size:1.2rem; font-weight:900; color:${color}">${isWin ? "WIN" : "LOSE"}</div>
-                    </div>
-                </div>`;
-            });
+                // Match ထဲက Leader ID တွေကို သုံးပြီး Registration အချက်အလက် ဆွဲထုတ်မယ်
+                const teamADoc = await db.collection("registrations").doc(matchData.teamA_LeaderId).get();
+                const teamBDoc = await db.collection("registrations").doc(matchData.teamB_LeaderId).get();
+                
+                const dataA = teamADoc.data();
+                const dataB = teamBDoc.data();
+
+                // ဘယ်သူနိုင်သလဲဆိုတာ စစ်ဆေးခြင်း
+                const isWinnerA = matchData.winner === "teamA"; 
+                
+                // Team A အတွက် Card
+                container.innerHTML += renderMatchResultCard(dataA, matchData, isWinnerA);
+                // Team B အတွက် Card
+                container.innerHTML += renderMatchResultCard(dataB, matchData, !isWinnerA);
+            }
         });
+}
+
+// Result Card ကို ဆောက်ပေးမည့် Helper Function (ဒါကို script ရဲ့ အပြင်ဘက်မှာ ထည့်ပါ)
+function renderMatchResultCard(regData, matchData, isWinner) {
+    if (!regData) return "";
+    const color = isWinner ? "#4caf50" : "#d32f2f";
+    const name = regData.squadName || regData.playerName;
+    
+    return `
+    <div class="match-card">
+        <div class="match-header" style="background:${color}; color:#fff;">
+            <span>${matchData.fee} Ks</span>
+            <span>${isWinner ? "VICTORY" : "DEFEAT"}</span>
+        </div>
+        <div class="match-body">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <img src="${regData.squadLogo}" style="width:40px;height:40px;border-radius:50%; border:2px solid ${color}">
+                <div>
+                    <div style="font-weight:bold;">${name}</div>
+                    <div style="font-size:0.7rem; color:#aaa;">${matchData.matchTimestamp ? matchData.matchTimestamp.toDate().toLocaleDateString() : 'Recent'}</div>
+                </div>
+            </div>
+            <div style="font-size:1.2rem; font-weight:900; color:${color}">${isWinner ? "WIN" : "LOSE"}</div>
+        </div>
+    </div>`;
 }
 // ✨ မိမိဖွင့်ထားသော အခန်းအား ဖျက်သိမ်းပြီး ပြန်ထွက်သည့် Function
 async function cancelMyRoom() {
