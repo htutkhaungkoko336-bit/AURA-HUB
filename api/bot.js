@@ -128,15 +128,19 @@ bot.action(/view_(.+)/, async (ctx) => {
     const message = ctx.callbackQuery.message;
     const caption = message.caption || "";
     const isInfoVisible = caption.includes("🔍 MATCH DETAILS");
+    
+    // Admin က Confirm လုပ်ပြီးသားလား စစ်ဆေးခြင်း (Firestore မှာ status စစ်နိုင်ပါတယ်)
+    // ဒါပေမဲ့ လွယ်အောင် Status စစ်မယ့်အစား Caption ကိုကြည့်မယ်
+    const isConfirmed = caption.includes("အတည်ပြုပြီးပါပြီ");
 
-    // ခလုတ်တွေကို အမြဲတမ်း ပြန်သတ်မှတ်ပေးရပါမယ်
-    const keyboard = {
-        inline_keyboard: [
-            [{ text: isInfoVisible ? '🔍 Hide Details' : '🔍 View Match Info', callback_data: `view_${docId}` }],
-            [{ text: '✅ Confirm', callback_data: `confirm_${docId}` }, { text: '❌ Reject', callback_data: `reject_${docId}` }]
-        ]
-    };
+    // ခလုတ်ဆောက်တဲ့အခါ Confirm လုပ်ပြီးသားဆိုရင် Confirm/Reject ခလုတ် မထည့်တော့ဘူး
+    let inline_keyboard = [[{ text: isInfoVisible ? '🔍 Hide Details' : '🔍 View Match Info', callback_data: `view_${docId}` }]];
+    
+    if (!isConfirmed) {
+        inline_keyboard.push([{ text: '✅ Confirm', callback_data: `confirm_${docId}` }, { text: '❌ Reject', callback_data: `reject_${docId}` }]);
+    }
 
+    const keyboard = { inline_keyboard };
     if (isInfoVisible) {
         // အချက်အလက် ပေါ်နေရင် ဖျောက်မယ် (ပုံနဲ့ ခလုတ်ပဲ ကျန်မယ်)
         await ctx.editMessageCaption("📸 *ရလဒ် Screenshot*", {
@@ -209,7 +213,7 @@ bot.action(/confirm_(.+)/, async (ctx) => {
     });
 });
 
-// ၂။ ရွေးချယ်ပြီးပြီဆိုရင် Firestore update လုပ်မယ်
+// ၂။ ရွေးချယ်ပြီးပြီဆိုရင် Firestore update လုပ်မယ် + ခလုတ်အကုန်ဖျောက်မယ်
 bot.action(/win_(A|B)_(.+)/, async (ctx) => {
     const winner = ctx.match[1];
     const docId = ctx.match[2];
@@ -226,7 +230,7 @@ bot.action(/win_(A|B)_(.+)/, async (ctx) => {
     await db.collection("registrations").doc(matchData.teamA_LeaderId).update({ status: "finished", winStatus: teamAStatus });
     await db.collection("registrations").doc(matchData.teamB_LeaderId).update({ status: "finished", winStatus: teamBStatus });
 
-    // အချက်အလက်များကို ပြန်ယူရန် (အရင်ရေးထားတဲ့ Logic အတိုင်း)
+    // အချက်အလက်များကို ပြန်ယူရန်
     const [leaderA, leaderB] = await Promise.all([
         db.collection("registrations").doc(matchData.teamA_LeaderId).get(),
         db.collection("registrations").doc(matchData.teamB_LeaderId).get()
@@ -249,7 +253,7 @@ bot.action(/win_(A|B)_(.+)/, async (ctx) => {
 ━━━━━━━━━━━━━━
 💰 <b>ကျေးဇူးပြု၍ Winner အတွက် ငွေလွှဲပြေစာ (SS) ကို ဤ Message ကို Reply ပြန်ပြီး ပို့ပေးပါ။</b>`;
 
-    // ခလုတ်နဲ့အတူ ပြန်ပြမယ်
+    // ဒီမှာ အဓိကပြင်လိုက်တာပါ: View Match Info ခလုတ်တစ်ခုတည်းပဲ ကျန်အောင်လုပ်မယ်
     await ctx.editMessageCaption(info, {
         parse_mode: 'HTML',
         reply_markup: {
@@ -259,14 +263,14 @@ bot.action(/win_(A|B)_(.+)/, async (ctx) => {
         }
     });
 
-    // Session ထဲမှာ adminMessageId ကို မှတ်ထားမှ Reply ပြန်ရင် ရမှာပါ
+    // Session ထဲမှာ adminMessageId ကို မှတ်ထားမယ်
     await db.collection("sessions").doc(docId).set({ 
         adminMessageId: ctx.callbackQuery.message.message_id, 
         targetChatId: userId 
     }, { merge: true });
 
     await ctx.telegram.sendMessage(userId, `🎉 ဂုဏ်ယူပါသည်။ ပွဲစဉ်ရလဒ်ကို အတည်ပြုပြီးပါပြီ။`);
-    ctx.answerCbQuery();
+    ctx.answerCbQuery("အောင်မြင်စွာ အတည်ပြုပြီးပါပြီ");
 });
 
 bot.action(/reject_(.+)/, async (ctx) => {
