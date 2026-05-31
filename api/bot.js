@@ -211,46 +211,44 @@ bot.action(/confirm_(.+)/, async (ctx) => {
     if (!matchDoc.exists) return ctx.answerCbQuery("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
     const matchData = matchDoc.data();
 
-    try {
-        // ၃။ Firestore ထဲက Status တွေကို Update လုပ်မယ် (Result Tab အတွက်)
-        // matchId ကို finished လုပ်မယ်
-       await db.collection("matches").doc(matchId).update({ 
-    status: "finished",
-    // အနိုင်ရတဲ့အသင်းကို Admin က ဘယ်သူလဲဆိုတာ သိဖို့ 
-    // အခုလိုမျိုး winner: "teamA" (သို့) "teamB" ဆိုပြီး ထည့်ပေးလိုက်ပါ
-    winner: "teamA" // ဥပမာ - Team A နိုင်တယ်ဆိုပါစို့
-});
+try {
+    // ဤနေရာတွင် ကျွန်တော်ပေးသည့် Batch Code ကို အစားထိုးထည့်ပါ
+    const batch = db.batch();
 
-        // Team A နှင့် Team B ၏ Registrations များကို finished လုပ်မယ်
-        // ဒီနေရာမှာ အနိုင်ရတဲ့အသင်းကို သတ်မှတ်ချက်အရ winStatus: "win" / "lose" ထည့်ပေးနိုင်ပါတယ်
-        await db.collection("registrations").doc(matchData.teamA_LeaderId).update({ 
-            status: "finished",
-            winStatus: "win" // အနိုင်ရတဲ့အသင်း (Admin က လက်စွမ်းပြပြီး ဖြည့်ပေးရပါမယ်)
-        });
-        await db.collection("registrations").doc(matchData.teamB_LeaderId).update({ 
-            status: "finished",
-            winStatus: "lose" 
-        });
+    // ၁။ Match ကို update လုပ်ခြင်း
+    const matchRef = db.collection("matches").doc(matchId);
+    batch.update(matchRef, { 
+        status: "finished",
+        winner: "teamA" // လိုအပ်ရင် ဤနေရာကို "teamB" သို့ ပြောင်းနိုင်သည်
+    });
 
-        // ၄။ Admin Message ကို ပြင်ဆင်မယ်
-        const sentMessage = await ctx.editMessageCaption("✅ ပွဲစဉ်ရလဒ် အတည်ပြုပြီးပါပြီ။\n💰 ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ဤ Message ကို Reply ပြန်ပြီး ပို့ပေးပါ။", { 
-            reply_markup: { 
-                inline_keyboard: [[{ text: '🔍 View Match Info', callback_data: `view_${docId}` }]] 
-            } 
-        });
-        
-        // ၅။ Session ထဲမှာ ငွေလွှဲပြေစာအတွက် စောင့်ဆိုင်းနေကြောင်း မှတ်တမ်းတင်မယ်
-        await db.collection("sessions").doc(docId).set({ 
-            waitingForReceipt: true, 
-            targetChatId: userId,
-            adminMessageId: sentMessage.message_id,
-            matchId: matchId,
-            teamA_LeaderId: matchData.teamA_LeaderId,
-            teamB_LeaderId: matchData.teamB_LeaderId
-        });
+    // ၂။ Team A ရဲ့ registration ကို update လုပ်ခြင်း
+    const regRefA = db.collection("registrations").doc(matchData.teamA_LeaderId);
+    batch.update(regRefA, { 
+        status: "finished", 
+        matchStatus: "finished",
+        winStatus: "win" // Team A နိုင်လျှင်
+    });
 
-        // ၆။ User ကို အကြောင်းကြားမယ်
-        await ctx.telegram.sendMessage(userId, "🎉 ဂုဏ်ယူပါသည်။ ပွဲစဉ်ရလဒ်ကို အတည်ပြုပြီးပါပြီ။ ငွေလွှဲပြေစာ (SS) ပို့ပေးပါ။");
+    // ၃။ Team B ရဲ့ registration ကို update လုပ်ခြင်း
+    const regRefB = db.collection("registrations").doc(matchData.teamB_LeaderId);
+    batch.update(regRefB, { 
+        status: "finished", 
+        matchStatus: "finished",
+        winStatus: "lose" // Team B ရှုံးလျှင်
+    });
+
+    // ၄။ Batch အားလုံးကို တစ်ပြိုင်တည်း commit လုပ်ခြင်း
+    await batch.commit();
+
+    // ၅။ Admin Message ကို ပြင်ဆင်မယ် (ဆက်လက်လုပ်ဆောင်ရန်)
+    const sentMessage = await ctx.editMessageCaption("✅ ပွဲစဉ်ရလဒ် အတည်ပြုပြီးပါပြီ။\n💰 ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ဤ Message ကို Reply ပြန်ပြီး ပို့ပေးပါ။", { 
+        reply_markup: { 
+            inline_keyboard: [[{ text: '🔍 View Match Info', callback_data: `view_${docId}` }]] 
+        } 
+    });
+            // ၆။ User ကို အကြောင်းကြားမယ်
+        await ctx.telegram.sendMessage(userId, "🎉 ဂုဏ်ယူပါသည်။ ပွဲစဉ်ရလဒ်ကို အတည်ပြုပြီးပါပြီ။ငွေလွှဲပြေစာ (SS) ကို စောင့်ပေးပါ");
         
         ctx.answerCbQuery("အောင်မြင်စွာ အတည်ပြုပြီးပါပြီ");
     } catch (error) {
