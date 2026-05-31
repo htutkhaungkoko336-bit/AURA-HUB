@@ -197,51 +197,26 @@ ${dataB.players.map(p => `👤 ${p.name}`).join('\n')}
 });
 
 bot.action(/confirm_(.+)/, async (ctx) => {
-    const docId = ctx.match[1];
-    
-    // ၁။ Pending Photo ထဲက Data ကို အရင်ယူမယ်
-    const doc = await db.collection("pending_photos").doc(docId).get();
-    if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက် ရှာမတွေ့ပါ။");
-    
-    const { matchId, userId } = doc.data();
-
-    // ၂။ Match အချက်အလက်ကို ဆွဲထုတ်မယ်
-    const matchDoc = await db.collection("matches").doc(matchId).get();
-    if (!matchDoc.exists) return ctx.answerCbQuery("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
-    const matchData = matchDoc.data();
-
-    try {
-        // ၃။ Firestore ထဲက Status တွေကို Update လုပ်မယ် (Result Tab အတွက်)
-        await db.collection("matches").doc(matchId).update({ status: "finished" });
-        await db.collection("registrations").doc(matchData.teamA_LeaderId).update({ status: "finished" });
-        await db.collection("registrations").doc(matchData.teamB_LeaderId).update({ status: "finished" });
-
-        // ၄။ Admin Message ကို ပြင်ဆင်မယ်
-        const sentMessage = await ctx.editMessageCaption("✅ ပွဲစဉ်ရလဒ် အတည်ပြုပြီးပါပြီ။\n💰 ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ဤ Message ကို Reply ပြန်ပြီး ပို့ပေးပါ။", { 
-            reply_markup: { 
-                inline_keyboard: [[{ text: '🔍 View Match Info', callback_data: `view_${docId}` }]] 
-            } 
-        });
-        
-        // ၅။ Session ထဲမှာ ငွေလွှဲပြေစာအတွက် စောင့်ဆိုင်းနေကြောင်း မှတ်တမ်းတင်မယ်
-        await db.collection("sessions").doc(docId).set({ 
-            waitingForReceipt: true, 
-            targetChatId: userId,
-            adminMessageId: sentMessage.message_id,
-            matchId: matchId,
-            teamA_LeaderId: matchData.teamA_LeaderId,
-            teamB_LeaderId: matchData.teamB_LeaderId
-        });
-
-        // ၆။ User ကို အကြောင်းကြားမယ်
-        await ctx.telegram.sendMessage(userId, "🎉 ဂုဏ်ယူပါသည်။ ပွဲစဉ်ရလဒ်ကို အတည်ပြုပြီးပါပြီ။ ကျေးဇူးပြု၍ Winner အတွက် ငွေလွှဲပြေစာ (SS) ကို Bot ထံသို့ ပို့ပေးပါ။");
-        
-        ctx.answerCbQuery("အောင်မြင်စွာ အတည်ပြုပြီးပါပြီ");
-    } catch (error) {
-        console.error(error);
-        ctx.answerCbQuery("❌ Error: စနစ်အမှားအယွင်းရှိပါသည်။");
-    }
+    const docId = ctx.match[1];
+    const doc = await db.collection("pending_photos").doc(docId).get();
+    if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက် ရှာမတွေ့ပါ။");
+    
+    const userId = doc.data().userId;
+    
+    // Admin ကို ပို့လိုက်တဲ့ Message ကို variable တစ်ခုထဲ သိမ်းပါ
+    const sentMessage = await ctx.editMessageCaption("✅ အတည်ပြုသည်။ ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ပို့ပေးပါ။", { 
+        reply_markup: { inline_keyboard: [[{ text: '🔍 View Match Info', callback_data: `view_${docId}` }]] } 
+    });
+    
+    // ဒီနေရာမှာ adminMessageId ကို အဓိကထားသိမ်းပါ
+    await db.collection("sessions").doc(docId).set({ 
+        waitingForReceipt: true, 
+        targetChatId: userId,
+        adminMessageId: sentMessage.message_id // <<-- အရေးကြီးဆုံးအချက်
+    });
+    ctx.answerCbQuery();
 });
+
 bot.action(/reject_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
     const doc = await db.collection("pending_photos").doc(docId).get();
