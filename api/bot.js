@@ -199,36 +199,44 @@ ${dataB.players.map(p => `👤 ${p.name}`).join('\n')}
 bot.action(/confirm_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
     
+    // ၁။ Data အရင်ဆွဲထုတ်ပါ
     const doc = await db.collection("pending_photos").doc(docId).get();
     if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက် ရှာမတွေ့ပါ။");
     
     const { matchId, userId } = doc.data();
     const matchDoc = await db.collection("matches").doc(matchId).get();
     if (!matchDoc.exists) return ctx.answerCbQuery("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
+    
     const matchData = matchDoc.data();
 
     try {
-        // ၁။ Batch Update လုပ်ခြင်း
+        // ၂။ Batch Update (matchStatus ကို သုံးပြီး အကုန်ပြင်ပါ)
         const batch = db.batch();
         const matchRef = db.collection("matches").doc(matchId);
-        batch.update(matchRef, { status: "finished", winner: "teamA" });
+        
+        batch.update(matchRef, { 
+            matchStatus: "finished", // status အစား matchStatus
+            winner: "teamA" 
+        });
 
         batch.update(db.collection("registrations").doc(matchData.teamA_LeaderId), { 
-            status: "finished", matchStatus: "finished", winStatus: "win" 
+            matchStatus: "finished", 
+            winStatus: "win" 
         });
         batch.update(db.collection("registrations").doc(matchData.teamB_LeaderId), { 
-            status: "finished", matchStatus: "finished", winStatus: "lose" 
+            matchStatus: "finished", 
+            winStatus: "lose" 
         });
         await batch.commit();
 
-        // ၂။ Message ကိုအရင်ပြင်ပြီးမှ sentMessage ID ကို ယူခြင်း
+        // ၃။ Message ပြင်ခြင်း
         const sentMessage = await ctx.editMessageCaption("✅ ပွဲစဉ်ရလဒ် အတည်ပြုပြီးပါပြီ။\n💰 ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ဤ Message ကို Reply ပြန်ပြီး ပို့ပေးပါ။", { 
             reply_markup: { 
                 inline_keyboard: [[{ text: '🔍 View Match Info', callback_data: `view_${docId}` }]] 
             } 
         });
 
-        // ၃။ Session ထဲမှာ သိမ်းခြင်း (sentMessage.message_id ကို အခုမှ သုံးလို့ရပါပြီ)
+        // ၄။ Session သိမ်းခြင်း
         await db.collection("sessions").doc(docId).set({ 
             waitingForReceipt: true, 
             targetChatId: userId,
@@ -238,7 +246,6 @@ bot.action(/confirm_(.+)/, async (ctx) => {
             teamB_LeaderId: matchData.teamB_LeaderId
         });
 
-        // ၄။ User ကို အကြောင်းကြားခြင်း
         await ctx.telegram.sendMessage(userId, "🎉 ဂုဏ်ယူပါသည်။ ပွဲစဉ်ရလဒ်ကို အတည်ပြုပြီးပါပြီ။ ငွေလွှဲပြေစာ (SS) ကို စောင့်ပေးပါ။");
         ctx.answerCbQuery("အောင်မြင်စွာ အတည်ပြုပြီးပါပြီ");
         
@@ -246,7 +253,8 @@ bot.action(/confirm_(.+)/, async (ctx) => {
         console.error(error);
         ctx.answerCbQuery("❌ Error: စနစ်အမှားအယွင်းရှိပါသည်။");
     }
-});bot.action(/reject_(.+)/, async (ctx) => {
+});
+bot.action(/reject_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
     const doc = await db.collection("pending_photos").doc(docId).get();
     if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက် ရှာမတွေ့ပါ။");
