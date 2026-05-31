@@ -122,33 +122,35 @@ bot.on('photo', async (ctx) => {
     });
     ctx.reply("✅ ပုံတင်ပြပြီးပါပြီ။ Admin စစ်ဆေးနေပါသည်၊ ခဏစောင့်ပေးပါ။");
 });
-// 3. View Match Info (Toggle Logic with Full Data - FIXED)
 bot.action(/view_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
     const message = ctx.callbackQuery.message;
-    const caption = message.caption || "";
-    const isInfoVisible = caption.includes("🔍 MATCH DETAILS");
-    
-    // Admin က Confirm လုပ်ပြီးသားလား စစ်ဆေးခြင်း (Firestore မှာ status စစ်နိုင်ပါတယ်)
-    // ဒါပေမဲ့ လွယ်အောင် Status စစ်မယ့်အစား Caption ကိုကြည့်မယ်
+    const caption = message.caption || message.text || "";
     const isConfirmed = caption.includes("အတည်ပြုပြီးပါပြီ");
+    const isInfoVisible = caption.includes("🔍 MATCH DETAILS");
 
-    // ခလုတ်ဆောက်တဲ့အခါ Confirm လုပ်ပြီးသားဆိုရင် Confirm/Reject ခလုတ် မထည့်တော့ဘူး
-    let inline_keyboard = [[{ text: isInfoVisible ? '🔍 Hide Details' : '🔍 View Match Info', callback_data: `view_${docId}` }]];
+    // 1. Keyboard ကို အရင်ဆောက်မယ်
+    let inline_keyboard = [[{ 
+        text: isInfoVisible ? '🔍 Hide Details' : '🔍 View Match Info', 
+        callback_data: `view_${docId}` 
+    }]];
     
     if (!isConfirmed) {
-        inline_keyboard.push([{ text: '✅ Confirm', callback_data: `confirm_${docId}` }, { text: '❌ Reject', callback_data: `reject_${docId}` }]);
+        inline_keyboard.push([
+            { text: '✅ Confirm', callback_data: `confirm_${docId}` }, 
+            { text: '❌ Reject', callback_data: `reject_${docId}` }
+        ]);
     }
-
     const keyboard = { inline_keyboard };
+
+    // 2. Info ပေါ်နေရင် ဖျောက်မယ်
     if (isInfoVisible) {
-        // အချက်အလက် ပေါ်နေရင် ဖျောက်မယ် (ပုံနဲ့ ခလုတ်ပဲ ကျန်မယ်)
         await ctx.editMessageCaption("📸 *ရလဒ် Screenshot*", {
             parse_mode: 'Markdown',
             reply_markup: keyboard
         });
     } else {
-        // အချက်အလက် ပေါ်လာအောင် လုပ်မယ်
+        // 3. Info မပေါ်ရင် အချက်အလက်ဆွဲပြီး ပြမယ်
         const doc = await db.collection("pending_photos").doc(docId).get();
         if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက်မရှိပါ။");
         
@@ -157,18 +159,15 @@ bot.action(/view_(.+)/, async (ctx) => {
         if (!matchDoc.exists) return ctx.answerCbQuery("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
         
         const matchData = matchDoc.data();
-        
-        // Data ဆွဲထုတ်ခြင်း (အရင်အတိုင်း)
         const [leaderA, leaderB] = await Promise.all([
             db.collection("registrations").doc(matchData.teamA_LeaderId).get(),
             db.collection("registrations").doc(matchData.teamB_LeaderId).get()
         ]);
-
+        
         const dataA = leaderA.data();
         const dataB = leaderB.data();
-        
-        const leaderAId = dataA.players && dataA.players[0] ? dataA.players[0].id : "မရှိပါ";
-        const leaderBId = dataB.players && dataB.players[0] ? dataB.players[0].id : "မရှိပါ";
+        const leaderAId = dataA.players?.[0]?.id || "မရှိပါ";
+        const leaderBId = dataB.players?.[0]?.id || "မရှိပါ";
 
         const info = `<b>🔍 MATCH DETAILS</b>
 🕒 Time: ${matchData.matchTimestamp ? matchData.matchTimestamp.toDate().toLocaleString('my-MM') : "N/A"}
@@ -181,12 +180,11 @@ ${dataA.players.map(p => `👤 ${p.name}`).join('\n')}
 
 <b>🏆 TEAM B: ${matchData.teamB}</b>
 👤 Leader: ${dataB.players[0].name} (ID: <code>${leaderBId}</code>)
-📞 K-Pay: <code>${dataB.kpayPhone || "မပါရှိပါ"}</code>
+📞 K-Pay: ${dataB.kpayPhone || "မပါရှိပါ"}
 ${dataB.players.map(p => `👤 ${p.name}`).join('\n')}
 ━━━━━━━━━━━━━━
 🎲 First Pick: ${matchData.firstPickWinner}`;
         
-        // အချက်အလက်အပြည့်အစုံနဲ့ Edit လုပ်မယ်
         await ctx.editMessageCaption(info, {
             parse_mode: 'HTML',
             reply_markup: keyboard
