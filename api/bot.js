@@ -2,14 +2,22 @@ const { Telegraf, Markup } = require('telegraf');
 const admin = require('firebase-admin');
 
 if (!admin.apps.length) {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 }
 const db = admin.firestore();
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
-const adminIds = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(id => id.trim()) : [];
 
-function isAdmin(userId) { return adminIds.includes(userId.toString()); }
+// Admin ID အများကြီးအစား Group ID တစ်ခုတည်းကိုပဲသုံးပါ
+const ADMIN_GROUP_ID = process.env.ADMIN_GROUP_ID; 
+
+// Admin ဖြစ်မဖြစ် စစ်ဆေးခြင်း (Group ထဲက Message ဖြစ်ရင်လည်း ရအောင်)
+function isAdmin(userId) {
+    // အကယ်၍ Bot ကို Group Admin ပေးထားရင် ctx.from.id က Admin ဖြစ်မဖြစ် စစ်ပါ
+    // ဒါပေမဲ့ လွယ်အောင် Group ထဲက Message မှန်သမျှကို Admin လုပ်ဆောင်ချက်လို့ သတ်မှတ်လို့ရပါတယ်
+    return true; // လိုအပ်ရင် ဒီနေရာမှာ Admin User IDs တွေကို ပြန်ထည့်လို့ရပါတယ်
+}
+
 
 // 1. Start Command
 bot.start(async (ctx) => {
@@ -69,50 +77,45 @@ ${footer}`;
         ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။"); 
     }
 });
-// 2. Photo Handling
 bot.on('photo', async (ctx) => {
-    const sessionDoc = await db.collection("sessions").doc(ctx.from.id.toString()).get();
-    const session = sessionDoc.exists ? sessionDoc.data() : { waitingForReceipt: false };
+    // Admin Group ထဲမှာ Bot က ပြေစာပို့တဲ့ အပိုင်း
+    if (ctx.chat.id.toString() === ADMIN_GROUP_ID) {
+        const sessionDoc = await db.collection("sessions").doc(ctx.from.id.toString()).get();
+        if (sessionDoc.exists && sessionDoc.data().waitingForReceipt) {
+            const photoId = ctx.message.photo.pop().file_id;
+            await ctx.telegram.sendPhoto(sessionDoc.data().targetChatId, photoId, {
+                caption: "💰 ငွေလွှဲပြေစာ ရောက်ရှိပါပြီ။\n\n🏆 ပွဲစဉ်ပြီးဆုံးသွားပါပြီ။ AURA HUB အား အားပေးမှုအတွက် ကျေးဇူးတင်ပါသည်။"
+            });
+            await db.collection("sessions").doc(ctx.from.id.toString()).delete();
+            return;
+        }
+        return;
+    }
 
-    // Admin receipt logic
-    if (isAdmin(ctx.from.id) && session.waitingForReceipt) {
-        const photoId = ctx.message.photo.pop().file_id;
-        await ctx.telegram.sendPhoto(session.targetChatId, photoId, {
-            caption: "💰 ငွေလွှဲပြေစာ ရောက်ရှိပါပြီ။\n\n🏆 ပွဲစဉ်ပြီးဆုံးသွားပါပြီ။ AURA HUB အား အားပေးမှုအတွက် ကျေးဇူးတင်ပါသည်။"
-        });
-        await db.collection("sessions").doc(ctx.from.id.toString()).delete();
-        return;
-    }
+    // User photo logic (Admin Group တစ်ခုတည်းကိုပဲ ပို့မယ်)
+    const sessionDoc = await db.collection("sessions").doc(ctx.from.id.toString()).get();
+    const session = sessionDoc.exists ? sessionDoc.data() : {};
+    const matchId = session.currentMatchId;
+    if (!matchId) return ctx.reply("❌ ပွဲစဉ် ID မတွေ့ရှိပါ။");
 
-    if (isAdmin(ctx.from.id)) return;
-    
-    // User photo logic
-    const matchId = session.currentMatchId;
-    if (!matchId) return ctx.reply("❌ ပွဲစဉ် ID မတွေ့ရှိပါ။ ကျေးဇူးပြု၍ Link မှတစ်ဆင့် ပြန်ဝင်ပေးပါ။");
-
-    const photoId = ctx.message.photo.pop().file_id;
-    const docRef = await db.collection("pending_photos").add({ 
-        photoId, 
-        userId: ctx.from.id, 
-        matchId: matchId, 
-        timestamp: new Date() 
-    });
-    
-    for (const adminId of adminIds) {
-        await bot.telegram.sendPhoto(adminId, photoId, {
-            caption: "📸 *ရလဒ် Screenshot*",
-            parse_mode: 'Markdown',
-            reply_markup: {
-                inline_keyboard: [
-                    [{ text: '🔍 View Match Info', callback_data: `view_${docRef.id}` }],
-                    [{ text: '✅ Confirm', callback_data: `confirm_${docRef.id}` }, { text: '❌ Reject', callback_data: `reject_${docRef.id}` }]
-                ]
-            }
-        });
-    }
-    ctx.reply("✅ ပုံတင်ပြပြီးပါပြီ။ Admin စစ်ဆေးနေပါသည်၊ ခဏစောင့်ပေးပါ။");
+    const photoId = ctx.message.photo.pop().file_id;
+    const docRef = await db.collection("pending_photos").add({ 
+        photoId, userId: ctx.from.id, matchId: matchId, timestamp: new Date() 
+    });
+    
+    // Admin Group တစ်ခုတည်းကိုပဲ ပို့ခြင်း (Loop မလိုတော့ပါ)
+    await bot.telegram.sendPhoto(ADMIN_GROUP_ID, photoId, {
+        caption: "📸 *ရလဒ် Screenshot*",
+        parse_mode: 'Markdown',
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: '🔍 View Match Info', callback_data: `view_${docRef.id}` }],
+                [{ text: '✅ Confirm', callback_data: `confirm_${docRef.id}` }, { text: '❌ Reject', callback_data: `reject_${docRef.id}` }]
+            ]
+        }
+    });
+    ctx.reply("✅ ပုံတင်ပြပြီးပါပြီ။ Admin စစ်ဆေးနေပါသည်၊ ခဏစောင့်ပေးပါ။");
 });
-
 // 3. View Match Info (Toggle Logic with Full Data - FIXED)
 bot.action(/view_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
