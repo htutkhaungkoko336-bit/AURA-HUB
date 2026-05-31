@@ -521,7 +521,45 @@ function loadMatchRooms() {
 
 }
 
+function loadResultTab() {
+    const container = document.getElementById('match-content');
+    container.innerHTML = '<p style="text-align:center; color:#444;">Loading Results...</p>';
 
+    db.collection("registrations")
+        .where("status", "==", "finished")
+        .orderBy("timestamp", "desc")
+        .onSnapshot((querySnapshot) => {
+            container.innerHTML = "";
+            if (querySnapshot.empty) {
+                container.innerHTML = '<p style="text-align:center; color:#333;">No results yet.</p>';
+                return;
+            }
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                const isWin = data.winStatus === "win";
+                const color = isWin ? "#4caf50" : "#d32f2f";
+                
+                container.innerHTML += `
+                <div class="match-card">
+                    <div class="match-header" style="background:${color}; color:#fff;">
+                        <span>${data.mode} - ${data.fee} Ks</span>
+                        <span>${isWin ? "VICTORY" : "DEFEAT"}</span>
+                    </div>
+                    <div class="match-body">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img src="${data.squadLogo}" style="width:40px;height:40px;border-radius:50%; border:2px solid ${color}">
+                            <div>
+                                <div style="font-weight:bold;">${data.squadName || data.playerName}</div>
+                                <div style="font-size:0.7rem; color:#aaa;">${new Date(data.timestamp.toDate()).toLocaleDateString()}</div>
+                            </div>
+                        </div>
+                        <div style="font-size:1.2rem; font-weight:900; color:${color}">${isWin ? "WIN" : "LOSE"}</div>
+                    </div>
+                </div>`;
+            });
+        });
+}
 
 // ✨ မိမိဖွင့်ထားသော အခန်းအား ဖျက်သိမ်းပြီး ပြန်ထွက်သည့် Function
 

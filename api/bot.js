@@ -196,28 +196,52 @@ ${dataB.players.map(p => `👤 ${p.name}`).join('\n')}
     ctx.answerCbQuery();
 });
 
+// ၁။ Confirm နှိပ်လိုက်ရင် Team A လား B လား ရွေးခိုင်းမယ်
 bot.action(/confirm_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
-    const doc = await db.collection("pending_photos").doc(docId).get();
-    if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက် ရှာမတွေ့ပါ။");
     
-    const userId = doc.data().userId;
-    
-    // Admin ကို ပို့လိုက်တဲ့ Message ကို variable တစ်ခုထဲ သိမ်းပါ
-    const sentMessage = await ctx.editMessageCaption("✅ အတည်ပြုသည်။ ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ပို့ပေးပါ။", { 
-        reply_markup: { inline_keyboard: [[{ text: '🔍 View Match Info', callback_data: `view_${docId}` }]] } 
+    // Team ရွေးခိုင်းတဲ့ Keyboard ပေါ်လာမယ်
+    await ctx.editMessageCaption("🏆 ဘယ်အသင်း နိုင်သွားပါသလဲ?", {
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    { text: '🏆 Team A Win', callback_data: `win_A_${docId}` },
+                    { text: '🏆 Team B Win', callback_data: `win_B_${docId}` }
+                ],
+                [{ text: '🔙 Back', callback_data: `view_${docId}` }]
+            ]
+        }
     });
-    
-    // ဒီနေရာမှာ adminMessageId ကို အဓိကထားသိမ်းပါ
-    await db.collection("sessions").doc(docId).set({ 
-        waitingForReceipt: true, 
-        targetChatId: userId,
-        adminMessageId: sentMessage.message_id // <<-- အရေးကြီးဆုံးအချက်
-    });
-    ctx.answerCbQuery();
 });
 
-bot.action(/reject_(.+)/, async (ctx) => {
+// ၂။ ရွေးချယ်ပြီးပြီဆိုရင် Firestore update လုပ်မယ်
+bot.action(/win_(A|B)_(.+)/, async (ctx) => {
+    const winner = ctx.match[1]; // 'A' သို့မဟုတ် 'B'
+    const docId = ctx.match[2];
+    
+    const doc = await db.collection("pending_photos").doc(docId).get();
+    const { matchId, userId } = doc.data();
+    const matchDoc = await db.collection("matches").doc(matchId).get();
+    const matchData = matchDoc.data();
+
+    // အနိုင်/အရှုံး သတ်မှတ်ချက်
+    const teamAStatus = (winner === 'A') ? "win" : "lose";
+    const teamBStatus = (winner === 'B') ? "win" : "lose";
+
+    // Firestore Update
+    await db.collection("registrations").doc(matchData.teamA_LeaderId).update({
+        status: "finished",
+        winStatus: teamAStatus
+    });
+    await db.collection("registrations").doc(matchData.teamB_LeaderId).update({
+        status: "finished",
+        winStatus: teamBStatus
+    });
+
+    await ctx.editMessageCaption(`✅ အတည်ပြုပြီးပါပြီ။ 🏆 Team ${winner} နိုင်ပါတယ်။`);
+    await ctx.telegram.sendMessage(userId, `🎉 ဂုဏ်ယူပါသည်။ ပွဲစဉ်ရလဒ်ကို အတည်ပြုပြီးပါပြီ။`);
+    ctx.answerCbQuery();
+});bot.action(/reject_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
     const doc = await db.collection("pending_photos").doc(docId).get();
     if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက် ရှာမတွေ့ပါ။");

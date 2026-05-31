@@ -345,3 +345,15 @@ body { background-color: #000; color: #fff; margin: 0; padding: 0; display: flex
     border-top: 25px solid #FFD700;
     z-index: 10001;
 }
+/* Result Tab အတွက် CSS */
+.match-card {
+    transition: all 0.3s ease;
+    border: 1px solid #333;
+}
+.match-header {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 15px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
