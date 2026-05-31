@@ -78,21 +78,27 @@ ${footer}`;
     }
 });
 bot.on('photo', async (ctx) => {
-    // Admin Group ထဲမှာ Bot က ပြေစာပို့တဲ့ အပိုင်း
-    if (ctx.chat.id.toString() === ADMIN_GROUP_ID) {
-        const sessionDoc = await db.collection("sessions").doc(ctx.from.id.toString()).get();
-        if (sessionDoc.exists && sessionDoc.data().waitingForReceipt) {
-            const photoId = ctx.message.photo.pop().file_id;
-            await ctx.telegram.sendPhoto(sessionDoc.data().targetChatId, photoId, {
-                caption: "💰 ငွေလွှဲပြေစာ ရောက်ရှိပါပြီ။\n\n🏆 ပွဲစဉ်ပြီးဆုံးသွားပါပြီ။ AURA HUB အား အားပေးမှုအတွက် ကျေးဇူးတင်ပါသည်။"
-            });
-            await db.collection("sessions").doc(ctx.from.id.toString()).delete();
-            return;
-        }
-        return;
-    }
+    // Admin Group ထဲက Message ဖြစ်ပြီး Reply ပြန်ထားတာလား စစ်ပါ
+    if (ctx.chat.id.toString() === ADMIN_GROUP_ID && ctx.message.reply_to_message) {
+        const repliedMessageId = ctx.message.reply_to_message.message_id;
 
-    // User photo logic (Admin Group တစ်ခုတည်းကိုပဲ ပို့မယ်)
+        // Firestore ထဲမှာ adminMessageId နဲ့ ရှာမယ်
+        const sessionSnapshot = await db.collection("sessions")
+            .where("adminMessageId", "==", repliedMessageId)
+            .get();
+
+        if (!sessionSnapshot.empty) {
+            const doc = sessionSnapshot.docs[0];
+            const sessionData = doc.data();
+            const photoId = ctx.message.photo.pop().file_id;
+            
+            await ctx.telegram.sendPhoto(sessionData.targetChatId, photoId, {
+                caption: "💰 ငွေလွှဲပြေစာ ရောက်ရှိပါပြီ။\n\n🏆 ပွဲစဉ်ပြီးဆုံးသွားပါပြီ။ AURA HUB အား အားပေးမှုအတွက် ကျေးဇူးတင်ပါသည်။"
+            });
+            await doc.ref.delete(); // Session ပြီးသွားပြီမို့ ဖျက်လိုက်မယ်
+            return;
+        }
+    }    // User photo logic (Admin Group တစ်ခုတည်းကိုပဲ ပို့မယ်)
     const sessionDoc = await db.collection("sessions").doc(ctx.from.id.toString()).get();
     const session = sessionDoc.exists ? sessionDoc.data() : {};
     const matchId = session.currentMatchId;
@@ -190,27 +196,25 @@ ${dataB.players.map(p => `👤 ${p.name}`).join('\n')}
     ctx.answerCbQuery();
 });
 
-// 4. Admin Actions (Confirm/Reject)
 bot.action(/confirm_(.+)/, async (ctx) => {
-    const docId = ctx.match[1];
-    const doc = await db.collection("pending_photos").doc(docId).get();
-    if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက် ရှာမတွေ့ပါ။");
-    
-    const userId = doc.data().userId;
-    await ctx.answerCbQuery("ပြေစာပို့ရန် စောင့်ဆိုင်းနေပါသည်...");
-    
-    // ခလုတ်အသစ်ပြန်ဆောက်: View Match Info ကိုပဲ ချန်ထားမယ်
-    const newKeyboard = {
-        inline_keyboard: [
-            [{ text: '🔍 View Match Info', callback_data: `view_${docId}` }]
-        ]
-    };
-
-    await ctx.editMessageCaption("✅ အတည်ပြုသည်။ ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ပို့ပေးပါ။", { 
-        reply_markup: newKeyboard 
-    });
-    
-    await db.collection("sessions").doc(ctx.from.id.toString()).set({ waitingForReceipt: true, targetChatId: userId });
+    const docId = ctx.match[1];
+    const doc = await db.collection("pending_photos").doc(docId).get();
+    if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက် ရှာမတွေ့ပါ။");
+    
+    const userId = doc.data().userId;
+    
+    // Admin ကို ပို့လိုက်တဲ့ Message ကို variable တစ်ခုထဲ သိမ်းပါ
+    const sentMessage = await ctx.editMessageCaption("✅ အတည်ပြုသည်။ ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ပို့ပေးပါ။", { 
+        reply_markup: { inline_keyboard: [[{ text: '🔍 View Match Info', callback_data: `view_${docId}` }]] } 
+    });
+    
+    // ဒီနေရာမှာ adminMessageId ကို အဓိကထားသိမ်းပါ
+    await db.collection("sessions").doc(docId).set({ 
+        waitingForReceipt: true, 
+        targetChatId: userId,
+        adminMessageId: sentMessage.message_id // <<-- အရေးကြီးဆုံးအချက်
+    });
+    ctx.answerCbQuery();
 });
 
 bot.action(/reject_(.+)/, async (ctx) => {
