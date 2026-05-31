@@ -196,67 +196,57 @@ ${dataB.players.map(p => `👤 ${p.name}`).join('\n')}
     ctx.answerCbQuery();
 });
 
-// Admin Confirm လုပ်သည့်အပိုင်း (ပေါင်းစပ်ပြီးသား)
 bot.action(/confirm_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
     
-    // ၁။ Pending Photo ထဲက Data ကို ယူမယ်
     const doc = await db.collection("pending_photos").doc(docId).get();
     if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက် ရှာမတွေ့ပါ။");
     
     const { matchId, userId } = doc.data();
-
-    // ၂။ Match အချက်အလက်ကို ဆွဲထုတ်မယ်
     const matchDoc = await db.collection("matches").doc(matchId).get();
     if (!matchDoc.exists) return ctx.answerCbQuery("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
     const matchData = matchDoc.data();
 
-try {
-    // ဤနေရာတွင် ကျွန်တော်ပေးသည့် Batch Code ကို အစားထိုးထည့်ပါ
-    const batch = db.batch();
+    try {
+        // ၁။ Batch Update လုပ်ခြင်း
+        const batch = db.batch();
+        const matchRef = db.collection("matches").doc(matchId);
+        batch.update(matchRef, { status: "finished", winner: "teamA" });
 
-    // ၁။ Match ကို update လုပ်ခြင်း
-    const matchRef = db.collection("matches").doc(matchId);
-    batch.update(matchRef, { 
-        status: "finished",
-        winner: "teamA" // လိုအပ်ရင် ဤနေရာကို "teamB" သို့ ပြောင်းနိုင်သည်
-    });
+        batch.update(db.collection("registrations").doc(matchData.teamA_LeaderId), { 
+            status: "finished", matchStatus: "finished", winStatus: "win" 
+        });
+        batch.update(db.collection("registrations").doc(matchData.teamB_LeaderId), { 
+            status: "finished", matchStatus: "finished", winStatus: "lose" 
+        });
+        await batch.commit();
 
-    // ၂။ Team A ရဲ့ registration ကို update လုပ်ခြင်း
-    const regRefA = db.collection("registrations").doc(matchData.teamA_LeaderId);
-    batch.update(regRefA, { 
-        status: "finished", 
-        matchStatus: "finished",
-        winStatus: "win" // Team A နိုင်လျှင်
-    });
+        // ၂။ Message ကိုအရင်ပြင်ပြီးမှ sentMessage ID ကို ယူခြင်း
+        const sentMessage = await ctx.editMessageCaption("✅ ပွဲစဉ်ရလဒ် အတည်ပြုပြီးပါပြီ။\n💰 ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ဤ Message ကို Reply ပြန်ပြီး ပို့ပေးပါ။", { 
+            reply_markup: { 
+                inline_keyboard: [[{ text: '🔍 View Match Info', callback_data: `view_${docId}` }]] 
+            } 
+        });
 
-    // ၃။ Team B ရဲ့ registration ကို update လုပ်ခြင်း
-    const regRefB = db.collection("registrations").doc(matchData.teamB_LeaderId);
-    batch.update(regRefB, { 
-        status: "finished", 
-        matchStatus: "finished",
-        winStatus: "lose" // Team B ရှုံးလျှင်
-    });
+        // ၃။ Session ထဲမှာ သိမ်းခြင်း (sentMessage.message_id ကို အခုမှ သုံးလို့ရပါပြီ)
+        await db.collection("sessions").doc(docId).set({ 
+            waitingForReceipt: true, 
+            targetChatId: userId,
+            adminMessageId: sentMessage.message_id, 
+            matchId: matchId,
+            teamA_LeaderId: matchData.teamA_LeaderId,
+            teamB_LeaderId: matchData.teamB_LeaderId
+        });
 
-    // ၄။ Batch အားလုံးကို တစ်ပြိုင်တည်း commit လုပ်ခြင်း
-    await batch.commit();
-
-    // ၅။ Admin Message ကို ပြင်ဆင်မယ် (ဆက်လက်လုပ်ဆောင်ရန်)
-    const sentMessage = await ctx.editMessageCaption("✅ ပွဲစဉ်ရလဒ် အတည်ပြုပြီးပါပြီ။\n💰 ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ဤ Message ကို Reply ပြန်ပြီး ပို့ပေးပါ။", { 
-        reply_markup: { 
-            inline_keyboard: [[{ text: '🔍 View Match Info', callback_data: `view_${docId}` }]] 
-        } 
-    });
-            // ၆။ User ကို အကြောင်းကြားမယ်
-        await ctx.telegram.sendMessage(userId, "🎉 ဂုဏ်ယူပါသည်။ ပွဲစဉ်ရလဒ်ကို အတည်ပြုပြီးပါပြီ။ငွေလွှဲပြေစာ (SS) ကို စောင့်ပေးပါ");
-        
+        // ၄။ User ကို အကြောင်းကြားခြင်း
+        await ctx.telegram.sendMessage(userId, "🎉 ဂုဏ်ယူပါသည်။ ပွဲစဉ်ရလဒ်ကို အတည်ပြုပြီးပါပြီ။ ငွေလွှဲပြေစာ (SS) ကို စောင့်ပေးပါ။");
         ctx.answerCbQuery("အောင်မြင်စွာ အတည်ပြုပြီးပါပြီ");
+        
     } catch (error) {
         console.error(error);
         ctx.answerCbQuery("❌ Error: စနစ်အမှားအယွင်းရှိပါသည်။");
     }
-});
-bot.action(/reject_(.+)/, async (ctx) => {
+});bot.action(/reject_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
     const doc = await db.collection("pending_photos").doc(docId).get();
     if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက် ရှာမတွေ့ပါ။");

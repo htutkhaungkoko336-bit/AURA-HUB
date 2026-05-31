@@ -369,7 +369,7 @@ async function loadResultTab() {
 
     // Registration အစား Matches ကိုပဲ query လုပ်ပါမယ်
     db.collection("matches")
-        .where("status", "==", "finished")
+        .where("matchStatus", "==", "finished") // <--- ဒီနေရာမှာ ပြင်လိုက်ပါ
         .orderBy("matchTimestamp", "desc")
         .onSnapshot(async (snapshot) => {
             container.innerHTML = "";
@@ -397,33 +397,7 @@ async function loadResultTab() {
                 container.innerHTML += renderMatchResultCard(dataB, matchData, !isWinnerA);
             }
         });
-}
-
-// Result Card ကို ဆောက်ပေးမည့် Helper Function (ဒါကို script ရဲ့ အပြင်ဘက်မှာ ထည့်ပါ)
-function renderMatchResultCard(regData, matchData, isWinner) {
-    if (!regData) return "";
-    const color = isWinner ? "#4caf50" : "#d32f2f";
-    const name = regData.squadName || regData.playerName;
-    
-    return `
-    <div class="match-card">
-        <div class="match-header" style="background:${color}; color:#fff;">
-            <span>${matchData.fee} Ks</span>
-            <span>${isWinner ? "VICTORY" : "DEFEAT"}</span>
-        </div>
-        <div class="match-body">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <img src="${regData.squadLogo}" style="width:40px;height:40px;border-radius:50%; border:2px solid ${color}">
-                <div>
-                    <div style="font-weight:bold;">${name}</div>
-                    <div style="font-size:0.7rem; color:#aaa;">${matchData.matchTimestamp ? matchData.matchTimestamp.toDate().toLocaleDateString() : 'Recent'}</div>
-                </div>
-            </div>
-            <div style="font-size:1.2rem; font-weight:900; color:${color}">${isWinner ? "WIN" : "LOSE"}</div>
-        </div>
-    </div>`;
-}
-// ✨ မိမိဖွင့်ထားသော အခန်းအား ဖျက်သိမ်းပြီး ပြန်ထွက်သည့် Function
+}// ✨ မိမိဖွင့်ထားသော အခန်းအား ဖျက်သိမ်းပြီး ပြန်ထွက်သည့် Function
 async function cancelMyRoom() {
     if (!myTeamInfo || !myTeamInfo.id) return;
     if (confirm("မင်းရဲ့အခန်းကို ဖျက်သိမ်းမလား?")) {
