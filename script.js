@@ -271,22 +271,23 @@ function switchTab(tabName, element) {
     loadMatchRooms();
 }
 function loadMatchRooms() {
-    const container = document.getElementById('match-content');
+const container = document.getElementById('match-content');
     if (!container) return;
-    // 👇 ဒီစာကြောင်းလေး တစ်ကြောင်းတည်းကို အပေါ်ဆုံးမှာ ထည့်ပေးလိုက်ပါ (Error မတက်အောင် ကာကွယ်ခြင်း)
     if (!myTeamInfo || !myTeamInfo.fee) return;
+
     container.innerHTML = '<p style="text-align:center; color:#444; font-size:0.8rem;">Loading...</p>';
-    // ... ကျန်တဲ့ ကုဒ်တွေက အောက်မှာ ပုံမှန်အတိုင်း ဆက်ရှိနေပါစေ ...
-    // 🔒 Playing Tab ထဲရောက်ရင် Create Room ခလုတ်ကြီးကို ဖျောက်ထားပြီး Waiting Room ကျမှ ပြန်ပြပေးခြင်း
+
+    // Create Room ခလုတ် ဖျောက်ရန် Logic
     const createRoomBtn = document.querySelector('.create-room-card');
     if (createRoomBtn) {
-        if (currentMatchTab === 'playing') {
+        // Playing သို့မဟုတ် Result Tab ဖြစ်နေရင် ခလုတ်ကို ဖျောက်မယ်
+        if (currentMatchTab === 'playing' || currentMatchTab === 'result') {
             createRoomBtn.style.display = 'none';
         } else {
-            createRoomBtn.style.display = 'block'; // သို့မဟုတ် မူရင်း style အတိုင်း 'flex' ဟု ပြောင်းနိုင်သည်
+            createRoomBtn.style.display = 'block';
         }
     }
-    // 🔄 Tab အလိုက် ဒေတာဆွဲထုတ်မည့် လမ်းကြောင်းအား ခွဲထုတ်ခြင်း
+        // 🔄 Tab အလိုက် ဒေတာဆွဲထုတ်မည့် လမ်းကြောင်းအား ခွဲထုတ်ခြင်း
     if (currentMatchTab === 'playing') {
         // 🎮 [PLAYING TAB LOGIC]: matches collection ဆီကနေ ပွဲစဉ်များကို တိုက်ရိုက်ဖတ်ပြီး ခလုတ်မပါသော UI ဆွဲမည်
         db.collection("matches")
@@ -362,14 +363,12 @@ function loadMatchRooms() {
             });
     }
 }
-// အသစ်ပြင်ဆင်ထားသော loadResultTab Function
 async function loadResultTab() {
     const container = document.getElementById('match-content');
     container.innerHTML = '<p style="text-align:center; color:#444;">Loading Results...</p>';
 
-    // Registration အစား Matches ကိုပဲ query လုပ်ပါမယ်
     db.collection("matches")
-        .where("matchStatus", "==", "finished") // <--- ဒီနေရာမှာ ပြင်လိုက်ပါ
+        .where("matchStatus", "==", "finished")
         .orderBy("matchTimestamp", "desc")
         .onSnapshot(async (snapshot) => {
             container.innerHTML = "";
@@ -380,24 +379,35 @@ async function loadResultTab() {
 
             for (const doc of snapshot.docs) {
                 const matchData = doc.data();
-                
-                // Match ထဲက Leader ID တွေကို သုံးပြီး Registration အချက်အလက် ဆွဲထုတ်မယ်
                 const teamADoc = await db.collection("registrations").doc(matchData.teamA_LeaderId).get();
                 const teamBDoc = await db.collection("registrations").doc(matchData.teamB_LeaderId).get();
                 
                 const dataA = teamADoc.data();
                 const dataB = teamBDoc.data();
 
-                // ဘယ်သူနိုင်သလဲဆိုတာ စစ်ဆေးခြင်း
-                const isWinnerA = matchData.winner === "teamA"; 
-                
-                // Team A အတွက် Card
-                container.innerHTML += renderMatchResultCard(dataA, matchData, isWinnerA);
-                // Team B အတွက် Card
-                container.innerHTML += renderMatchResultCard(dataB, matchData, !isWinnerA);
+                // ရလဒ်သက်သက် ပြပေးမည့် Card
+                container.innerHTML += `
+                <div class="match-card" style="border: 1px solid #444; background: #111; margin-bottom: 10px; padding: 15px; border-radius: 8px;">
+                    <div style="text-align: center; color: #c9a66b; font-size: 0.8rem; margin-bottom: 10px;">MATCH ID: ${matchData.matchId}</div>
+                    <div style="display: flex; justify-content: space-around; align-items: center;">
+                        <div style="text-align:center;">
+                            <img src="${dataA.squadLogo}" style="width:40px; height:40px; border-radius:50%; border:1px solid #333;">
+                            <div style="color: ${matchData.winner === 'teamA' ? '#c9a66b' : '#fff'}; margin-top:5px;">${dataA.squadName}</div>
+                        </div>
+                        <div style="font-weight:bold; color:#555;">VS</div>
+                        <div style="text-align:center;">
+                            <img src="${dataB.squadLogo}" style="width:40px; height:40px; border-radius:50%; border:1px solid #333;">
+                            <div style="color: ${matchData.winner === 'teamB' ? '#c9a66b' : '#fff'}; margin-top:5px;">${dataB.squadName}</div>
+                        </div>
+                    </div>
+                    <div style="text-align:center; margin-top:10px; font-size:0.8rem; color:#aaa;">
+                        Winner: <span style="color:#c9a66b; font-weight:bold;">${matchData.winner === 'teamA' ? dataA.squadName : dataB.squadName}</span>
+                    </div>
+                </div>`;
             }
         });
-}// ✨ မိမိဖွင့်ထားသော အခန်းအား ဖျက်သိမ်းပြီး ပြန်ထွက်သည့် Function
+}
+// ✨ မိမိဖွင့်ထားသော အခန်းအား ဖျက်သိမ်းပြီး ပြန်ထွက်သည့် Function
 async function cancelMyRoom() {
     if (!myTeamInfo || !myTeamInfo.id) return;
     if (confirm("မင်းရဲ့အခန်းကို ဖျက်သိမ်းမလား?")) {
