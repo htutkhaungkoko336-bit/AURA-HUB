@@ -272,56 +272,46 @@ function switchTab(tabName, element) {
 }
 function loadMatchRooms() {
 const container = document.getElementById('match-content');
-    if (!container) return;
-    if (!myTeamInfo || !myTeamInfo.fee) return;
+    if (!container || !myTeamInfo) return;
 
-    container.innerHTML = '<p style="text-align:center; color:#444; font-size:0.8rem;">Loading...</p>';
+    container.innerHTML = '<p style="text-align:center; color:#444;">Loading...</p>';
 
-    // Create Room ခလုတ် ဖျောက်ရန် Logic
+    // Create Room ခလုတ်ကို History Tab မှာ ဖျောက်ထားမယ်
     const createRoomBtn = document.querySelector('.create-room-card');
     if (createRoomBtn) {
-        // Playing သို့မဟုတ် Result Tab ဖြစ်နေရင် ခလုတ်ကို ဖျောက်မယ်
-        if (currentMatchTab === 'playing' || currentMatchTab === 'result') {
-            createRoomBtn.style.display = 'none';
-        } else {
-            createRoomBtn.style.display = 'block';
-        }
+        createRoomBtn.style.display = (currentMatchTab === 'waiting') ? 'block' : 'none';
     }
-        // 🔄 Tab အလိုက် ဒေတာဆွဲထုတ်မည့် လမ်းကြောင်းအား ခွဲထုတ်ခြင်း
-    if (currentMatchTab === 'playing') {
-        // 🎮 [PLAYING TAB LOGIC]: matches collection ဆီကနေ ပွဲစဉ်များကို တိုက်ရိုက်ဖတ်ပြီး ခလုတ်မပါသော UI ဆွဲမည်
+
+    if (currentMatchTab === 'finished') {
+        // 🔥 HISTORY TAB LOGIC
         db.collection("matches")
+            .where("matchStatus", "==", "finished")
             .orderBy("matchTimestamp", "desc")
-            .onSnapshot((querySnapshot) => {
+            .limit(10) // နောက်ဆုံးပွဲ ၁၀ ပွဲပဲ ပြမယ်
+            .onSnapshot((snapshot) => {
                 container.innerHTML = "";
-                if (querySnapshot.empty) {
-                    container.innerHTML = `<p style="text-align:center; color:#333; margin-top:30px; font-size:0.8rem;">No matches running in playing tab yet.</p>`;
+                if (snapshot.empty) {
+                    container.innerHTML = '<p style="text-align:center; color:#333;">No match history found.</p>';
                     return;
                 }
-                querySnapshot.forEach((doc) => {
+                snapshot.forEach(doc => {
                     const data = doc.data();
-                    // နှစ်ဖက်စလုံးရဲ့ အသင်းနာမည်နှင့် Logo များဖြင့် တိုက်ရိုက် Card ပုံစံဆွဲခြင်း
-                    const roomBar = `
-                    <div class="match-card" style="border: 1px solid #333;">
-                        <div class="match-header" style="justify-content: center;">
-                            <span style="color:#c9a66b; font-weight:bold; font-size: 11px;">🎮 LIVE MATCHING</span>
+                    const isWinner = data.winner === 'teamA' ? data.teamA : data.teamB; // Logic အရ နိုင်တဲ့အသင်း
+                    
+                    container.innerHTML += `
+                    <div class="match-card" style="border: 1px solid #c9a66b; margin-bottom: 10px; padding: 10px; border-radius: 8px; background: #1a1a1a;">
+                        <div style="font-size: 0.7rem; color: #c9a66b;">MATCH ID: ${data.matchId}</div>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:5px;">
+                            <span>${data.teamA}</span>
+                            <b style="color:#555;">VS</b>
+                            <span>${data.teamB}</span>
                         </div>
-                        <div class="match-body">
-                            <div style="display:flex; align-items:center; gap:10px; width: 40%;">
-                                <img src="${data.teamALogo || ''}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
-                                <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Team <span style="color:#c9a66b; font-weight:bold;">${data.teamA}</span></div>
-                            </div>
-                            <div style="color: #c9a66b; font-weight:bold; font-style:italic; width: 10%; text-align:center;">Vs</div>
-                            <div style="display:flex; align-items:center; gap:10px; justify-content:flex-end; width: 40%; text-align: right;">
-                                <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Team <span style="color:#c9a66b; font-weight:bold;">${data.teamB}</span></div>
-                                <img src="${data.teamBLogo || ''}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
-                            </div>
+                        <div style="text-align:center; margin-top:8px; font-size: 0.8rem; color: #fff;">
+                            Winner: <span style="color: #4caf50;">${isWinner}</span>
                         </div>
                     </div>`;
-                    container.innerHTML += roomBar;
                 });
-            });
-    } else {
+            });    } else {
         // 🚪 [WAITING ROOM TAB LOGIC]: မူရင်းအတိုင်း registrations ထဲက အခန်းဖွင့်ထားသူများကိုပဲ ပြသပေးမည်
         db.collection("registrations")
             .where("fee", "==", Number(myTeamInfo.fee))
