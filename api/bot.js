@@ -210,15 +210,19 @@ bot.action(/confirm_(.+)/, async (ctx) => {
     const matchData = matchDoc.data();
 
     try {
-        // ၂။ Batch Update (matchStatus ကို သုံးပြီး အကုန်ပြင်ပါ)
+        // ၂။ Batch Update (matchStatus နဲ့ results ကို တခါတည်းသိမ်းမယ်)
         const batch = db.batch();
-        const matchRef = db.collection("matches").doc(matchId);
         
+        const matchRef = db.collection("matches").doc(matchId);
+        const resultRef = db.collection("results").doc(); // ID အသစ်တစ်ခု generate လုပ်မယ်
+
+        // Match status ပြောင်းခြင်း
         batch.update(matchRef, { 
-            matchStatus: "finished", // status အစား matchStatus
+            matchStatus: "finished", 
             winner: "teamA" 
         });
 
+        // Registration များ update လုပ်ခြင်း
         batch.update(db.collection("registrations").doc(matchData.teamA_LeaderId), { 
             matchStatus: "finished", 
             winStatus: "win" 
@@ -227,6 +231,17 @@ bot.action(/confirm_(.+)/, async (ctx) => {
             matchStatus: "finished", 
             winStatus: "lose" 
         });
+
+        // Result အသစ်ထည့်ခြင်း
+        batch.set(resultRef, {
+            matchId: matchId,
+            teamA: matchData.teamA,
+            teamB: matchData.teamB,
+            winner: "teamA",
+            fee: matchData.fee || 0,
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
+        });
+
         await batch.commit();
 
         // ၃။ Message ပြင်ခြင်း
@@ -236,7 +251,7 @@ bot.action(/confirm_(.+)/, async (ctx) => {
             } 
         });
 
-        // ၄။ Session သိမ်းခြင်း
+        // ၄။ Session သိမ်းခြင်း (Receipt စောင့်ရန်)
         await db.collection("sessions").doc(docId).set({ 
             waitingForReceipt: true, 
             targetChatId: userId,

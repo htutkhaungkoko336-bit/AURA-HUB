@@ -364,48 +364,36 @@ const container = document.getElementById('match-content');
     }
 }
 async function loadResultTab() {
-    const container = document.getElementById('match-content');
-    container.innerHTML = '<p style="text-align:center; color:#444;">Loading Results...</p>';
+    const resultContainer = document.getElementById('match-content');
+    resultContainer.innerHTML = '<p style="text-align:center; color:#888;">Loading matches...</p>';
 
-    db.collection("matches")
-        .where("matchStatus", "==", "finished")
-        .orderBy("matchTimestamp", "desc")
-        .onSnapshot(async (snapshot) => {
-            container.innerHTML = "";
-            if (snapshot.empty) {
-                container.innerHTML = '<p style="text-align:center; color:#333;">No results yet.</p>';
-                return;
-            }
+    // results collection ကို ဖတ်ခြင်း
+    const snapshot = await db.collection("results")
+        .orderBy("timestamp", "desc")
+        .limit(10)
+        .get();
 
-            for (const doc of snapshot.docs) {
-                const matchData = doc.data();
-                const teamADoc = await db.collection("registrations").doc(matchData.teamA_LeaderId).get();
-                const teamBDoc = await db.collection("registrations").doc(matchData.teamB_LeaderId).get();
-                
-                const dataA = teamADoc.data();
-                const dataB = teamBDoc.data();
+    if (snapshot.empty) {
+        resultContainer.innerHTML = '<p style="text-align:center;">No results found.</p>';
+        return;
+    }
 
-                // ရလဒ်သက်သက် ပြပေးမည့် Card
-                container.innerHTML += `
-                <div class="match-card" style="border: 1px solid #444; background: #111; margin-bottom: 10px; padding: 15px; border-radius: 8px;">
-                    <div style="text-align: center; color: #c9a66b; font-size: 0.8rem; margin-bottom: 10px;">MATCH ID: ${matchData.matchId}</div>
-                    <div style="display: flex; justify-content: space-around; align-items: center;">
-                        <div style="text-align:center;">
-                            <img src="${dataA.squadLogo}" style="width:40px; height:40px; border-radius:50%; border:1px solid #333;">
-                            <div style="color: ${matchData.winner === 'teamA' ? '#c9a66b' : '#fff'}; margin-top:5px;">${dataA.squadName}</div>
-                        </div>
-                        <div style="font-weight:bold; color:#555;">VS</div>
-                        <div style="text-align:center;">
-                            <img src="${dataB.squadLogo}" style="width:40px; height:40px; border-radius:50%; border:1px solid #333;">
-                            <div style="color: ${matchData.winner === 'teamB' ? '#c9a66b' : '#fff'}; margin-top:5px;">${dataB.squadName}</div>
-                        </div>
-                    </div>
-                    <div style="text-align:center; margin-top:10px; font-size:0.8rem; color:#aaa;">
-                        Winner: <span style="color:#c9a66b; font-weight:bold;">${matchData.winner === 'teamA' ? dataA.squadName : dataB.squadName}</span>
-                    </div>
-                </div>`;
-            }
-        });
+    resultContainer.innerHTML = ''; 
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        // သင်၏ ပုံကြမ်းအတိုင်း Card ပုံစံဖော်ပြခြင်း
+        resultContainer.innerHTML += `
+            <div style="background: #111; border: 1px solid #333; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+                <p style="font-size: 0.75rem; color: #c9a66b;">Fee: ${data.fee} Ks</p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                    <span>🏆 ${data.teamA}</span>
+                    <span style="color:#888;">vs</span>
+                    <span>${data.teamB}</span>
+                </div>
+                <p style="text-align: center; color: #00ff00; margin-top: 8px;">Winner: ${data.winner}</p>
+            </div>
+        `;
+    });
 }
 // ✨ မိမိဖွင့်ထားသော အခန်းအား ဖျက်သိမ်းပြီး ပြန်ထွက်သည့် Function
 async function cancelMyRoom() {
