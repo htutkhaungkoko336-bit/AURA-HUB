@@ -357,3 +357,17 @@ body { background-color: #000; color: #fff; margin: 0; padding: 0; display: flex
     font-size: 0.75rem;
     font-weight: bold;
 }
+.hidden-page {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    opacity: 0;
+    visibility: hidden; /* အဲ့ဒီအစား display: none သုံးမယ့်နေရာမှာ ဒါကိုသုံး */
+    transition: opacity 0.3s;
+}
+
+.active-page {
+    opacity: 1;
+    visibility: visible;
+}

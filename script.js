@@ -121,26 +121,33 @@ function previewScreenshot(event) {
     }
 }
 
-// 🎯 [SUPER FIXED]: ပုံပေါ်လာပြီးနောက် ထပ်မံနှိပ်ပါကလည်း File Input ကို ပြန်ဖွင့်ပေးမည့် စနစ်
+// 🔥 [UPDATED]: Logo Preview & Re-selection System
+const logoInput = document.getElementById('sqLogo');
+const logoPreviewImg = document.getElementById('logoPreview');
+
 function previewLogo(event) {
     const file = event.target.files[0];
     const output = document.getElementById('logoPreview');
     const label = document.getElementById('logoLabel');
-    const fileInput = document.getElementById('sqLogo');
     
     if (file) {
         const reader = new FileReader();
-        reader.onload = function() {
-            output.src = reader.result;
+        reader.onload = function(e) {
+            output.src = e.target.result;
             output.style.display = 'block';
             if (label) label.style.display = 'none';
-
-            // 🔥 [MAGIC LINE]: ပုံထွက်လာပြီးနောက် အဲဒီပုံကို ကလစ်ထပ်နှိပ်ရင် ဖိုင်ရွေးပုံး ပြန်ပွင့်လာအောင် ဖန်တီးခြင်း
-            output.onclick = () => fileInput.click();
         };
         reader.readAsDataURL(file);
     }
 }
+
+// Event Delegator (ပုံကို ပြန်နှိပ်ရင် File Input ပြန်ပွင့်အောင်လုပ်ခြင်း)
+document.body.addEventListener('click', function(e) {
+    if (e.target && e.target.id === 'logoPreview') {
+        const sqLogoInput = document.getElementById('sqLogo');
+        if (sqLogoInput) sqLogoInput.click();
+    }
+});
 
 // --- IMGBB UPLOAD FUNCTION ---
 async function uploadToImgBB(file) {
