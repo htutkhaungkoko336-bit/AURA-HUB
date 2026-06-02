@@ -395,6 +395,33 @@ async function loadResultTab() {
         `;
     });
 }
+// --- [NEW] RESULT TAB AUTO-UPDATE & SWITCHING LOGIC ---
+db.collection("results")
+    .orderBy("timestamp", "desc")
+    .onSnapshot((snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+                console.log("New result detected!");
+                
+                // ၁။ Result Tab ကို Refresh လုပ်ပေးပါ
+                loadResultTab(); 
+                
+                // ၂။ အရေးကြီး: Tab ကို အလိုအလျောက် ပြောင်းချင်လျှင် ဤနေရာတွင် Function ခေါ်ပါ
+                // ဥပမာ - showResultTab() ဆိုသည့် function ကို အောက်တွင် ရေးပေးရပါမည်
+                showResultTab(); 
+            }
+        });
+    });
+
+// ၃။ Tab ပြောင်းပေးမည့် Function အသစ် (ဤ Function ကို သင့် Script အောက်ဆုံးတွင် ထည့်ပါ)
+function showResultTab() {
+    // သင့် Tab ခလုတ်များ၏ ID အမည်များအတိုင်း ပြင်ပေးပါ
+    // ဥပမာ - result-tab-btn ဆိုသည်မှာ Result ကိုနှိပ်မည့် ခလုတ် ID ဖြစ်သည်
+    const resultBtn = document.getElementById('result-tab-btn'); 
+    if (resultBtn) {
+        resultBtn.click(); // Result Tab ခလုတ်ကို အလိုအလျောက် နှိပ်လိုက်သည့်သဘော
+    }
+}
 // ✨ မိမိဖွင့်ထားသော အခန်းအား ဖျက်သိမ်းပြီး ပြန်ထွက်သည့် Function
 async function cancelMyRoom() {
     if (!myTeamInfo || !myTeamInfo.id) return;
