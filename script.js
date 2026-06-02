@@ -1,4 +1,5 @@
 // --- DATA & STATE ---
+let currentListener = null;
 const mapData = [
     { 
         mode: "5vs5", 
@@ -278,66 +279,99 @@ function switchTab(tabName, element) {
     loadMatchRooms();
 }
 function loadMatchRooms() {
-const container = document.getElementById('match-content');
-    if (!container) return;
-    if (!myTeamInfo || !myTeamInfo.fee) return;
-
-    container.innerHTML = '<p style="text-align:center; color:#444; font-size:0.8rem;">Loading...</p>';
-
-    // Create Room ခလုတ် ဖျောက်ရန် Logic
+    const container = document.getElementById('match-content');
     const createRoomBtn = document.querySelector('.create-room-card');
+    
+    if (!container) return;
+    
+    // အရေးကြီးဆုံး: အရင်နားထောင်နေတဲ့ Listener ကို ပိတ်မှ နောက်တစ်ခုကို စလို့ရမယ်
+    if (currentListener) {
+        currentListener();
+        currentListener = null;
+    }
+
+    // Create Room ခလုတ် ဖျောက်ရန်/ပြရန်
     if (createRoomBtn) {
-        // Playing သို့မဟုတ် Result Tab ဖြစ်နေရင် ခလုတ်ကို ဖျောက်မယ်
         if (currentMatchTab === 'playing' || currentMatchTab === 'result') {
             createRoomBtn.style.display = 'none';
         } else {
             createRoomBtn.style.display = 'block';
         }
     }
-        // 🔄 Tab အလိုက် ဒေတာဆွဲထုတ်မည့် လမ်းကြောင်းအား ခွဲထုတ်ခြင်း
+
+    container.innerHTML = '<p style="text-align:center; color:#444; font-size:0.8rem;">Loading...</p>';
+
+    // --- PLAYING TAB ---
     if (currentMatchTab === 'playing') {
-        // 🎮 [PLAYING TAB LOGIC]: matches collection ဆီကနေ ပွဲစဉ်များကို တိုက်ရိုက်ဖတ်ပြီး ခလုတ်မပါသော UI ဆွဲမည်
-        db.collection("matches")
+        currentListener = db.collection("matches")
             .orderBy("matchTimestamp", "desc")
             .onSnapshot((querySnapshot) => {
                 container.innerHTML = "";
                 if (querySnapshot.empty) {
-                    container.innerHTML = `<p style="text-align:center; color:#333; margin-top:30px; font-size:0.8rem;">No matches running in playing tab yet.</p>`;
+                    container.innerHTML = `<p style="text-align:center; color:#333; margin-top:30px; font-size:0.8rem;">No matches running.</p>`;
                     return;
                 }
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
-                    // နှစ်ဖက်စလုံးရဲ့ အသင်းနာမည်နှင့် Logo များဖြင့် တိုက်ရိုက် Card ပုံစံဆွဲခြင်း
-                    const roomBar = `
-                    <div class="match-card" style="border: 1px solid #333;">
+                    container.innerHTML += `
+                    <div class="match-card" style="border: 1px solid #333; margin-bottom:10px;">
                         <div class="match-header" style="justify-content: center;">
                             <span style="color:#c9a66b; font-weight:bold; font-size: 11px;">🎮 LIVE MATCHING</span>
                         </div>
                         <div class="match-body">
                             <div style="display:flex; align-items:center; gap:10px; width: 40%;">
                                 <img src="${data.teamALogo || ''}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
-                                <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Team <span style="color:#c9a66b; font-weight:bold;">${data.teamA}</span></div>
+                                <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${data.teamA}</div>
                             </div>
                             <div style="color: #c9a66b; font-weight:bold; font-style:italic; width: 10%; text-align:center;">Vs</div>
                             <div style="display:flex; align-items:center; gap:10px; justify-content:flex-end; width: 40%; text-align: right;">
-                                <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">Team <span style="color:#c9a66b; font-weight:bold;">${data.teamB}</span></div>
+                                <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${data.teamB}</div>
                                 <img src="${data.teamBLogo || ''}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
                             </div>
                         </div>
                     </div>`;
-                    container.innerHTML += roomBar;
                 });
             });
-    } else {
-        // 🚪 [WAITING ROOM TAB LOGIC]: မူရင်းအတိုင်း registrations ထဲက အခန်းဖွင့်ထားသူများကိုပဲ ပြသပေးမည်
-        db.collection("registrations")
-            .where("fee", "==", Number(myTeamInfo.fee))
-            .where("status", "==", "confirm")
-            .where("matchStatus", "==", currentMatchTab)
+    } 
+    // --- RESULT TAB ---
+    else if (currentMatchTab === 'result') {
+        currentListener = db.collection("results")
+            .orderBy("timestamp", "desc")
+            .limit(10)
             .onSnapshot((querySnapshot) => {
                 container.innerHTML = "";
                 if (querySnapshot.empty) {
-                    container.innerHTML = `<p style="text-align:center; color:#333; margin-top:30px; font-size:0.8rem;">No entries in ${currentMatchTab} yet.</p>`;
+                    container.innerHTML = '<p style="text-align:center; color:#444; font-size:0.8rem;">No results found.</p>';
+                    return;
+                }
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    container.innerHTML += `
+                        <div style="background: #111; border: 1px solid #333; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+                            <p style="font-size: 0.75rem; color: #c9a66b;">Fee: ${data.fee} Ks</p>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                                <span style="color:#fff;">🏆 ${data.teamA}</span>
+                                <span style="color:#888;">vs</span>
+                                <span style="color:#fff;">${data.teamB}</span>
+                            </div>
+                            <p style="text-align: center; color: #00ff00; margin-top: 8px; font-size: 0.8rem;">Winner: ${data.winner}</p>
+                        </div>
+                    `;
+                });
+            });
+    }
+    // --- WAITING TAB ---
+    else {
+        if (!myTeamInfo || !myTeamInfo.fee) return;
+        
+        currentListener = db.collection("registrations")
+            .where("fee", "==", Number(myTeamInfo.fee))
+            .where("status", "==", "confirm")
+            .where("matchStatus", "==", "waiting")
+            .onSnapshot((querySnapshot) => {
+                container.innerHTML = "";
+                if (querySnapshot.empty) {
+                    container.innerHTML = `<p style="text-align:center; color:#333; margin-top:30px; font-size:0.8rem;">No entries in waiting room.</p>`;
                     return;
                 }
                 querySnapshot.forEach((doc) => {
@@ -345,10 +379,11 @@ const container = document.getElementById('match-content');
                     const isMyTeam = doc.id === myTeamInfo.id;
                     const name = data.mode === "5vs5" ? data.squadName : data.playerName;
                     const actionUI = isMyTeam
-                        ? `<button class="cancel-room-btn" onclick="cancelMyRoom()" style="background:#cc0000; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:0.7rem; cursor:pointer; font-weight:bold;">CANCEL ROOM</button>`
-                        : `<button class="plus-join-btn" onclick="challengeTeam('${doc.id}')">+</button>`;
-                    const roomBar = `
-                    <div class="match-card" style="${isMyTeam ? 'border: 1px solid #c9a66b; background: rgba(201,166,107,0.05);' : ''}">
+                        ? `<button class="cancel-room-btn" onclick="cancelMyRoom()" style="background:#cc0000; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:0.7rem; cursor:pointer; font-weight:bold;">CANCEL</button>`
+                        : `<button class="plus-join-btn" onclick="challengeTeam('${doc.id}')" style="background:#c9a66b; border:none; padding:5px 10px; border-radius:4px; font-weight:bold;">+</button>`;
+                    
+                    container.innerHTML += `
+                    <div class="match-card" style="${isMyTeam ? 'border: 1px solid #c9a66b; background: rgba(201,166,107,0.05);' : 'border: 1px solid #333;'} margin-bottom:10px;">
                         <div class="match-header">
                             <span>💰 ${data.fee}ks.</span>
                             <span style="opacity:0.7; font-size: 10px;">${data.mode}</span>
@@ -356,7 +391,7 @@ const container = document.getElementById('match-content');
                         <div class="match-body">
                             <div style="display:flex; align-items:center; gap:10px;">
                                 <img src="${data.squadLogo}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
-                                <div style="color: #fff; font-size: 0.9rem;">Team <span style="color:#c9a66b; font-weight:bold;">${name}</span></div>
+                                <div style="color: #fff; font-size: 0.9rem;">${name}</div>
                             </div>
                             <div style="color: #c9a66b; font-weight:bold; font-style:italic;">Vs</div>
                             <div style="display:flex; align-items:center; gap:10px;">
@@ -365,7 +400,6 @@ const container = document.getElementById('match-content');
                             </div>
                         </div>
                     </div>`;
-                    container.innerHTML += roomBar;
                 });
             });
     }
