@@ -365,63 +365,56 @@ const container = document.getElementById('match-content');
 }
 async function loadResultTab() {
     const resultContainer = document.getElementById('match-content');
+    
+    // UI ကို အရင်ဆုံး Loading ပြမယ်
     resultContainer.innerHTML = '<p style="text-align:center; color:#888;">Loading matches...</p>';
 
-    // results collection ကို ဖတ်ခြင်း
-    const snapshot = await db.collection("results")
-        .orderBy("timestamp", "desc")
-        .limit(10)
-        .get();
+    try {
+        const snapshot = await db.collection("results")
+            .orderBy("timestamp", "desc")
+            .limit(10)
+            .get();
 
-    if (snapshot.empty) {
-        resultContainer.innerHTML = '<p style="text-align:center;">No results found.</p>';
-        return;
-    }
+        // Data မရှိရင်
+        if (snapshot.empty) {
+            resultContainer.innerHTML = '<p style="text-align:center;">No results found.</p>';
+            return;
+        }
 
-    resultContainer.innerHTML = ''; 
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        // သင်၏ ပုံကြမ်းအတိုင်း Card ပုံစံဖော်ပြခြင်း
-        resultContainer.innerHTML += `
-            <div style="background: #111; border: 1px solid #333; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
-                <p style="font-size: 0.75rem; color: #c9a66b;">Fee: ${data.fee} Ks</p>
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
-                    <span>🏆 ${data.teamA}</span>
-                    <span style="color:#888;">vs</span>
-                    <span>${data.teamB}</span>
+        // ရှိရင် အရင် Loading စာသားကို ရှင်းပြီးမှ အသစ်ပြန်ရေးမယ်
+        resultContainer.innerHTML = ''; 
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            resultContainer.innerHTML += `
+                <div style="background: #111; border: 1px solid #333; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+                    <p style="font-size: 0.75rem; color: #c9a66b;">Fee: ${data.fee} Ks</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                        <span>🏆 ${data.teamA}</span>
+                        <span style="color:#888;">vs</span>
+                        <span>${data.teamB}</span>
+                    </div>
+                    <p style="text-align: center; color: #00ff00; margin-top: 8px;">Winner: ${data.winner}</p>
                 </div>
-                <p style="text-align: center; color: #00ff00; margin-top: 8px;">Winner: ${data.winner}</p>
-            </div>
-        `;
-    });
-}
-// --- [NEW] RESULT TAB AUTO-UPDATE & SWITCHING LOGIC ---
+            `;
+        });
+    } catch (err) {
+        console.error("Error loading results: ", err);
+    }
+}// --- [NEW] RESULT TAB AUTO-UPDATE & SWITCHING LOGIC ---
+// --- [FIXED]: ရှင်းလင်းပြီး ထိရောက်သော Listener ---
 db.collection("results")
     .orderBy("timestamp", "desc")
+    .limit(10)
     .onSnapshot((snapshot) => {
-        snapshot.docChanges().forEach((change) => {
-            if (change.type === "added") {
-                console.log("New result detected!");
-                
-                // ၁။ Result Tab ကို Refresh လုပ်ပေးပါ
-                loadResultTab(); 
-                
-                // ၂။ အရေးကြီး: Tab ကို အလိုအလျောက် ပြောင်းချင်လျှင် ဤနေရာတွင် Function ခေါ်ပါ
-                // ဥပမာ - showResultTab() ဆိုသည့် function ကို အောက်တွင် ရေးပေးရပါမည်
-                showResultTab(); 
-            }
-        });
+        // အသစ်တစ်ခုခု ထပ်ဝင်လာမှပဲ Refresh လုပ်ပါ
+        const hasNewChanges = snapshot.docChanges().some(change => change.type === "added");
+        if (hasNewChanges) {
+            console.log("New result detected!");
+            loadResultTab(); // UI ကို အသစ်နဲ့ အစားထိုးမယ်
+        }
     });
 
-// ၃။ Tab ပြောင်းပေးမည့် Function အသစ် (ဤ Function ကို သင့် Script အောက်ဆုံးတွင် ထည့်ပါ)
-function showResultTab() {
-    // သင့် Tab ခလုတ်များ၏ ID အမည်များအတိုင်း ပြင်ပေးပါ
-    // ဥပမာ - result-tab-btn ဆိုသည်မှာ Result ကိုနှိပ်မည့် ခလုတ် ID ဖြစ်သည်
-    const resultBtn = document.getElementById('result-tab-btn'); 
-    if (resultBtn) {
-        resultBtn.click(); // Result Tab ခလုတ်ကို အလိုအလျောက် နှိပ်လိုက်သည့်သဘော
-    }
-}
+// showResultTab() function ကို ဖျက်ပစ်ပါ (မလိုအပ်တော့ပါ)
 // ✨ မိမိဖွင့်ထားသော အခန်းအား ဖျက်သိမ်းပြီး ပြန်ထွက်သည့် Function
 async function cancelMyRoom() {
     if (!myTeamInfo || !myTeamInfo.id) return;
