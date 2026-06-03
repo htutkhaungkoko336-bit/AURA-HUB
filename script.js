@@ -272,31 +272,33 @@ function watchStatus(docId) {
         }
     });
 }
+let currentMatchTab = 'waiting'; // လက်ရှိ Tab အနေနဲ့ သတ်မှတ်ထားပါ
+let currentListener = null;
+
 function switchTab(tabName, element) {
-    currentMatchTab = tabName;
+    // ၁။ အရင်ဖွင့်ထားတဲ့ listener ကို အမြဲပိတ်ပါ
+    if (currentListener) {
+        currentListener();
+        currentListener = null;
+    }
+
+    // ၂။ Tab ခလုတ်များရဲ့ Active class ကို ပြောင်းပါ
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    element.classList.add('active');
-    loadMatchRooms();
+    if (element) element.classList.add('active');
+
+    // ၃။ Tab အသစ်ကို သတ်မှတ်ပြီး Data ပြန်တင်ပါ
+    currentMatchTab = tabName;
+    loadMatchRooms(); 
 }
 function loadMatchRooms() {
     const container = document.getElementById('match-content');
     const createRoomBtn = document.querySelector('.create-room-card');
     
     if (!container) return;
-    
-    // အရေးကြီးဆုံး: အရင်နားထောင်နေတဲ့ Listener ကို ပိတ်မှ နောက်တစ်ခုကို စလို့ရမယ်
-    if (currentListener) {
-        currentListener();
-        currentListener = null;
-    }
 
     // Create Room ခလုတ် ဖျောက်ရန်/ပြရန်
     if (createRoomBtn) {
-        if (currentMatchTab === 'playing' || currentMatchTab === 'result') {
-            createRoomBtn.style.display = 'none';
-        } else {
-            createRoomBtn.style.display = 'block';
-        }
+        createRoomBtn.style.display = (currentMatchTab === 'waiting') ? 'block' : 'none';
     }
 
     container.innerHTML = '<p style="text-align:center; color:#444; font-size:0.8rem;">Loading...</p>';
@@ -321,11 +323,11 @@ function loadMatchRooms() {
                         <div class="match-body">
                             <div style="display:flex; align-items:center; gap:10px; width: 40%;">
                                 <img src="${data.teamALogo || ''}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
-                                <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${data.teamA}</div>
+                                <div style="color: #fff; font-size: 0.9rem;">${data.teamA}</div>
                             </div>
                             <div style="color: #c9a66b; font-weight:bold; font-style:italic; width: 10%; text-align:center;">Vs</div>
                             <div style="display:flex; align-items:center; gap:10px; justify-content:flex-end; width: 40%; text-align: right;">
-                                <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${data.teamB}</div>
+                                <div style="color: #fff; font-size: 0.9rem;">${data.teamB}</div>
                                 <img src="${data.teamBLogo || ''}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
                             </div>
                         </div>
@@ -363,7 +365,6 @@ function loadMatchRooms() {
     // --- WAITING TAB ---
     else {
         if (!myTeamInfo || !myTeamInfo.fee) return;
-        
         currentListener = db.collection("registrations")
             .where("fee", "==", Number(myTeamInfo.fee))
             .where("status", "==", "confirm")
@@ -377,27 +378,18 @@ function loadMatchRooms() {
                 querySnapshot.forEach((doc) => {
                     const data = doc.data();
                     const isMyTeam = doc.id === myTeamInfo.id;
-                    const name = data.mode === "5vs5" ? data.squadName : data.playerName;
                     const actionUI = isMyTeam
-                        ? `<button class="cancel-room-btn" onclick="cancelMyRoom()" style="background:#cc0000; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:0.7rem; cursor:pointer; font-weight:bold;">CANCEL</button>`
-                        : `<button class="plus-join-btn" onclick="challengeTeam('${doc.id}')" style="background:#c9a66b; border:none; padding:5px 10px; border-radius:4px; font-weight:bold;">+</button>`;
+                        ? `<button class="cancel-room-btn" onclick="cancelMyRoom()" style="background:#cc0000; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:0.7rem; cursor:pointer;">CANCEL</button>`
+                        : `<button class="plus-join-btn" onclick="challengeTeam('${doc.id}')" style="background:#c9a66b; border:none; width:30px; height:30px; border-radius:50%; font-weight:bold; cursor:pointer;">+</button>`;
                     
                     container.innerHTML += `
-                    <div class="match-card" style="${isMyTeam ? 'border: 1px solid #c9a66b; background: rgba(201,166,107,0.05);' : 'border: 1px solid #333;'} margin-bottom:10px;">
-                        <div class="match-header">
-                            <span>💰 ${data.fee}ks.</span>
-                            <span style="opacity:0.7; font-size: 10px;">${data.mode}</span>
-                        </div>
-                        <div class="match-body">
+                    <div class="match-card" style="${isMyTeam ? 'border: 1px solid #c9a66b;' : 'border: 1px solid #333;'} padding: 10px; margin-bottom:10px; border-radius:8px;">
+                        <div class="match-body" style="display:flex; justify-content:space-between; align-items:center;">
                             <div style="display:flex; align-items:center; gap:10px;">
-                                <img src="${data.squadLogo}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
-                                <div style="color: #fff; font-size: 0.9rem;">${name}</div>
+                                <img src="${data.squadLogo}" style="width:30px; height:30px; border-radius:50%;">
+                                <div>${data.mode === "5vs5" ? data.squadName : data.playerName}</div>
                             </div>
-                            <div style="color: #c9a66b; font-weight:bold; font-style:italic;">Vs</div>
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <div style="width:28px; height:28px; border-radius:50%; border:1px dashed #444; display:flex; align-items:center; justify-content:center; color:#444; font-size:0.7rem;">?</div>
-                                ${actionUI}
-                            </div>
+                            ${actionUI}
                         </div>
                     </div>`;
                 });

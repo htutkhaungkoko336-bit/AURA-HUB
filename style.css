@@ -371,3 +371,18 @@ body { background-color: #000; color: #fff; margin: 0; padding: 0; display: flex
     opacity: 1;
     visibility: visible;
 }
+/* + ခလုတ်အတွက် ပုံစံ */
+.plus-join-btn {
+    background: #c9a66b !important;
+    border: none;
+    padding: 8px 15px !important;
+    border-radius: 50% !important; /* အဝိုင်းပုံစံဖြစ်သွားအောင် */
+    font-weight: bold;
+    color: #000;
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
