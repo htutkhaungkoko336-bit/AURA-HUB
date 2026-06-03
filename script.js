@@ -272,126 +272,128 @@ function watchStatus(docId) {
         }
     });
 }
-let currentMatchTab = 'waiting'; // လက်ရှိ Tab အနေနဲ့ သတ်မှတ်ထားပါ
-let currentListener = null;
-
+// --- [GLOBAL VARIABLES - တစ်နေရာတည်းတွင်သာ ထားပါ] ---
+// --- [SWITCH TAB FUNCTION] ---
 function switchTab(tabName, element) {
-    // ၁။ အရင်ဖွင့်ထားတဲ့ listener ကို အမြဲပိတ်ပါ
     if (currentListener) {
         currentListener();
         currentListener = null;
     }
 
-    // ၂။ Tab ခလုတ်များရဲ့ Active class ကို ပြောင်းပါ
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     if (element) element.classList.add('active');
 
-    // ၃။ Tab အသစ်ကို သတ်မှတ်ပြီး Data ပြန်တင်ပါ
     currentMatchTab = tabName;
     loadMatchRooms(); 
 }
+// --- [GLOBAL VARIABLES] ---
+let currentMatchTab = 'waiting';
+let currentListener = null;
+
+// --- [MAIN LOADING FUNCTION] ---
 function loadMatchRooms() {
     const container = document.getElementById('match-content');
     const createRoomBtn = document.querySelector('.create-room-card');
     
     if (!container) return;
 
-    // Create Room ခလုတ် ဖျောက်ရန်/ပြရန်
+    // အရင်နားထောင်နေတဲ့ Listener ကို ပိတ်မှ Data အမှားမပါမှာပါ
+    if (currentListener) {
+        currentListener();
+        currentListener = null;
+    }
+
+    // Create Room ခလုတ် - Waiting tab မှာပဲ ပြမယ်
     if (createRoomBtn) {
         createRoomBtn.style.display = (currentMatchTab === 'waiting') ? 'block' : 'none';
     }
 
-    container.innerHTML = '<p style="text-align:center; color:#444; font-size:0.8rem;">Loading...</p>';
+    container.innerHTML = '<p style="text-align:center; color:#888; font-size:0.8rem;">Loading...</p>';
 
-    // --- PLAYING TAB ---
+    // ၁။ PLAYING TAB
     if (currentMatchTab === 'playing') {
         currentListener = db.collection("matches")
             .orderBy("matchTimestamp", "desc")
-            .onSnapshot((querySnapshot) => {
+            .onSnapshot((snapshot) => {
                 container.innerHTML = "";
-                if (querySnapshot.empty) {
-                    container.innerHTML = `<p style="text-align:center; color:#333; margin-top:30px; font-size:0.8rem;">No matches running.</p>`;
+                if (snapshot.empty) {
+                    container.innerHTML = `<p style="text-align:center; color:#444; margin-top:20px;">No active matches.</p>`;
                     return;
                 }
-                querySnapshot.forEach((doc) => {
+                snapshot.forEach(doc => {
                     const data = doc.data();
                     container.innerHTML += `
-                    <div class="match-card" style="border: 1px solid #333; margin-bottom:10px;">
-                        <div class="match-header" style="justify-content: center;">
-                            <span style="color:#c9a66b; font-weight:bold; font-size: 11px;">🎮 LIVE MATCHING</span>
-                        </div>
-                        <div class="match-body">
-                            <div style="display:flex; align-items:center; gap:10px; width: 40%;">
-                                <img src="${data.teamALogo || ''}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
-                                <div style="color: #fff; font-size: 0.9rem;">${data.teamA}</div>
+                        <div class="match-card" style="border: 1px solid #333; padding:10px; margin-bottom:10px; border-radius:8px;">
+                            <div style="color:#c9a66b; font-weight:bold; font-size:10px; text-align:center;">🎮 LIVE MATCHING</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px;">
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <img src="${data.teamALogo || ''}" style="width:30px; height:30px; border-radius:50%;">
+                                    <span>${data.teamA}</span>
+                                </div>
+                                <div style="color:#c9a66b;">Vs</div>
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span>${data.teamB}</span>
+                                    <img src="${data.teamBLogo || ''}" style="width:30px; height:30px; border-radius:50%;">
+                                </div>
                             </div>
-                            <div style="color: #c9a66b; font-weight:bold; font-style:italic; width: 10%; text-align:center;">Vs</div>
-                            <div style="display:flex; align-items:center; gap:10px; justify-content:flex-end; width: 40%; text-align: right;">
-                                <div style="color: #fff; font-size: 0.9rem;">${data.teamB}</div>
-                                <img src="${data.teamBLogo || ''}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
-                            </div>
-                        </div>
-                    </div>`;
+                        </div>`;
                 });
             });
     } 
-    // --- RESULT TAB ---
+    // ၂။ RESULT TAB
     else if (currentMatchTab === 'result') {
         currentListener = db.collection("results")
             .orderBy("timestamp", "desc")
             .limit(10)
-            .onSnapshot((querySnapshot) => {
+            .onSnapshot((snapshot) => {
                 container.innerHTML = "";
-                if (querySnapshot.empty) {
-                    container.innerHTML = '<p style="text-align:center; color:#444; font-size:0.8rem;">No results found.</p>';
+                if (snapshot.empty) {
+                    container.innerHTML = '<p style="text-align:center; color:#444;">No results yet.</p>';
                     return;
                 }
-                querySnapshot.forEach(doc => {
+                snapshot.forEach(doc => {
                     const data = doc.data();
                     container.innerHTML += `
-                        <div style="background: #111; border: 1px solid #333; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
-                            <p style="font-size: 0.75rem; color: #c9a66b;">Fee: ${data.fee} Ks</p>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
-                                <span style="color:#fff;">🏆 ${data.teamA}</span>
-                                <span style="color:#888;">vs</span>
-                                <span style="color:#fff;">${data.teamB}</span>
+                        <div style="background:#111; border:1px solid #333; padding:15px; border-radius:10px; margin-bottom:10px;">
+                            <p style="font-size:0.75rem; color:#c9a66b;">Fee: ${data.fee} Ks</p>
+                            <div style="display:flex; justify-content:space-between; color:#fff;">
+                                <span>🏆 ${data.teamA}</span> <span>vs</span> <span>${data.teamB}</span>
                             </div>
-                            <p style="text-align: center; color: #00ff00; margin-top: 8px; font-size: 0.8rem;">Winner: ${data.winner}</p>
-                        </div>
-                    `;
+                            <p style="text-align:center; color:#0f0; margin-top:5px;">Winner: ${data.winner}</p>
+                        </div>`;
                 });
             });
-    }
-    // --- WAITING TAB ---
+    } 
+    // ၃။ WAITING TAB
     else {
         if (!myTeamInfo || !myTeamInfo.fee) return;
         currentListener = db.collection("registrations")
             .where("fee", "==", Number(myTeamInfo.fee))
             .where("status", "==", "confirm")
             .where("matchStatus", "==", "waiting")
-            .onSnapshot((querySnapshot) => {
+            .onSnapshot((snapshot) => {
                 container.innerHTML = "";
-                if (querySnapshot.empty) {
-                    container.innerHTML = `<p style="text-align:center; color:#333; margin-top:30px; font-size:0.8rem;">No entries in waiting room.</p>`;
+                if (snapshot.empty) {
+                    container.innerHTML = `<p style="text-align:center; color:#444; margin-top:20px;">No entries in waiting room.</p>`;
                     return;
                 }
-                querySnapshot.forEach((doc) => {
+                snapshot.forEach(doc => {
                     const data = doc.data();
                     const isMyTeam = doc.id === myTeamInfo.id;
                     const actionUI = isMyTeam
-                        ? `<button class="cancel-room-btn" onclick="cancelMyRoom()" style="background:#cc0000; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:0.7rem; cursor:pointer;">CANCEL</button>`
-                        : `<button class="plus-join-btn" onclick="challengeTeam('${doc.id}')" style="background:#c9a66b; border:none; width:30px; height:30px; border-radius:50%; font-weight:bold; cursor:pointer;">+</button>`;
+                        ? `<button onclick="cancelMyRoom()" style="background:#cc0000; border:none; padding:5px 10px; border-radius:4px; color:white; cursor:pointer;">CANCEL</button>`
+                        : `<button onclick="challengeTeam('${doc.id}')" style="background:#c9a66b; border:none; width:35px; height:35px; border-radius:50%; font-weight:bold; cursor:pointer;">+</button>`;
                     
                     container.innerHTML += `
-                    <div class="match-card" style="${isMyTeam ? 'border: 1px solid #c9a66b;' : 'border: 1px solid #333;'} padding: 10px; margin-bottom:10px; border-radius:8px;">
-                        <div class="match-body" style="display:flex; justify-content:space-between; align-items:center;">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <img src="${data.squadLogo}" style="width:30px; height:30px; border-radius:50%;">
-                                <div>${data.mode === "5vs5" ? data.squadName : data.playerName}</div>
+                        <div style="border: ${isMyTeam ? '1px solid #c9a66b' : '1px solid #333'}; padding:10px; margin-bottom:10px; border-radius:8px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <img src="${data.squadLogo}" style="width:30px; height:30px; border-radius:50%;">
+                                    <span>${data.mode === "5vs5" ? data.squadName : data.playerName}</span>
+                                </div>
+                                ${actionUI}
                             </div>
-                            ${actionUI}
-                        </div>
-                    </div>`;
+                        </div>`;
                 });
             });
     }
