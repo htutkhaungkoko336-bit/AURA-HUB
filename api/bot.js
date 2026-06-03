@@ -210,35 +210,36 @@ bot.action(/confirm_(.+)/, async (ctx) => {
     const matchData = matchDoc.data();
 
     try {
+        // ၂။ Batch Update (matchStatus နဲ့ results ကို တခါတည်းသိမ်းမယ်)
         const batch = db.batch();
         
-        // --- အဓိက အပြောင်းအလဲ ---
         const matchRef = db.collection("matches").doc(matchId);
-        const resultRef = db.collection("results").doc(); // ID အသစ်
+        const resultRef = db.collection("results").doc(); // ID အသစ်တစ်ခု generate လုပ်မယ်
 
-        // [NEW] Match ကို ဖျက်လိုက်ခြင်းဖြင့် Playing Tab မှာ ပျောက်သွားစေမည်
-        batch.delete(matchRef);
-
-        // [FIXED] Result အသစ်ထည့်ခြင်း (ဒီထဲမှာ Winner ပါဝင်တဲ့အတွက် Result Tab မှာ ပေါ်လာမယ်)
-        batch.set(resultRef, {
-            matchId: matchId,
-            teamA: matchData.teamA,
-            teamB: matchData.teamB,
-            teamALogo: matchData.teamALogo || "", // UI အတွက် လိုအပ်ပါက
-            teamBLogo: matchData.teamBLogo || "",
-            winner: "teamA", // လိုအပ်သလို ပြောင်းလဲပေးနိုင်ပါသည်
-            fee: matchData.fee || 0,
-            timestamp: admin.firestore.FieldValue.serverTimestamp()
+        // Match status ပြောင်းခြင်း
+        batch.update(matchRef, { 
+            matchStatus: "finished", 
+            winner: "teamA" 
         });
 
         // Registration များ update လုပ်ခြင်း
         batch.update(db.collection("registrations").doc(matchData.teamA_LeaderId), { 
-            matchStatus: "result", // "finished" အစား "result" ဟု ပြောင်းပါ
+            matchStatus: "finished", 
             winStatus: "win" 
         });
         batch.update(db.collection("registrations").doc(matchData.teamB_LeaderId), { 
-            matchStatus: "result", 
+            matchStatus: "finished", 
             winStatus: "lose" 
+        });
+
+        // Result အသစ်ထည့်ခြင်း
+        batch.set(resultRef, {
+            matchId: matchId,
+            teamA: matchData.teamA,
+            teamB: matchData.teamB,
+            winner: "teamA",
+            fee: matchData.fee || 0,
+            timestamp: admin.firestore.FieldValue.serverTimestamp()
         });
 
         await batch.commit();
@@ -250,12 +251,14 @@ bot.action(/confirm_(.+)/, async (ctx) => {
             } 
         });
 
-        // ၄။ Session သိမ်းခြင်း
+        // ၄။ Session သိမ်းခြင်း (Receipt စောင့်ရန်)
         await db.collection("sessions").doc(docId).set({ 
             waitingForReceipt: true, 
             targetChatId: userId,
             adminMessageId: sentMessage.message_id, 
-            matchId: matchId
+            matchId: matchId,
+            teamA_LeaderId: matchData.teamA_LeaderId,
+            teamB_LeaderId: matchData.teamB_LeaderId
         });
 
         await ctx.telegram.sendMessage(userId, "🎉 ဂုဏ်ယူပါသည်။ ပွဲစဉ်ရလဒ်ကို အတည်ပြုပြီးပါပြီ။ ငွေလွှဲပြေစာ (SS) ကို စောင့်ပေးပါ။");

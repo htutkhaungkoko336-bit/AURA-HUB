@@ -404,52 +404,45 @@ function loadMatchRooms() {
             });
     }
 }
-let resultUnsubscribe = null; // Listener ကို ပြန်ပိတ်ဖို့အတွက် variable လေးတစ်ခု ကြိုဆောက်ထားပါ
-
-function loadResultTab() {
-    const resultContainer = document.getElementById('match-content'); 
+async function loadResultTab() {
+    const resultContainer = document.getElementById('match-content');
     
-    // အရင်ဆုံးရှိပြီးသား Listener ကို ပိတ်မယ် (ဒါမှ Data မရှုပ်မှာ)
-    if (resultUnsubscribe) resultUnsubscribe();
+    // UI ကို အရင်ဆုံး Loading ပြမယ်
+    resultContainer.innerHTML = '<p style="text-align:center; color:#888;">Loading matches...</p>';
 
-    // အခုမှ Listener အသစ် စဖွင့်မယ်
-    resultUnsubscribe = db.collection("results")
-        .orderBy("timestamp", "desc")
-        .limit(20)
-        .onSnapshot((querySnapshot) => {
-            resultContainer.innerHTML = ""; 
-            
-            if (querySnapshot.empty) {
-                resultContainer.innerHTML = '<p style="text-align:center;">No results yet.</p>';
-                return;
-            }
+    try {
+        const snapshot = await db.collection("results")
+            .orderBy("timestamp", "desc")
+            .limit(10)
+            .get();
 
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                resultContainer.innerHTML += `
-                    <div class="result-card">
-                        <p style="color: gold;">Winner: ${data.winner}</p>
-                        <p>${data.teamA} <span style="color: #888;">vs</span> ${data.teamB}</p>
-                        <p style="font-size: 0.7rem; color: #555;">Fee: ${data.fee} Ks</p>
+        // Data မရှိရင်
+        if (snapshot.empty) {
+            resultContainer.innerHTML = '<p style="text-align:center;">No results found.</p>';
+            return;
+        }
+
+        // ရှိရင် အရင် Loading စာသားကို ရှင်းပြီးမှ အသစ်ပြန်ရေးမယ်
+        resultContainer.innerHTML = ''; 
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            resultContainer.innerHTML += `
+                <div style="background: #111; border: 1px solid #333; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
+                    <p style="font-size: 0.75rem; color: #c9a66b;">Fee: ${data.fee} Ks</p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+                        <span>🏆 ${data.teamA}</span>
+                        <span style="color:#888;">vs</span>
+                        <span>${data.teamB}</span>
                     </div>
-                `;
-            });
+                    <p style="text-align: center; color: #00ff00; margin-top: 8px;">Winner: ${data.winner}</p>
+                </div>
+            `;
         });
-}
-function switchTab(tabName) {
-    // အရင်ဆုံး Listener အဟောင်းတွေကို အားလုံး ပိတ်ရပါမယ်
-    if (resultUnsubscribe) {
-        resultUnsubscribe();
-        resultUnsubscribe = null;
+    } catch (err) {
+        console.error("Error loading results: ", err);
     }
-    // (Playing Tab အတွက် listener ကိုလည်း ဒီလိုပဲ ပိတ်ဖို့ မမေ့ပါနဲ့)
-
-    // ပြီးမှ လိုချင်တဲ့ Tab ကို ဖွင့်ပါ
-    if (tabName === 'result') {
-        loadResultTab(); // Result Tab ရောက်မှ ဒီ function ကို ခေါ်မယ်
-    }
-    // ... ကျန်တဲ့ tab logic များ
-}// --- [FIXED]: ရှင်းလင်းပြီး ထိရောက်သော Listener ---
+}// --- [NEW] RESULT TAB AUTO-UPDATE & SWITCHING LOGIC ---
+// --- [FIXED]: ရှင်းလင်းပြီး ထိရောက်သော Listener ---
 db.collection("results")
     .orderBy("timestamp", "desc")
     .limit(10)
