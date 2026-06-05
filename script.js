@@ -304,6 +304,7 @@ function loadMatchRooms() {
     // --- PLAYING TAB ---
     if (currentMatchTab === 'playing') {
         currentListener = db.collection("matches")
+            .where("status", "==", "open")
             .orderBy("matchTimestamp", "desc")
             .onSnapshot((querySnapshot) => {
                 container.innerHTML = "";

@@ -219,6 +219,7 @@ bot.action(/confirm_(.+)/, async (ctx) => {
         // Match status ပြောင်းခြင်း
         batch.update(matchRef, { 
             matchStatus: "finished", 
+            status: "finished",
             winner: "teamA" 
         });
 
