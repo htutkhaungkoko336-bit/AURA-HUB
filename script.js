@@ -304,10 +304,11 @@ function loadMatchRooms() {
     // --- PLAYING TAB ---
     if (currentMatchTab === 'playing') {
         currentListener = db.collection("matches")
-            .where("status", "==", "open")
-            .orderBy("matchTimestamp", "desc")
-            .onSnapshot((querySnapshot) => {
-                container.innerHTML = "";
+        .where("status", "!=", "finished") 
+        .orderBy("status") // .where() တွင် inequality (!=) သုံးပါက orderBy တွင် ထို field ကို ထည့်ရပါမည်
+        .orderBy("matchTimestamp", "desc")
+        .onSnapshot((querySnapshot) => {    
+                    container.innerHTML = "";
                 if (querySnapshot.empty) {
                     container.innerHTML = `<p style="text-align:center; color:#333; margin-top:30px; font-size:0.8rem;">No matches running.</p>`;
                     return;
