@@ -1,30 +1,34 @@
-const admin = require('firebase-admin');
-const axios = require('axios');
-
-// Firebase Initialize လုပ်ခြင်း
-if (!admin.apps.length) {
-  const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-  });
-}
-const db = admin.firestore();
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
   try {
     const { callback_query } = req.body;
-    const data = callback_query.data; // ဥပမာ: confirm_12345
-    const [action, regId] = data.split('_');
+    if (!callback_query) return res.status(200).send('OK');
+
+    const data = callback_query.data; 
+    
+    // အရေးကြီး: ပထမဆုံး _ ကိုပဲ ခွဲမယ်၊ ကျန်တာကို ID အဖြစ် ယူမယ်
+    const firstIndex = data.indexOf('_');
+    const action = data.substring(0, firstIndex);
+    const regId = data.substring(firstIndex + 1).trim(); // .trim() ထည့်ပေးလိုက်ပါ
+    
     const chatId = callback_query.message.chat.id;
     const messageId = callback_query.message.message_id;
 
+    // Firebase Document ကို စစ်ဆေးခြင်း
+    const docRef = db.collection('registrations').doc(regId);
+    const doc = await docRef.get();
+
+    if (!doc.exists) {
+      console.error("Firebase Document Not Found for ID:", regId);
+      return res.status(404).json({ error: "Data not found" });
+    }
+
     // Firebase ထဲမှာ Status Update လုပ်ခြင်း
     const status = action === 'confirm' ? 'approved' : 'rejected';
-    await db.collection('registrations').doc(regId).update({ status: status });
+    await docRef.update({ status: status });
 
-    // Telegram မှာ Button ကို ဖျက်ပြီး Status ပြခြင်း
+    // Telegram မှာ Edit လုပ်ခြင်း
     await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/editMessageText`, {
       chat_id: chatId,
       message_id: messageId,
