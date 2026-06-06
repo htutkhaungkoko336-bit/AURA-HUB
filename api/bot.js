@@ -186,6 +186,57 @@ bot.action(/reject_(.+)/, async (ctx) => {
 });
 
 module.exports = async (req, res) => {
-    try { await bot.handleUpdate(req.body); res.status(200).send('OK'); }
-    catch (err) { console.error(err); res.status(500).send('Internal Server Error'); }
+    // 1. CORS Headers (Frontend ကနေ request ပို့တဲ့အခါ Error မတက်အောင်)
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
+    // 2. Registration Notification လက်ခံရန် (Frontend ကနေ လှမ်းခေါ်တဲ့ အပိုင်း)
+    if (req.url === '/api/notify' || (req.path && req.path === '/api/notify')) {
+        try {
+            const { regId, data } = req.body;
+            
+            // 5vs5 လား 1vs1 လား ခွဲခြားပြီး message တည်ဆောက်ခြင်း
+            let playersList = "";
+            if (data.mode === "5vs5" && data.players) {
+                playersList = data.players.map(p => `👤 ${p.name}`).join('\n');
+            } else {
+                playersList = `👤 ${data.playerName || 'Solo'}`;
+            }
+
+            const msg = `🚨 <b>New Registration Request</b>\n\n` +
+                        `🎮 Mode: ${data.mode}\n` +
+                        `🏆 Squad: ${data.squadName || 'Solo'}\n` +
+                        `📞 K-Pay: ${data.kpayPhone}\n` +
+                        `💰 Fee: ${data.fee}\n` +
+                        `👥 Players:\n${playersList}`;
+
+            await bot.telegram.sendMessage(ADMIN_GROUP_ID, msg, {
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [[
+                        { text: '✅ Confirm', callback_data: `regConfirm_${regId}` },
+                        { text: '❌ Reject', callback_data: `regReject_${regId}` }
+                    ]]
+                }
+            });
+            return res.status(200).json({ success: true, message: 'Notification Sent' });
+        } catch (err) {
+            console.error("Notify Error:", err);
+            return res.status(500).json({ success: false, error: err.message });
+        }
+    }
+
+    // 3. Telegram Bot Update များအတွက် (Webhook)
+    try { 
+        await bot.handleUpdate(req.body); 
+        return res.status(200).send('OK'); 
+    } catch (err) { 
+        console.error("Bot Update Error:", err); 
+        return res.status(500).send('Internal Server Error'); 
+    }
 };

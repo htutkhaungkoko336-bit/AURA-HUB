@@ -185,13 +185,7 @@ async function submitProof() {
 
     try {
         const paymentURL = await uploadToImgBB(ssFile);
-        
-        let squadLogoURL = ""; 
-        if (sqLogoFile) {
-            squadLogoURL = await uploadToImgBB(sqLogoFile);
-        } else {
-            squadLogoURL = "https://i.ibb.co/4pGm0Zf/default-logo.png";
-        }
+        let squadLogoURL = sqLogoFile ? await uploadToImgBB(sqLogoFile) : "https://i.ibb.co/4pGm0Zf/default-logo.png";
 
         const mode = mapData[currentIndex].mode;
         let registrationData = {
@@ -204,13 +198,13 @@ async function submitProof() {
             matchStatus: "none",
         };
 
+        // Player Data များကို စုစည်းခြင်း
         if (mode === "5vs5") {
-            const players = Array.from(document.querySelectorAll('#page-5vs5 .player-row')).map(row => ({
+            registrationData.squadName = document.getElementById('squad-name').value;
+            registrationData.players = Array.from(document.querySelectorAll('#page-5vs5 .player-row')).map(row => ({
                 name: row.querySelectorAll('input')[0].value,
                 id: row.querySelectorAll('input')[1].value
             }));
-            registrationData.squadName = document.getElementById('squad-name').value;
-            registrationData.players = players;
             registrationData.kpayName = document.getElementById('kpay-name').value;
             registrationData.kpayPhone = document.getElementById('kpay-no').value;
         } else {
@@ -221,13 +215,21 @@ async function submitProof() {
             registrationData.kpayPhone = document.getElementById('kpay-no-solo').value;
         }
 
+        // Firestore ထဲကို Data တင်ခြင်း
         const docRef = await db.collection("registrations").add(registrationData);
+        
+        // --- [အသစ်ထည့်ရမည့်အပိုင်း] Admin ဆီ Webhook ပို့ခြင်း ---
+        await fetch('https://aura-hub-bay.vercel.app/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                regId: docRef.id, 
+                data: registrationData 
+            })
+        });
+        // ----------------------------------------------------
+
         document.getElementById('waiting-msg').innerText = "Payment ကို Admin မှ စစ်ဆေးနေပါသည်။ ခဏစောင့်ပေးပါ...";
-        
-        // Form တင်ပြီးပါက Clean ပြန်လုပ်ခြင်း
-        document.getElementById('ssFile').value = "";
-        document.getElementById('sqLogo').value = "";
-        
         watchStatus(docRef.id);
 
     } catch (error) {
@@ -236,7 +238,6 @@ async function submitProof() {
         document.getElementById('waiting-msg').style.display = 'none';
     }
 }
-
 function backToRegistration() {
     document.getElementById('page-payment-proof').style.display = 'none';
     const mode = mapData[currentIndex].mode;
@@ -248,24 +249,37 @@ function backToRegistration() {
 }
 
 window.onload = updateDisplay;
+
 // --- MATCH CENTER SYSTEM ---
-let currentMatchTab = 'waiting';
-let myTeamInfo = null;
 function watchStatus(docId) {
     db.collection("registrations").doc(docId).onSnapshot((doc) => {
         if (doc.exists) {
             const data = doc.data();
             myTeamInfo = { id: doc.id, ...data };
-            // ✨ [RULE 1]: Waiting Room အဆင့် (သို့မဟုတ်) အခန်းမရှိသေးသည့် အဆင့်
-            // တစ်ဖက်လူက ပွဲဖျက်လိုက်လျှင် သော်လည်းကောင်း၊ မိမိဘာသာ Cancel လုပ်လျှင်သော်လည်းကောင်း Waiting UI သို့ အလိုအလျောက် ပြန်ပို့မည်
+            const waitingMsg = document.getElementById('waiting-msg'); // Payment ပြတဲ့ page ထဲက text
+
+            // --- [အသစ်ထည့်ရန်] Admin က Confirm/Reject လုပ်တာကို စောင့်ကြည့်ခြင်း ---
+            if (data.status === "confirm") {
+                // Confirm ဖြစ်ရင် ပွဲစဉ်ရှာတဲ့နေရာ (Match Center) ကို ပို့ပေးမယ်
+                document.getElementById('page-payment-proof').style.display = 'none';
+                document.getElementById('page-match-center').style.display = 'flex';
+                if (typeof loadMatchRooms === 'function') loadMatchRooms();
+            } 
+            else if (data.status === "rejected") {
+                // Reject ဖြစ်ရင် အကြောင်းကြားစာပြမယ်
+                if (waitingMsg) waitingMsg.innerText = "❌ သင်၏ Registration ကို ပယ်ချလိုက်ပါသည်။ (အချက်အလက်မပြည့်စုံခြင်း သို့မဟုတ် ငွေလွှဲပြေစာမမှန်ခြင်း)";
+                // လိုအပ်ရင် 5 စက္ကန့်နေရင် Home ပြန်ပို့တာမျိုး လုပ်နိုင်ပါတယ်
+            }
+
+            // --- [မူလသင်ရေးထားသော Rule များ] ---
             if (data.status === "confirm" && (data.matchStatus === "none" || data.matchStatus === "waiting") && !data.currentMatchId) {
                 const playingLobby = document.getElementById('page-playing-lobby');
                 if (playingLobby) playingLobby.style.display = 'none';
                 document.getElementById('page-payment-proof').style.display = 'none';
                 document.getElementById('page-match-center').style.display = 'flex';
-                loadMatchRooms();
+                if (typeof loadMatchRooms === 'function') loadMatchRooms();
             }
-            // ✨ [RULE 2]: စိန်ခေါ်မှု အောင်မြင်၍ ပွဲစတင်ရန် ပြင်ဆင်သည့် အဆင့်
+            
             if (data.matchStatus === "playing" && data.currentMatchId) {
                 startMatchMonitoring(data.currentMatchId);
             }
