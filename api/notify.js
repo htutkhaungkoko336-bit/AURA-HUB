@@ -27,11 +27,11 @@ export default async function handler(req, res) {
                     `🆔 *Reg ID:* ${regId}`;
 
     // Confirm/Reject ခလုတ်များ ထည့်ခြင်း
-    const inline_keyboard = [[
-      { text: "✅ Confirm", callback_data: `confirm_${regId}` },
-      { text: "❌ Reject", callback_data: `reject_${regId}` }
-    ]];
-
+// notify.js ထဲက အပိုင်း
+  const inline_keyboard = [[
+      { text: '✅ Confirm', callback_data: `regConfirm_${regId}` }, // 'confirm_' ကို 'regConfirm_' လို့ ပြင်ပါ
+      { text: '❌ Reject', callback_data: `regReject_${regId}` }    // 'reject_' ကို 'regReject_' လို့ ပြင်ပါ
+  ]];
     // Telegram သို့ ပို့ဆောင်ခြင်း
   await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       chat_id: REGISTRATION_GROUP_ID, // ဒီနေရာလေး ပြောင်းလိုက်ရုံပါပဲ
