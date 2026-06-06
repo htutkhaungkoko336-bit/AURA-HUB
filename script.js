@@ -433,10 +433,8 @@ async function showMatchDetail(matchId, teamAName, teamBName) {
         regs.forEach(doc => {
             const data = doc.data();
             const playersList = data.players.map(p => `
-                <div style="text-align: center; margin-bottom: 8px;">
-                    <div style="background: #222; border: 1px solid #c9a66b; color: #fff; padding: 5px 10px; border-radius: 15px; font-size: 0.75rem; display: inline-block; min-width: 80px;">
-                        ${p.name}
-                    </div>
+                <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(201, 166, 107, 0.3); padding: 8px; margin-bottom: 6px; border-radius: 8px; text-align: center; color: #fff; font-size: 0.75rem;">
+                    ${p.name}
                 </div>
             `).join("");
             
@@ -444,21 +442,35 @@ async function showMatchDetail(matchId, teamAName, teamBName) {
             else if (data.squadName === teamBName) teamBPlayersHTML = playersList;
         });
 
+        // Banner ပုံစံအတွက် Style (Team Name တွေမှာ သုံးမယ်)
+        const bannerStyle = `
+            background: linear-gradient(to bottom, #d4af37, #aa8822);
+            color: #000;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-align: center;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+            border: 1px solid #ffd700;
+        `;
+
         body.innerHTML = `
-            <div style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-                <div style="display: flex; justify-content: space-between; width: 100%; margin-bottom: 15px;">
-                    <div style="color: #c9a66b; font-weight: bold; font-size: 0.9rem; flex: 1; text-align: center;">${teamAName}</div>
-                    <div style="width: 40px;"></div> <div style="color: #c9a66b; font-weight: bold; font-size: 0.9rem; flex: 1; text-align: center;">${teamBName}</div>
+            <div style="width: 100%; position: relative; padding: 10px;">
+                <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #000; border: 1px solid #c9a66b; color: #c9a66b; padding: 2px 10px; border-radius: 20px; font-weight: bold; font-size: 0.7rem; z-index: 1;">
+                    VS
                 </div>
 
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <div style="flex: 1;">${teamAPlayersHTML}</div>
-                    
-                    <div style="width: 40px; height: 40px; background: #c9a66b; color: #000; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 0.7rem; flex-shrink: 0;">
-                        VS
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;">
+                    <div>
+                        <div style="${bannerStyle}">${teamAName}</div>
+                        ${teamAPlayersHTML}
                     </div>
-                    
-                    <div style="flex: 1;">${teamBPlayersHTML}</div>
+                    <div>
+                        <div style="${bannerStyle}">${teamBName}</div>
+                        ${teamBPlayersHTML}
+                    </div>
                 </div>
             </div>
         `;
