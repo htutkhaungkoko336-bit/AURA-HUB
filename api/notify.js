@@ -7,28 +7,38 @@ export default async function handler(req, res) {
 
   try {
     const { regId, data } = req.body;
-    
-    // Environment Variables တွေကို ခေါ်သုံးခြင်း (Vercel settings ထဲကနေ လာမှာပါ)
-// အရင်က ကုဒ်နေရာမှာ အခုလို ပြင်ပါ
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN; // TELEGRAM_BOT_TOKEN အဖြစ် ပြင်လိုက်ပါ
-const ADMIN_GROUP_ID = process.env.ADMIN_GROUP_ID;
-    // အကယ်၍ Token သို့မဟုတ် ID မရှိရင် error တက်အောင်လုပ်ခြင်း
-    if (!BOT_TOKEN || !ADMIN_GROUP_ID) {
-        throw new Error("Missing BOT_TOKEN or ADMIN_GROUP_ID in environment variables");
+    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+    const ADMIN_GROUP_ID = process.env.ADMIN_GROUP_ID;
+
+    // Player Details အားလုံး ပါဝင်အောင် ပြင်ဆင်ခြင်း
+    let playerDetails = "";
+    if (data.mode === "5vs5") {
+        playerDetails = data.players.map((p, i) => `${i+1}. ${p.name} (ID: ${p.id})`).join('\n');
+    } else {
+        playerDetails = `Player: ${data.playerName}\nID: ${data.mlbbId}`;
     }
 
+    // မက်ဆေ့ချ် ပုံစံ
     const message = `🔔 *New Registration Received!*\n\n` +
-                    `Mode: ${data.mode}\n` +
-                    `Fee: ${data.fee} Ks\n` +
-                    `Name: ${data.squadName || data.playerName}\n` +
-                    `[View Payment Proof](${data.paymentURL})\n\n` +
-                    `ID: ${regId}`;
+                    `🎮 *Mode:* ${data.mode}\n` +
+                    `💰 *Fee:* ${data.fee} Ks\n\n` +
+                    `👤 *Identity:*\n${data.squadName ? `Squad: ${data.squadName}\n${playerDetails}` : playerDetails}\n\n` +
+                    `💳 *Payment Info:*\nName: ${data.kpayName}\nPhone: ${data.kpayPhone}\n\n` +
+                    `🖼️ [View Payment Proof](${data.paymentURL})\n` +
+                    `🆔 *Reg ID:* ${regId}`;
 
-    // Telegram ကို စာပို့ခြင်း
+    // Confirm/Reject ခလုတ်များ ထည့်ခြင်း
+    const inline_keyboard = [[
+      { text: "✅ Confirm", callback_data: `confirm_${regId}` },
+      { text: "❌ Reject", callback_data: `reject_${regId}` }
+    ]];
+
+    // Telegram သို့ ပို့ဆောင်ခြင်း
     await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         chat_id: ADMIN_GROUP_ID,
         text: message,
-        parse_mode: 'Markdown'
+        parse_mode: 'Markdown',
+        reply_markup: { inline_keyboard: inline_keyboard }
     });
 
     return res.status(200).json({ success: true });
