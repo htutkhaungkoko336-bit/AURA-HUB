@@ -449,21 +449,21 @@ async function showMatchDetail(matchId, teamAName, teamBName) {
         });
 
         body.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 10px; margin-top: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 5px;">
                 
                 <div style="flex: 1; text-align: center;">
-                    <div style="color:#c9a66b; font-weight:bold; margin-bottom:8px; font-size:0.85rem;">${teamAName}</div>
+                    <div style="color:#c9a66b; font-weight:bold; margin-bottom:8px; font-size:0.8rem;">${teamAName}</div>
                     <div style="font-size: 0.75rem; color:#fff; text-align: left; display: inline-block;">
-                        ${teamAPlayersHTML.split('</div>').filter(Boolean).map(p => `<div style="margin-bottom:2px;">👤 ${p.replace('<div>', '').replace('</div>', '')}</div>`).join('')}
+                        ${teamAPlayersHTML.replace(/<div>/g, '<div style="margin-bottom:2px; white-space:nowrap;">👤 ')}
                     </div>
                 </div>
 
                 <div style="color: #c9a66b; font-size: 0.8rem; font-weight: bold; margin-top: 25px; padding: 0 5px;">VS</div>
 
                 <div style="flex: 1; text-align: center;">
-                    <div style="color:#c9a66b; font-weight:bold; margin-bottom:8px; font-size:0.85rem;">${teamBName}</div>
+                    <div style="color:#c9a66b; font-weight:bold; margin-bottom:8px; font-size:0.8rem;">${teamBName}</div>
                     <div style="font-size: 0.75rem; color:#fff; text-align: left; display: inline-block;">
-                        ${teamBPlayersHTML.split('</div>').filter(Boolean).map(p => `<div style="margin-bottom:2px;">👤 ${p.replace('<div>', '').replace('</div>', '')}</div>`).join('')}
+                        ${teamBPlayersHTML.replace(/<div>/g, '<div style="margin-bottom:2px; white-space:nowrap;">👤 ')}
                     </div>
                 </div>
                 
