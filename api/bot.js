@@ -15,7 +15,7 @@ function isAdmin(userId) {
     return adminIds.includes(userId.toString());
 }
 
-// Admin Keyboard အသစ် (Ticket System)
+// --- Keyboards ---
 const getAdminKeyboard = (docId, selectedWinner) => {
     return {
         inline_keyboard: [
@@ -32,10 +32,40 @@ const getAdminKeyboard = (docId, selectedWinner) => {
     };
 };
 
+// --- Admin Panel Command ---
+bot.command('admin', (ctx) => {
+    if (!isAdmin(ctx.from.id)) return;
+    ctx.reply("🛠 <b>AURA HUB Admin Panel</b>\nလုပ်ဆောင်ချက်ကို ရွေးချယ်ပါ:", {
+        parse_mode: 'HTML',
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: '📋 Registration Pending', callback_data: 'view_reg_list' },
+                 { text: '🏆 Result Management', callback_data: 'view_result_list' }]
+            ]
+        }
+    });
+});
+
+// --- Registration Logic ---
+// မှတ်ချက်: Register တင်တဲ့နေရာမှာ ဒီ function ကို ခေါ်သုံးပေးရပါမယ်
+bot.action(/regConfirm_(.+)/, async (ctx) => {
+    const regId = ctx.match[1];
+    await db.collection("registrations").doc(regId).update({ status: "confirm" });
+    await ctx.editMessageText("✅ Registration အတည်ပြုပြီးပါပြီ။");
+    ctx.answerCbQuery("Confirmed!");
+});
+
+bot.action(/regReject_(.+)/, async (ctx) => {
+    const regId = ctx.match[1];
+    await db.collection("registrations").doc(regId).update({ status: "rejected" });
+    await ctx.editMessageText("❌ Registration ပယ်ချလိုက်ပါပြီ။");
+    ctx.answerCbQuery("Rejected!");
+});
+
 // 1. Start Command
 bot.start(async (ctx) => {
     const userId = ctx.from.id.toString();
-    if (isAdmin(userId)) return ctx.reply("👋 Admin Panel သို့ ကြိုဆိုပါသည်။");
+    if (isAdmin(userId)) return ctx.reply("👋 Admin Panel သို့ ကြိုဆိုပါသည်။ /admin ဟု ရိုက်၍ Menu ခေါ်ပါ။");
     const matchId = ctx.startPayload;
     if (!matchId) return ctx.reply("🔥 AURA HUB Matchmaking Bot သို့ ကြိုဆိုပါသည်။");
     await db.collection("sessions").doc(userId).set({ currentMatchId: matchId }, { merge: true });
@@ -49,10 +79,8 @@ bot.start(async (ctx) => {
         ]);
         const dataA = leaderADoc.data() || { players: [], kpayPhone: "မရှိပါ" };
         const dataB = leaderBDoc.data() || { players: [], kpayPhone: "မရှိပါ" };
-        const leaderAId = dataA.players && dataA.players[0] ? dataA.players[0].id : "မရှိပါ";
-        const leaderBId = dataB.players && dataB.players[0] ? dataB.players[0].id : "မရှိပါ";
         const renderPlayers = (players) => players.map(p => `👤 ${p.name}`).join('\n');
-        const msg = `<b>🔍 MATCH DETAILS</b>\n\n💰 <b>Fee:</b> ${matchData.fee || 0}\n━━━━━━━━━━━━━━\n<b>🏆 TEAM A: ${matchData.teamA}</b>\n👤 Leader: ${dataA.players[0].name} (ID: <code>${leaderAId}</code>)\n📞 Ph: ${dataA.kpayPhone}\n${renderPlayers(dataA.players)}\n\n<b>🏆 TEAM B: ${matchData.teamB}</b>\n👤 Leader: ${dataB.players[0].name} (ID: <code>${leaderBId}</code>)\n📞 Ph: ${dataB.kpayPhone}\n${renderPlayers(dataB.players)}\n━━━━━━━━━━━━━━\n🎲 <b>First Pick:</b> ${matchData.firstPickWinner}\n\n━━━━━━━━━━━━━━\n📢 <b>AURA HUB Official</b>`;
+        const msg = `<b>🔍 MATCH DETAILS</b>\n\n💰 <b>Fee:</b> ${matchData.fee || 0}\n━━━━━━━━━━━━━━\n<b>🏆 TEAM A: ${matchData.teamA}</b>\n📞 Ph: ${dataA.kpayPhone}\n${renderPlayers(dataA.players)}\n\n<b>🏆 TEAM B: ${matchData.teamB}</b>\n📞 Ph: ${dataB.kpayPhone}\n${renderPlayers(dataB.players)}\n━━━━━━━━━━━━━━\n🎲 <b>First Pick:</b> ${matchData.firstPickWinner}`;
         ctx.reply(msg, { parse_mode: 'HTML' });
     } catch (e) { console.error(e); ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။"); }
 });
@@ -87,7 +115,7 @@ bot.on('photo', async (ctx) => {
     ctx.reply("✅ ပုံတင်ပြပြီးပါပြီ။ Admin စစ်ဆေးနေပါသည်၊ ခဏစောင့်ပေးပါ။");
 });
 
-// 3. Selection Action (Tick ခြစ်ခြင်း)
+// 3. Selection Action
 bot.action(/select(A|B)_(.+)/, async (ctx) => {
     const winner = ctx.match[1] === 'A' ? 'teamA' : 'teamB';
     const docId = ctx.match[2];
@@ -96,7 +124,7 @@ bot.action(/select(A|B)_(.+)/, async (ctx) => {
     ctx.answerCbQuery(`${winner === 'teamA' ? 'Team A' : 'Team B'} ကို ရွေးချယ်ပြီးပါပြီ`);
 });
 
-// 4. View Match Info (Original)
+// 4. View Match Info
 bot.action(/view_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
     const message = ctx.callbackQuery.message;
@@ -120,7 +148,7 @@ bot.action(/view_(.+)/, async (ctx) => {
     ctx.answerCbQuery();
 });
 
-// 5. Confirm Action (Updated)
+// 5. Confirm Action
 bot.action(/confirm_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
     const doc = await db.collection("pending_photos").doc(docId).get();
