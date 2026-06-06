@@ -433,9 +433,8 @@ async function showMatchDetail(matchId, teamAName, teamBName) {
         regs.forEach(doc => {
             const data = doc.data();
             const playersList = data.players.map(p => `
-                <div style="display: flex; align-items: center; margin-bottom: 8px; color: #fff; font-size: 0.8rem;">
-                    <div style="width: 6px; height: 6px; background: #c9a66b; border-radius: 50%; margin-right: 10px; box-shadow: 0 0 8px #c9a66b;"></div>
-                    <span>${p.name}</span>
+                <div style="background: rgba(255,255,255,0.05); padding: 8px 12px; margin-bottom: 6px; border-radius: 6px; font-size: 0.8rem; border: 1px solid rgba(201,166,107,0.2);">
+                    ${p.name}
                 </div>
             `).join("");
             
@@ -444,17 +443,18 @@ async function showMatchDetail(matchId, teamAName, teamBName) {
         });
 
         body.innerHTML = `
-            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(201, 166, 107, 0.3); padding: 20px; border-radius: 15px; backdrop-filter: blur(10px); width: 100%;">
-                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
-                    <div style="flex: 1;">
-                        <div style="color:#f1e4b9; font-weight:bold; margin-bottom:12px; font-size:0.85rem; text-align: center; border-bottom: 1px solid #c9a66b; padding-bottom: 5px;">${teamAName}</div>
+            <div style="width: 100%; position: relative;">
+                <div style="position: absolute; top: -35px; left: 50%; transform: translateX(-50%); background: #c9a66b; color: #000; padding: 4px 15px; border-radius: 20px; font-weight: bold; font-size: 0.8rem;">
+                    VS
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;">
+                    <div>
+                        <div style="text-align: center; color: #c9a66b; margin-bottom: 10px; font-weight: bold; font-size: 0.9rem;">${teamAName}</div>
                         ${teamAPlayersHTML}
                     </div>
-
-                    <div style="color: #c9a66b; font-size: 0.8rem; font-weight: 800; text-shadow: 0 0 10px #c9a66b; padding: 0 10px; align-self: center;">VS</div>
-
-                    <div style="flex: 1;">
-                        <div style="color:#f1e4b9; font-weight:bold; margin-bottom:12px; font-size:0.85rem; text-align: center; border-bottom: 1px solid #c9a66b; padding-bottom: 5px;">${teamBName}</div>
+                    <div>
+                        <div style="text-align: center; color: #c9a66b; margin-bottom: 10px; font-weight: bold; font-size: 0.9rem;">${teamBName}</div>
                         ${teamBPlayersHTML}
                     </div>
                 </div>
