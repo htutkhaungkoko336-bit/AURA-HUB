@@ -9,9 +9,9 @@ export default async function handler(req, res) {
     const { regId, data } = req.body;
     
     // Environment Variables တွေကို ခေါ်သုံးခြင်း (Vercel settings ထဲကနေ လာမှာပါ)
-    const BOT_TOKEN = process.env.BOT_TOKEN;
-    const ADMIN_GROUP_ID = process.env.ADMIN_GROUP_ID;
-
+// အရင်က ကုဒ်နေရာမှာ အခုလို ပြင်ပါ
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN; // TELEGRAM_BOT_TOKEN အဖြစ် ပြင်လိုက်ပါ
+const ADMIN_GROUP_ID = process.env.ADMIN_GROUP_ID;
     // အကယ်၍ Token သို့မဟုတ် ID မရှိရင် error တက်အောင်လုပ်ခြင်း
     if (!BOT_TOKEN || !ADMIN_GROUP_ID) {
         throw new Error("Missing BOT_TOKEN or ADMIN_GROUP_ID in environment variables");
