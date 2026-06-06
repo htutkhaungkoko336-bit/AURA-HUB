@@ -27,7 +27,7 @@ const getAdminKeyboard = (docId, selectedWinner) => {
                 { text: selectedWinner === 'teamB' ? '✅ Team B (Win)' : '⬜ Team B', callback_data: `selectB_${docId}` }
             ],
             [
-                { text: '✅ confirm', callback_data: `confirm_${docId}` },
+                { text: '✅ Confirm', callback_data: `confirm_${docId}` },
                 { text: '❌ Reject', callback_data: `reject_${docId}` }
             ],
             [{ text: '🔍 View Match Info', callback_data: `view_${docId}` }]
