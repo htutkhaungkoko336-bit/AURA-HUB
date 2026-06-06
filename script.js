@@ -419,17 +419,27 @@ else if (currentMatchTab === 'result') {
 async function showMatchDetail(matchId, teamAName, teamBName) {
     const modal = document.getElementById('match-detail-popup');
     const body = document.getElementById('match-detail-body');
-    body.innerHTML = "Loading..."; // ခဏစောင့်ခိုင်းမယ်
+    body.innerHTML = "Loading...";
     modal.style.display = 'flex';
 
     try {
-        const regs = await db.collection("registrations").where("matchId", "==", matchId).get();
+        // ဒီနေရာမှာ matchId ကို currentMatchId နဲ့ ပြောင်းလိုက်ပါ
+        const regs = await db.collection("registrations")
+                             .where("currentMatchId", "==", matchId)
+                             .get();
+
+        if (regs.empty) {
+            body.innerHTML = "No player data found.";
+            return;
+        }
+
         let teamAPlayersHTML = "";
         let teamBPlayersHTML = "";
 
         regs.forEach(doc => {
             const data = doc.data();
-            const playersList = data.players.map(p => `<div>${p.name}</div>`).join("");
+            // Players array ထဲက name ကို map လုပ်တာ မှန်ကန်ပါတယ်
+            const playersList = data.players.map(p => `<div style="margin-bottom:4px;">${p.name}</div>`).join("");
             
             if (data.squadName === teamAName) {
                 teamAPlayersHTML = playersList;
@@ -440,17 +450,18 @@ async function showMatchDetail(matchId, teamAName, teamBName) {
 
         body.innerHTML = `
             <div style="flex: 1; text-align: center;">
-                <div style="color:#c9a66b; font-weight:bold; margin-bottom:10px;">${teamAName}</div>
-                <div style="font-size: 0.85rem;">${teamAPlayersHTML}</div>
+                <div style="color:#c9a66b; font-weight:bold; margin-bottom:10px; font-size:0.9rem;">${teamAName}</div>
+                <div style="font-size: 0.8rem; color:#fff;">${teamAPlayersHTML || 'N/A'}</div>
             </div>
-            <div style="color: #444; margin-top: 10px;">VS</div>
+            <div style="color: #444; margin-top: 10px; font-weight:bold;">VS</div>
             <div style="flex: 1; text-align: center;">
-                <div style="color:#c9a66b; font-weight:bold; margin-bottom:10px;">${teamBName}</div>
-                <div style="font-size: 0.85rem;">${teamBPlayersHTML}</div>
+                <div style="color:#c9a66b; font-weight:bold; margin-bottom:10px; font-size:0.9rem;">${teamBName}</div>
+                <div style="font-size: 0.8rem; color:#fff;">${teamBPlayersHTML || 'N/A'}</div>
             </div>
         `;
     } catch (e) {
-        body.innerHTML = "Error loading players.";
+        console.error(e);
+        body.innerHTML = "Error loading data.";
     }
 }
 async function loadResultTab() {
