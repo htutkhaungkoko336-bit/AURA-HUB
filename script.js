@@ -448,23 +448,25 @@ async function showMatchDetail(matchId, teamAName, teamBName) {
             }
         });
 
-        body.innerHTML = `
-                    <div style="flex: 1; text-align: center;">
-                        <div style="color:#c9a66b; font-weight:bold; margin-bottom:12px; font-size:0.95rem;">${teamAName}</div>
-                        <div style="font-size: 0.85rem; color:#fff; text-align: left; display: inline-block;">
-                            ${teamAPlayersHTML.split('</div>').filter(Boolean).map(p => `<div>👤 ${p.replace('<div>', '')}</div>`).join('')}
-                        </div>
-                    </div>
-                    
-                    <div style="color: #444; font-size: 1.5rem; font-weight: 900; margin: 0 15px; align-self: center; transform: scaleY(1.2);">VS</div>
-                    
-                    <div style="flex: 1; text-align: center;">
-                        <div style="color:#c9a66b; font-weight:bold; margin-bottom:12px; font-size:0.95rem;">${teamBName}</div>
-                        <div style="font-size: 0.85rem; color:#fff; text-align: left; display: inline-block;">
-                            ${teamBPlayersHTML.split('</div>').filter(Boolean).map(p => `<div>👤 ${p.replace('<div>', '')}</div>`).join('')}
-                        </div>
-                    </div>
-                `;
+    body.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 10px;">
+            <div style="flex: 1; text-align: center;">
+                <div style="color:#c9a66b; font-weight:bold; margin-bottom:10px; font-size:0.8rem;">${teamAName}</div>
+                <div style="font-size: 0.75rem; color:#fff; text-align: left; display: inline-block;">
+                    ${teamAPlayersHTML.split('</div>').filter(Boolean).map(p => `<div style="margin-bottom:2px;">👤 ${p.replace('<div>', '').replace('</div>', '')}</div>`).join('')}
+                </div>
+            </div>
+
+            <div style="color: #c9a66b; font-size: 0.8rem; font-weight: bold; margin-top: 25px;">VS</div>
+
+            <div style="flex: 1; text-align: center;">
+                <div style="color:#c9a66b; font-weight:bold; margin-bottom:10px; font-size:0.8rem;">${teamBName}</div>
+                <div style="font-size: 0.75rem; color:#fff; text-align: left; display: inline-block;">
+                    ${teamBPlayersHTML.split('</div>').filter(Boolean).map(p => `<div style="margin-bottom:2px;">👤 ${p.replace('<div>', '').replace('</div>', '')}</div>`).join('')}
+                </div>
+            </div>
+        </div>
+    `;
         } catch (e) {
         console.error(e);
         body.innerHTML = "Error loading data.";
