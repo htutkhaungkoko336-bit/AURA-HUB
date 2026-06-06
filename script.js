@@ -169,6 +169,34 @@ async function uploadToImgBB(file) {
 }
 
 // --- SUBMIT TO FIRESTORE ---
+async function submitRegistration(formData) {
+    // ၁။ Firebase ကို အချက်အလက်ပို့ပါ
+    const docRef = await db.collection("registrations").add({
+        ...formData,
+        status: "pending",
+        createdAt: new Date()
+    });
+
+    // ၂။ Telegram ကို Noti ချက်ချင်းပို့ပါ
+    const botToken = "YOUR_TELEGRAM_BOT_TOKEN";
+    const chatId = "YOUR_GROUP_ID";
+    const message = `🔔 *Registration အသစ်ဝင်လာပါပြီ!*\n\n` +
+                    `Name: ${formData.squadName}\n` +
+                    `Fee: ${formData.fee} Ks\n` +
+                    `ID: ${docRef.id}`; // Database ထဲက ID ကို ယူသုံးတာပါ
+
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            chat_id: chatId,
+            text: message,
+            parse_mode: "Markdown"
+        })
+    });
+
+    alert("အောင်မြင်စွာ တင်ပြီးပါပြီ!");
+}
 async function submitProof() {
     if (window.event) window.event.preventDefault();
 
@@ -215,11 +243,11 @@ async function submitProof() {
             registrationData.kpayPhone = document.getElementById('kpay-no-solo').value;
         }
 
-        // Firestore ထဲကို Data တင်ခြင်း
+        // ၁။ Firestore ထဲကို Data တင်ခြင်း
         const docRef = await db.collection("registrations").add(registrationData);
         
-        // --- [အသစ်ထည့်ရမည့်အပိုင်း] Admin ဆီ Webhook ပို့ခြင်း ---
-        await fetch('https://aura-hub-bay.vercel.app/api/notify', {
+        // ၂။ Admin ဆီ Telegram Noti ပို့ခြင်း (Webhook)
+        await fetch('/api/notify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
@@ -227,7 +255,6 @@ async function submitProof() {
                 data: registrationData 
             })
         });
-        // ----------------------------------------------------
 
         document.getElementById('waiting-msg').innerText = "Payment ကို Admin မှ စစ်ဆေးနေပါသည်။ ခဏစောင့်ပေးပါ...";
         watchStatus(docRef.id);
