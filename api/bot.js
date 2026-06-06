@@ -51,10 +51,25 @@ bot.command('admin', (ctx) => {
 
 // --- Registration Logic ---
 bot.action(/regConfirm_(.+)/, async (ctx) => {
-    const regId = ctx.match[1];
-    await db.collection("registrations").doc(regId).update({ status: "confirm" });
-    await ctx.editMessageText("✅ Registration အတည်ပြုပြီးပါပြီ။");
-    ctx.answerCbQuery("Confirmed!");
+    // .trim() ကို ထည့်လိုက်ပါ
+    const regId = ctx.match[1].trim(); 
+    
+    try {
+        const docRef = db.collection("registrations").doc(regId);
+        const doc = await docRef.get();
+        
+        if (!doc.exists) {
+            console.log("Not found ID:", regId); // Logs မှာ ID ကို စစ်ကြည့်လို့ရအောင်
+            return ctx.answerCbQuery("❌ Data မရှိပါ (ID မကိုက်ညီ)");
+        }
+        
+        await docRef.update({ status: "confirm" });
+        await ctx.editMessageText("✅ Registration အတည်ပြုပြီးပါပြီ။");
+        ctx.answerCbQuery("Confirmed!");
+    } catch (err) {
+        console.error(err);
+        ctx.answerCbQuery("Error ဖြစ်နေပါတယ်");
+    }
 });
 
 bot.action(/regReject_(.+)/, async (ctx) => {
