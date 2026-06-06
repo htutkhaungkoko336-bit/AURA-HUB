@@ -449,17 +449,23 @@ async function showMatchDetail(matchId, teamAName, teamBName) {
         });
 
         body.innerHTML = `
-            <div style="flex: 1; text-align: center;">
-                <div style="color:#c9a66b; font-weight:bold; margin-bottom:10px; font-size:0.9rem;">${teamAName}</div>
-                <div style="font-size: 0.8rem; color:#fff;">${teamAPlayersHTML || 'N/A'}</div>
-            </div>
-            <div style="color: #444; margin-top: 10px; font-weight:bold;">VS</div>
-            <div style="flex: 1; text-align: center;">
-                <div style="color:#c9a66b; font-weight:bold; margin-bottom:10px; font-size:0.9rem;">${teamBName}</div>
-                <div style="font-size: 0.8rem; color:#fff;">${teamBPlayersHTML || 'N/A'}</div>
-            </div>
-        `;
-    } catch (e) {
+                    <div style="flex: 1; text-align: center;">
+                        <div style="color:#c9a66b; font-weight:bold; margin-bottom:12px; font-size:0.95rem;">${teamAName}</div>
+                        <div style="font-size: 0.85rem; color:#fff; text-align: left; display: inline-block;">
+                            ${teamAPlayersHTML.split('</div>').filter(Boolean).map(p => `<div>👤 ${p.replace('<div>', '')}</div>`).join('')}
+                        </div>
+                    </div>
+                    
+                    <div style="color: #444; font-size: 1.5rem; font-weight: 900; margin: 0 15px; align-self: center; transform: scaleY(1.2);">VS</div>
+                    
+                    <div style="flex: 1; text-align: center;">
+                        <div style="color:#c9a66b; font-weight:bold; margin-bottom:12px; font-size:0.95rem;">${teamBName}</div>
+                        <div style="font-size: 0.85rem; color:#fff; text-align: left; display: inline-block;">
+                            ${teamBPlayersHTML.split('</div>').filter(Boolean).map(p => `<div>👤 ${p.replace('<div>', '')}</div>`).join('')}
+                        </div>
+                    </div>
+                `;
+        } catch (e) {
         console.error(e);
         body.innerHTML = "Error loading data.";
     }
