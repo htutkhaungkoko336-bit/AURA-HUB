@@ -279,7 +279,16 @@
     <div id="spin-result" style="color:#c9a66b; margin-top:20px; font-weight:bold;">
         Who gets the FIRST PICK?
     </div>
-</div><!-- Firebase SDK v8 ကိုပဲ သုံးပါမယ် -->
+</div>
+<div id="match-detail-popup" class="modal" style="display: none;">
+    <div class="modal-content" style="background: #111; color: white; padding: 20px; border-radius: 10px; width: 90%; max-width: 400px; margin: auto; margin-top: 20%;">
+        <h3 style="text-align: center; color: #d4af37;">Match Details</h3>
+        <div id="match-detail-body" style="display: flex; justify-content: space-around; margin: 20px 0;">
+            </div>
+        <button onclick="document.getElementById('match-detail-popup').style.display='none'" style="width: 100%; padding: 10px; background: #c9a66b; border: none; border-radius: 5px; font-weight: bold;">Close</button>
+    </div>
+</div>
+<!-- Firebase SDK v8 ကိုပဲ သုံးပါမယ် -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 

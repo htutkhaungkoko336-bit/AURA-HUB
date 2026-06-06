@@ -347,32 +347,28 @@ else if (currentMatchTab === 'result') {
                 const isTeamAWinner = data.winner === 'teamA';
                 const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString('en-GB') : "";
 
-                container.innerHTML += `
-                    <div style="background: #1a1a1a; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 10px; font-family: sans-serif;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                            <span style="font-size: 0.75rem; color: #c9a66b; font-weight: bold;">💰 ${data.fee} Ks</span>
-                            <span style="font-size: 0.75rem; color: #666;">${dateStr}</span>
+            // Result Tab ထဲက Result Card Code အပိုင်းကို ဒီလို ပြင်လိုက်ပါ
+            container.innerHTML += `
+                <div style="background: #1a1a1a; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer;" 
+                    onclick="showMatchDetail('${data.matchId}', '${data.teamA}', '${data.teamB}')">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span style="font-size: 0.75rem; color: #c9a66b; font-weight: bold;">💰 ${data.fee} Ks</span>
+                        <span style="font-size: 0.75rem; color: #666;">${dateStr}</span>
+                    </div>
+                    
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div style="text-align: center; flex: 1;">
+                            <div style="color: #fff; font-weight: 600; font-size: 0.95rem;">${data.teamA}</div>
+                            <div style="color: #d4af37; font-size: 0.75rem; font-weight:bold; margin-top: 6px;">${isTeamAWinner ? 'WINNER' : 'LOSER'}</div>
                         </div>
-                        
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <div style="text-align: center; flex: 1;">
-                                <div style="color: #fff; font-weight: 600; font-size: 0.95rem;">${data.teamA}</div>
-                                <div style="color: #d4af37; font-size: 0.75rem; font-weight:bold; margin-top: 6px; letter-spacing: 0.5px;">
-                                    ${isTeamAWinner ? 'WINNER' : 'LOSER'}
-                                </div>
-                            </div>
-                            
-                            <div style="color: #d4af37; font-size: 0.7rem; font-weight: bold; margin: 0 10px;">VS</div>
-                            
-                            <div style="text-align: center; flex: 1;">
-                                <div style="color: #fff; font-weight: 600; font-size: 0.95rem;">${data.teamB}</div>
-                                <div style="color: #d4af37; font-size: 0.75rem; font-weight:bold; margin-top: 6px; letter-spacing: 0.5px;">
-                                    ${!isTeamAWinner ? 'WINNER' : 'LOSER'}
-                                </div>
-                            </div>
+                        <div style="color: #444; font-size: 0.7rem; font-weight: bold; margin: 0 10px;">VS</div>
+                        <div style="text-align: center; flex: 1;">
+                            <div style="color: #fff; font-weight: 600; font-size: 0.95rem;">${data.teamB}</div>
+                            <div style="color: #d4af37; font-size: 0.75rem; font-weight:bold; margin-top: 6px;">${!isTeamAWinner ? 'WINNER' : 'LOSER'}</div>
                         </div>
                     </div>
-                `;
+                </div>
+            `;
             });
         });
 }
@@ -418,6 +414,43 @@ else if (currentMatchTab === 'result') {
                     </div>`;
                 });
             });
+    }
+}
+async function showMatchDetail(matchId, teamAName, teamBName) {
+    const modal = document.getElementById('match-detail-popup');
+    const body = document.getElementById('match-detail-body');
+    body.innerHTML = "Loading..."; // ခဏစောင့်ခိုင်းမယ်
+    modal.style.display = 'flex';
+
+    try {
+        const regs = await db.collection("registrations").where("matchId", "==", matchId).get();
+        let teamAPlayersHTML = "";
+        let teamBPlayersHTML = "";
+
+        regs.forEach(doc => {
+            const data = doc.data();
+            const playersList = data.players.map(p => `<div>${p.name}</div>`).join("");
+            
+            if (data.squadName === teamAName) {
+                teamAPlayersHTML = playersList;
+            } else if (data.squadName === teamBName) {
+                teamBPlayersHTML = playersList;
+            }
+        });
+
+        body.innerHTML = `
+            <div style="flex: 1; text-align: center;">
+                <div style="color:#c9a66b; font-weight:bold; margin-bottom:10px;">${teamAName}</div>
+                <div style="font-size: 0.85rem;">${teamAPlayersHTML}</div>
+            </div>
+            <div style="color: #444; margin-top: 10px;">VS</div>
+            <div style="flex: 1; text-align: center;">
+                <div style="color:#c9a66b; font-weight:bold; margin-bottom:10px;">${teamBName}</div>
+                <div style="font-size: 0.85rem;">${teamBPlayersHTML}</div>
+            </div>
+        `;
+    } catch (e) {
+        body.innerHTML = "Error loading players.";
     }
 }
 async function loadResultTab() {
