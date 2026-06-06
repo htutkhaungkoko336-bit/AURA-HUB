@@ -335,45 +335,43 @@ function loadMatchRooms() {
                 });
             });
     } 
-    // --- RESULT TAB ---
-    else if (currentMatchTab === 'result') {
-        currentListener = db.collection("results")
-            .orderBy("timestamp", "desc")
-            .limit(10)
-            .onSnapshot((querySnapshot) => {
-                container.innerHTML = "";
-                if (querySnapshot.empty) {
-                    container.innerHTML = '<p style="text-align:center; color:#666; margin-top:20px; font-size:0.8rem;">No results found.</p>';
-                    return;
-                }
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    // Timestamp ကို ဖတ်လို့လွယ်အောင် ပြောင်းမယ်
-                    const date = data.timestamp ? data.timestamp.toDate().toLocaleDateString('my-MM') : "";
+// --- RESULT TAB (Compact & Minimal) ---
+else if (currentMatchTab === 'result') {
+    currentListener = db.collection("results")
+        .orderBy("timestamp", "desc")
+        .limit(10)
+        .onSnapshot((querySnapshot) => {
+            container.innerHTML = "";
+            querySnapshot.forEach(doc => {
+                const data = doc.data();
+                const isTeamAWinner = data.winner === 'teamA';
 
-                    container.innerHTML += `
-                        <div style="background: linear-gradient(145deg, #1a1a1a, #111); border: 1px solid #333; padding: 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                <span style="font-size: 0.75rem; color: #c9a66b; font-weight: bold;">💰 ${data.fee} Ks</span>
-                                <span style="font-size: 0.7rem; color: #666;">${date}</span>
+                container.innerHTML += `
+                    <div style="background: #1a1a1a; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 8px; font-family: sans-serif;">
+                        <div style="font-size: 0.7rem; color: #c9a66b; margin-bottom: 8px; text-align: right;">💰 ${data.fee} Ks</div>
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="text-align: center; flex: 1;">
+                                <div style="color: #fff; font-weight: 600; font-size: 0.9rem;">${data.teamA}</div>
+                                <div style="color: ${isTeamAWinner ? '#d4af37' : '#666'}; font-size: 0.65rem; font-weight:bold; margin-top: 2px;">
+                                    ${isTeamAWinner ? 'WIN' : 'LOSE'}
+                                </div>
                             </div>
                             
-                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #222; border-bottom: 1px solid #222;">
-                                <div style="color: #fff; font-weight: bold; font-size: 0.95rem; width: 40%; text-align: center;">${data.teamA}</div>
-                                <div style="color: #c9a66b; font-style: italic; font-weight: bold; font-size: 0.8rem;">VS</div>
-                                <div style="color: #fff; font-weight: bold; font-size: 0.95rem; width: 40%; text-align: center;">${data.teamB}</div>
-                            </div>
-
-                            <div style="text-align: center; margin-top: 10px;">
-                                <span style="font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px;">Winner</span>
-                                <div style="color: #00ff00; font-weight: bold; font-size: 1rem; margin-top: 2px;">🏆 ${data.winner === 'teamA' ? data.teamA : data.teamB}</div>
+                            <div style="color: #444; font-size: 0.7rem; font-weight: bold; margin: 0 10px;">VS</div>
+                            
+                            <div style="text-align: center; flex: 1;">
+                                <div style="color: #fff; font-weight: 600; font-size: 0.9rem;">${data.teamB}</div>
+                                <div style="color: ${!isTeamAWinner ? '#d4af37' : '#666'}; font-size: 0.65rem; font-weight:bold; margin-top: 2px;">
+                                    ${!isTeamAWinner ? 'WIN' : 'LOSE'}
+                                </div>
                             </div>
                         </div>
-                    `;
-                });
+                    </div>
+                `;
             });
-    }  
-  // --- WAITING TAB ---
+        });
+}  // --- WAITING TAB ---
     else {
         if (!myTeamInfo || !myTeamInfo.fee) return;
         
