@@ -335,7 +335,7 @@ function loadMatchRooms() {
                 });
             });
     } 
-// --- RESULT TAB (Compact & Minimal) ---
+// --- RESULT TAB (Refined Minimalist) ---
 else if (currentMatchTab === 'result') {
     currentListener = db.collection("results")
         .orderBy("timestamp", "desc")
@@ -345,25 +345,29 @@ else if (currentMatchTab === 'result') {
             querySnapshot.forEach(doc => {
                 const data = doc.data();
                 const isTeamAWinner = data.winner === 'teamA';
+                const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString('en-GB') : "";
 
                 container.innerHTML += `
-                    <div style="background: #1a1a1a; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 8px; font-family: sans-serif;">
-                        <div style="font-size: 0.7rem; color: #c9a66b; margin-bottom: 8px; text-align: right;">💰 ${data.fee} Ks</div>
+                    <div style="background: #1a1a1a; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 10px; font-family: sans-serif;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-size: 0.75rem; color: #c9a66b; font-weight: bold;">💰 ${data.fee} Ks</span>
+                            <span style="font-size: 0.75rem; color: #666;">${dateStr}</span>
+                        </div>
                         
                         <div style="display: flex; justify-content: space-between; align-items: center;">
                             <div style="text-align: center; flex: 1;">
-                                <div style="color: #fff; font-weight: 600; font-size: 0.9rem;">${data.teamA}</div>
-                                <div style="color: ${isTeamAWinner ? '#d4af37' : '#666'}; font-size: 0.65rem; font-weight:bold; margin-top: 2px;">
-                                    ${isTeamAWinner ? 'WIN' : 'LOSE'}
+                                <div style="color: #fff; font-weight: 600; font-size: 0.95rem;">${data.teamA}</div>
+                                <div style="color: #d4af37; font-size: 0.75rem; font-weight:bold; margin-top: 6px; letter-spacing: 0.5px;">
+                                    ${isTeamAWinner ? 'WINNER' : 'LOSER'}
                                 </div>
                             </div>
                             
-                            <div style="color: #444; font-size: 0.7rem; font-weight: bold; margin: 0 10px;">VS</div>
+                            <div style="color: #d4af37; font-size: 0.7rem; font-weight: bold; margin: 0 10px;">VS</div>
                             
                             <div style="text-align: center; flex: 1;">
-                                <div style="color: #fff; font-weight: 600; font-size: 0.9rem;">${data.teamB}</div>
-                                <div style="color: ${!isTeamAWinner ? '#d4af37' : '#666'}; font-size: 0.65rem; font-weight:bold; margin-top: 2px;">
-                                    ${!isTeamAWinner ? 'WIN' : 'LOSE'}
+                                <div style="color: #fff; font-weight: 600; font-size: 0.95rem;">${data.teamB}</div>
+                                <div style="color: #d4af37; font-size: 0.75rem; font-weight:bold; margin-top: 6px; letter-spacing: 0.5px;">
+                                    ${!isTeamAWinner ? 'WINNER' : 'LOSER'}
                                 </div>
                             </div>
                         </div>
@@ -371,7 +375,8 @@ else if (currentMatchTab === 'result') {
                 `;
             });
         });
-}  // --- WAITING TAB ---
+}
+// --- WAITING TAB ---
     else {
         if (!myTeamInfo || !myTeamInfo.fee) return;
         
