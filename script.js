@@ -343,26 +343,37 @@ function loadMatchRooms() {
             .onSnapshot((querySnapshot) => {
                 container.innerHTML = "";
                 if (querySnapshot.empty) {
-                    container.innerHTML = '<p style="text-align:center; color:#444; font-size:0.8rem;">No results found.</p>';
+                    container.innerHTML = '<p style="text-align:center; color:#666; margin-top:20px; font-size:0.8rem;">No results found.</p>';
                     return;
                 }
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
+                    // Timestamp ကို ဖတ်လို့လွယ်အောင် ပြောင်းမယ်
+                    const date = data.timestamp ? data.timestamp.toDate().toLocaleDateString('my-MM') : "";
+
                     container.innerHTML += `
-                        <div style="background: #111; border: 1px solid #333; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
-                            <p style="font-size: 0.75rem; color: #c9a66b;">Fee: ${data.fee} Ks</p>
-                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
-                                <span style="color:#fff;">🏆 ${data.teamA}</span>
-                                <span style="color:#888;">vs</span>
-                                <span style="color:#fff;">${data.teamB}</span>
+                        <div style="background: linear-gradient(145deg, #1a1a1a, #111); border: 1px solid #333; padding: 15px; border-radius: 12px; margin-bottom: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.3);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <span style="font-size: 0.75rem; color: #c9a66b; font-weight: bold;">💰 ${data.fee} Ks</span>
+                                <span style="font-size: 0.7rem; color: #666;">${date}</span>
                             </div>
-                            <p style="text-align: center; color: #00ff00; margin-top: 8px; font-size: 0.8rem;">Winner: ${data.winner}</p>
+                            
+                            <div style="display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-top: 1px solid #222; border-bottom: 1px solid #222;">
+                                <div style="color: #fff; font-weight: bold; font-size: 0.95rem; width: 40%; text-align: center;">${data.teamA}</div>
+                                <div style="color: #c9a66b; font-style: italic; font-weight: bold; font-size: 0.8rem;">VS</div>
+                                <div style="color: #fff; font-weight: bold; font-size: 0.95rem; width: 40%; text-align: center;">${data.teamB}</div>
+                            </div>
+
+                            <div style="text-align: center; margin-top: 10px;">
+                                <span style="font-size: 0.7rem; color: #888; text-transform: uppercase; letter-spacing: 1px;">Winner</span>
+                                <div style="color: #00ff00; font-weight: bold; font-size: 1rem; margin-top: 2px;">🏆 ${data.winner === 'teamA' ? data.teamA : data.teamB}</div>
+                            </div>
                         </div>
                     `;
                 });
             });
-    }
-    // --- WAITING TAB ---
+    }  
+  // --- WAITING TAB ---
     else {
         if (!myTeamInfo || !myTeamInfo.fee) return;
         
