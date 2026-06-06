@@ -432,32 +432,31 @@ async function showMatchDetail(matchId, teamAName, teamBName) {
 
         regs.forEach(doc => {
             const data = doc.data();
-            // နာမည်လေးတွေကို Box လေးတွေနဲ့ အလှဆင်လိုက်ပါတယ်
             const playersList = data.players.map(p => `
-                <div style="background: rgba(201, 166, 107, 0.08); border-left: 3px solid #c9a66b; padding: 6px 10px; margin-bottom: 6px; border-radius: 0 4px 4px 0; color: #fff; font-size: 0.75rem;">
-                    ${p.name}
+                <div style="display: flex; align-items: center; margin-bottom: 8px; color: #fff; font-size: 0.8rem;">
+                    <div style="width: 6px; height: 6px; background: #c9a66b; border-radius: 50%; margin-right: 10px; box-shadow: 0 0 8px #c9a66b;"></div>
+                    <span>${p.name}</span>
                 </div>
             `).join("");
             
-            if (data.squadName === teamAName) {
-                teamAPlayersHTML = playersList;
-            } else if (data.squadName === teamBName) {
-                teamBPlayersHTML = playersList;
-            }
+            if (data.squadName === teamAName) teamAPlayersHTML = playersList;
+            else if (data.squadName === teamBName) teamBPlayersHTML = playersList;
         });
 
         body.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 15px;">
-                <div style="flex: 1;">
-                    <div style="color:#c9a66b; font-weight:bold; margin-bottom:12px; font-size:0.85rem; text-align: center;">${teamAName}</div>
-                    ${teamAPlayersHTML || '<div style="color:#666; font-size:0.7rem;">No players</div>'}
-                </div>
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(201, 166, 107, 0.3); padding: 20px; border-radius: 15px; backdrop-filter: blur(10px); width: 100%;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+                    <div style="flex: 1;">
+                        <div style="color:#f1e4b9; font-weight:bold; margin-bottom:12px; font-size:0.85rem; text-align: center; border-bottom: 1px solid #c9a66b; padding-bottom: 5px;">${teamAName}</div>
+                        ${teamAPlayersHTML}
+                    </div>
 
-                <div style="color: #c9a66b; font-size: 0.8rem; font-weight: bold; margin-top: 35px;">VS</div>
+                    <div style="color: #c9a66b; font-size: 0.8rem; font-weight: 800; text-shadow: 0 0 10px #c9a66b; padding: 0 10px; align-self: center;">VS</div>
 
-                <div style="flex: 1;">
-                    <div style="color:#c9a66b; font-weight:bold; margin-bottom:12px; font-size:0.85rem; text-align: center;">${teamBName}</div>
-                    ${teamBPlayersHTML || '<div style="color:#666; font-size:0.7rem;">No players</div>'}
+                    <div style="flex: 1;">
+                        <div style="color:#f1e4b9; font-weight:bold; margin-bottom:12px; font-size:0.85rem; text-align: center; border-bottom: 1px solid #c9a66b; padding-bottom: 5px;">${teamBName}</div>
+                        ${teamBPlayersHTML}
+                    </div>
                 </div>
             </div>
         `;
