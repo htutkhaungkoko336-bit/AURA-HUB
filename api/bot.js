@@ -8,7 +8,10 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
-const ADMIN_GROUP_ID = process.env.ADMIN_GROUP_ID; 
+// Group ID နှစ်ခုကို သီးခြားခွဲသတ်မှတ်ခြင်း
+const ADMIN_GROUP_ID = process.env.ADMIN_GROUP_ID;         // Result Group အတွက်
+const REG_GROUP_ID = process.env.REGISTRATION_GROUP_ID;    // Registration Group အသစ်အတွက်
+
 const adminIds = process.env.ADMIN_IDS ? process.env.ADMIN_IDS.split(',').map(id => id.trim()) : [];
 
 function isAdmin(userId) {
@@ -47,7 +50,6 @@ bot.command('admin', (ctx) => {
 });
 
 // --- Registration Logic ---
-// မှတ်ချက်: Register တင်တဲ့နေရာမှာ ဒီ function ကို ခေါ်သုံးပေးရပါမယ်
 bot.action(/regConfirm_(.+)/, async (ctx) => {
     const regId = ctx.match[1];
     await db.collection("registrations").doc(regId).update({ status: "confirm" });
@@ -107,6 +109,7 @@ bot.on('photo', async (ctx) => {
         photoId, userId: ctx.from.id, matchId: matchId, timestamp: new Date(), selectedWinner: null 
     });
     
+    // Result Group အတွက် အရင် ID ကိုပဲ သုံးသည်
     await bot.telegram.sendPhoto(ADMIN_GROUP_ID, photoId, {
         caption: "📸 *ရလဒ် Screenshot*",
         parse_mode: 'Markdown',
@@ -186,7 +189,6 @@ bot.action(/reject_(.+)/, async (ctx) => {
 });
 
 module.exports = async (req, res) => {
-    // 1. CORS Headers (Frontend ကနေ request ပို့တဲ့အခါ Error မတက်အောင်)
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -195,12 +197,9 @@ module.exports = async (req, res) => {
         return res.status(200).end();
     }
 
-    // 2. Registration Notification လက်ခံရန် (Frontend ကနေ လှမ်းခေါ်တဲ့ အပိုင်း)
     if (req.url === '/api/notify' || (req.path && req.path === '/api/notify')) {
         try {
             const { regId, data } = req.body;
-            
-            // 5vs5 လား 1vs1 လား ခွဲခြားပြီး message တည်ဆောက်ခြင်း
             let playersList = "";
             if (data.mode === "5vs5" && data.players) {
                 playersList = data.players.map(p => `👤 ${p.name}`).join('\n');
@@ -215,7 +214,8 @@ module.exports = async (req, res) => {
                         `💰 Fee: ${data.fee}\n` +
                         `👥 Players:\n${playersList}`;
 
-            await bot.telegram.sendMessage(ADMIN_GROUP_ID, msg, {
+            // Registration အသစ်အတွက် REG_GROUP_ID ကိုသုံးသည်
+            await bot.telegram.sendMessage(REG_GROUP_ID, msg, {
                 parse_mode: 'HTML',
                 reply_markup: {
                     inline_keyboard: [[
@@ -231,7 +231,6 @@ module.exports = async (req, res) => {
         }
     }
 
-    // 3. Telegram Bot Update များအတွက် (Webhook)
     try { 
         await bot.handleUpdate(req.body); 
         return res.status(200).send('OK'); 
