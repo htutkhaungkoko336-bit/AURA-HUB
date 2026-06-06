@@ -1,8 +1,6 @@
-// axios ကို install လုပ်ထားပြီးသားဖြစ်ပါစေ
 const axios = require('axios');
 
 export default async function handler(req, res) {
-  // POST method သာ လက်ခံမည်
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
@@ -10,11 +8,15 @@ export default async function handler(req, res) {
   try {
     const { regId, data } = req.body;
     
-    // Environment Variables များမှ Token နှင့် ID ကို ခေါ်ယူခြင်း
+    // Environment Variables တွေကို ခေါ်သုံးခြင်း (Vercel settings ထဲကနေ လာမှာပါ)
     const BOT_TOKEN = process.env.BOT_TOKEN;
     const ADMIN_GROUP_ID = process.env.ADMIN_GROUP_ID;
 
-    // Telegram သို့ ပို့မည့် Message ပုံစံ
+    // အကယ်၍ Token သို့မဟုတ် ID မရှိရင် error တက်အောင်လုပ်ခြင်း
+    if (!BOT_TOKEN || !ADMIN_GROUP_ID) {
+        throw new Error("Missing BOT_TOKEN or ADMIN_GROUP_ID in environment variables");
+    }
+
     const message = `🔔 *New Registration Received!*\n\n` +
                     `Mode: ${data.mode}\n` +
                     `Fee: ${data.fee} Ks\n` +
@@ -22,11 +24,11 @@ export default async function handler(req, res) {
                     `[View Payment Proof](${data.paymentURL})\n\n` +
                     `ID: ${regId}`;
 
-    // Telegram API သို့ ပို့ခြင်း
+    // Telegram ကို စာပို့ခြင်း
     await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      chat_id: ADMIN_GROUP_ID,
-      text: message,
-      parse_mode: 'Markdown'
+        chat_id: ADMIN_GROUP_ID,
+        text: message,
+        parse_mode: 'Markdown'
     });
 
     return res.status(200).json({ success: true });
