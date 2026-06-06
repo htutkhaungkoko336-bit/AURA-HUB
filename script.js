@@ -423,23 +423,21 @@ async function showMatchDetail(matchId, teamAName, teamBName) {
     modal.style.display = 'flex';
 
     try {
-        // ဒီနေရာမှာ matchId ကို currentMatchId နဲ့ ပြောင်းလိုက်ပါ
         const regs = await db.collection("registrations")
                              .where("currentMatchId", "==", matchId)
                              .get();
-
-        if (regs.empty) {
-            body.innerHTML = "No player data found.";
-            return;
-        }
 
         let teamAPlayersHTML = "";
         let teamBPlayersHTML = "";
 
         regs.forEach(doc => {
             const data = doc.data();
-            // Players array ထဲက name ကို map လုပ်တာ မှန်ကန်ပါတယ်
-            const playersList = data.players.map(p => `<div style="margin-bottom:4px;">${p.name}</div>`).join("");
+            // နာမည်လေးတွေကို Box လေးတွေနဲ့ အလှဆင်လိုက်ပါတယ်
+            const playersList = data.players.map(p => `
+                <div style="background: rgba(201, 166, 107, 0.08); border-left: 3px solid #c9a66b; padding: 6px 10px; margin-bottom: 6px; border-radius: 0 4px 4px 0; color: #fff; font-size: 0.75rem;">
+                    ${p.name}
+                </div>
+            `).join("");
             
             if (data.squadName === teamAName) {
                 teamAPlayersHTML = playersList;
@@ -449,28 +447,21 @@ async function showMatchDetail(matchId, teamAName, teamBName) {
         });
 
         body.innerHTML = `
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 5px;">
-                
-                <div style="flex: 1; text-align: center;">
-                    <div style="color:#c9a66b; font-weight:bold; margin-bottom:8px; font-size:0.8rem;">${teamAName}</div>
-                    <div style="font-size: 0.75rem; color:#fff; text-align: left; display: inline-block;">
-                        ${teamAPlayersHTML.replace(/<div>/g, '<div style="margin-bottom:2px; white-space:nowrap;">👤 ')}
-                    </div>
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%; gap: 15px;">
+                <div style="flex: 1;">
+                    <div style="color:#c9a66b; font-weight:bold; margin-bottom:12px; font-size:0.85rem; text-align: center;">${teamAName}</div>
+                    ${teamAPlayersHTML || '<div style="color:#666; font-size:0.7rem;">No players</div>'}
                 </div>
 
-                <div style="color: #c9a66b; font-size: 0.8rem; font-weight: bold; margin-top: 25px; padding: 0 5px;">VS</div>
+                <div style="color: #c9a66b; font-size: 0.8rem; font-weight: bold; margin-top: 35px;">VS</div>
 
-                <div style="flex: 1; text-align: center;">
-                    <div style="color:#c9a66b; font-weight:bold; margin-bottom:8px; font-size:0.8rem;">${teamBName}</div>
-                    <div style="font-size: 0.75rem; color:#fff; text-align: left; display: inline-block;">
-                        ${teamBPlayersHTML.replace(/<div>/g, '<div style="margin-bottom:2px; white-space:nowrap;">👤 ')}
-                    </div>
+                <div style="flex: 1;">
+                    <div style="color:#c9a66b; font-weight:bold; margin-bottom:12px; font-size:0.85rem; text-align: center;">${teamBName}</div>
+                    ${teamBPlayersHTML || '<div style="color:#666; font-size:0.7rem;">No players</div>'}
                 </div>
-                
             </div>
         `;
-        } catch (e) {
-        console.error(e);
+    } catch (e) {
         body.innerHTML = "Error loading data.";
     }
 }
