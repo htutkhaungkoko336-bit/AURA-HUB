@@ -432,44 +432,35 @@ async function showMatchDetail(matchId, teamAName, teamBName) {
 
         regs.forEach(doc => {
             const data = doc.data();
-            const playersList = data.players.map(p => `
-                <div style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(201, 166, 107, 0.3); padding: 8px; margin-bottom: 6px; border-radius: 8px; text-align: center; color: #fff; font-size: 0.75rem;">
+            const pList = data.players.map(p => `
+                <div style="background: #1a1a1a; border: 1px solid #333; border-radius: 4px; padding: 6px; margin-bottom: 5px; font-size: 0.75rem; text-align: center; color: #fff;">
                     ${p.name}
                 </div>
             `).join("");
             
-            if (data.squadName === teamAName) teamAPlayersHTML = playersList;
-            else if (data.squadName === teamBName) teamBPlayersHTML = playersList;
+            if (data.squadName === teamAName) teamAPlayersHTML = pList;
+            else if (data.squadName === teamBName) teamBPlayersHTML = pList;
         });
 
-        // Banner ပုံစံအတွက် Style (Team Name တွေမှာ သုံးမယ်)
-        const bannerStyle = `
-            background: linear-gradient(to bottom, #d4af37, #aa8822);
-            color: #000;
-            padding: 8px 15px;
-            border-radius: 5px;
-            font-weight: bold;
-            font-size: 0.85rem;
-            text-align: center;
-            margin-bottom: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
-            border: 1px solid #ffd700;
-        `;
-
         body.innerHTML = `
-            <div style="width: 100%; position: relative; padding: 10px;">
-                <div style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: #000; border: 1px solid #c9a66b; color: #c9a66b; padding: 2px 10px; border-radius: 20px; font-weight: bold; font-size: 0.7rem; z-index: 1;">
-                    VS
-                </div>
-
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;">
-                    <div>
-                        <div style="${bannerStyle}">${teamAName}</div>
-                        ${teamAPlayersHTML}
+            <div style="width: 100%; color: #fff; padding: 10px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
+                    <div style="flex: 1;">
+                        <div style="text-align: center; font-weight: 900; font-size: 1.2rem; color: #fff; margin-bottom: 20px;">
+                            🚩 ${teamAName}
+                        </div>
+                        ${teamAPlayersHTML || '<div style="color:#555; text-align:center; font-size:0.75rem;">-</div>'}
                     </div>
-                    <div>
-                        <div style="${bannerStyle}">${teamBName}</div>
-                        ${teamBPlayersHTML}
+
+                    <div style="display: flex; flex-direction: column; justify-content: center; height: 265px; color: #c9a66b; font-weight: 900; font-size: 0.9rem;">
+                        VS
+                    </div>
+
+                    <div style="flex: 1;">
+                        <div style="text-align: center; font-weight: 900; font-size: 1.2rem; color: #fff; margin-bottom: 20px;">
+                            🚩 ${teamBName}
+                        </div>
+                        ${teamBPlayersHTML || '<div style="color:#555; text-align:center; font-size:0.75rem;">-</div>'}
                     </div>
                 </div>
             </div>
