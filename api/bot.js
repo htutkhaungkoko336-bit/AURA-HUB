@@ -79,29 +79,48 @@ bot.action(/regReject_(.+)/, async (ctx) => {
     ctx.answerCbQuery("Rejected!");
 });
 
-// 1. Start Command
+// 1. Start Command (ပြင်ဆင်ပြီး)
 bot.start(async (ctx) => {
     const userId = ctx.from.id.toString();
     if (isAdmin(userId)) return ctx.reply("👋 Admin Panel သို့ ကြိုဆိုပါသည်။ /admin ဟု ရိုက်၍ Menu ခေါ်ပါ။");
+    
     const matchId = ctx.startPayload;
     if (!matchId) return ctx.reply("🔥 AURA HUB Matchmaking Bot သို့ ကြိုဆိုပါသည်။");
+    
     await db.collection("sessions").doc(userId).set({ currentMatchId: matchId }, { merge: true });
+    
     try {
         const matchDoc = await db.collection("matches").doc(matchId).get();
         if (!matchDoc.exists) return ctx.reply("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
         const matchData = matchDoc.data();
+        
         const [leaderADoc, leaderBDoc] = await Promise.all([
             db.collection("registrations").doc(matchData.teamA_LeaderId).get(),
             db.collection("registrations").doc(matchData.teamB_LeaderId).get()
         ]);
+        
         const dataA = leaderADoc.data() || { players: [], kpayPhone: "မရှိပါ" };
         const dataB = leaderBDoc.data() || { players: [], kpayPhone: "မရှိပါ" };
         const renderPlayers = (players) => players.map(p => `👤 ${p.name}`).join('\n');
-        const msg = `<b>🔍 MATCH DETAILS</b>\n\n💰 <b>Fee:</b> ${matchData.fee || 0}\n━━━━━━━━━━━━━━\n<b>🏆 TEAM A: ${matchData.teamA}</b>\n📞 Ph: ${dataA.kpayPhone}\n${renderPlayers(dataA.players)}\n\n<b>🏆 TEAM B: ${matchData.teamB}</b>\n📞 Ph: ${dataB.kpayPhone}\n${renderPlayers(dataB.players)}\n━━━━━━━━━━━━━━\n🎲 <b>First Pick:</b> ${matchData.firstPickWinner}`;
+        
+        // ဒီနေရာမှာ သင်ရေးချင်တဲ့ စာသားကို ထည့်ပါ
+        const instructionNote = "💡 *အနိုင်ရရှိသည့် အသင်းက Result Screenshot ကို ပို့ပေးပါ၊ ကျေးဇူးတင်ပါသည်။*";
+        
+        const msg = `<b>🔍 MATCH DETAILS</b>\n\n` +
+                    `💰 <b>Fee:</b> ${matchData.fee || 0}\n` +
+                    `━━━━━━━━━━━━━━\n` +
+                    `<b>🏆 TEAM A: ${matchData.teamA}</b>\n📞 Ph: ${dataA.kpayPhone}\n${renderPlayers(dataA.players)}\n\n` +
+                    `<b>🏆 TEAM B: ${matchData.teamB}</b>\n📞 Ph: ${dataB.kpayPhone}\n${renderPlayers(dataB.players)}\n` +
+                    `━━━━━━━━━━━━━━\n` +
+                    `🎲 <b>First Pick:</b> ${matchData.firstPickWinner}\n\n` +
+                    instructionNote; // First Pick အောက်မှာ ပေါ်လာပါမယ်
+        
         ctx.reply(msg, { parse_mode: 'HTML' });
-    } catch (e) { console.error(e); ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။"); }
+    } catch (e) { 
+        console.error(e); 
+        ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။"); 
+    }
 });
-
 // 2. Photo Handler
 bot.on('photo', async (ctx) => {
     if (ctx.chat.id.toString() === ADMIN_GROUP_ID && ctx.message.reply_to_message) {
