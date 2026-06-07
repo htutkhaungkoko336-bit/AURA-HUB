@@ -213,31 +213,52 @@ async function submitProof() {
 
     try {
         const paymentURL = await uploadToImgBB(ssFile);
-        let squadLogoURL = sqLogoFile ? await uploadToImgBB(sqLogoFile) : (myTeamInfo?.squadLogo || "https://i.ibb.co/4pGm0Zf/default-logo.png");
+        let squadLogoURL = sqLogoFile ? await uploadToImgBB(sqLogoFile) : "https://i.ibb.co/4pGm0Zf/default-logo.png";
 
-        // script.js ထဲက submitProof() function ထဲမှာ
-        let updateData = {
+        const mode = mapData[currentIndex].mode;
+        let registrationData = {
+            mode: mode,
+            fee: selectedFee,
             paymentURL: paymentURL,
             squadLogo: squadLogoURL,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             status: "pending",
-            isResubmission: false, // <--- ဒီမှာ false ပြန်လုပ်ပေးလိုက်ပါ
-            rejectReason: firebase.firestore.FieldValue.delete()
+            matchStatus: "none",
+            isResubmission: window.isResubmission || false // အဓိက အချက်!
         };
 
-        // လက်ရှိ ရှိပြီးသား ID (myTeamInfo.id) ရှိမရှိစစ်ပြီး Update လုပ်မယ်
-        if (myTeamInfo && myTeamInfo.id) {
-            await db.collection("registrations").doc(myTeamInfo.id).update(updateData);
-            alert("အောင်မြင်စွာ ပြန်လည်တင်သွင်းပြီးပါပြီ။ Admin ပြန်စစ်ပေးပါလိမ့်မယ်။");
+        // Player Data များကို စုစည်းခြင်း
+        if (mode === "5vs5") {
+            registrationData.squadName = document.getElementById('squad-name').value;
+            registrationData.players = Array.from(document.querySelectorAll('#page-5vs5 .player-row')).map(row => ({
+                name: row.querySelectorAll('input')[0].value,
+                id: row.querySelectorAll('input')[1].value
+            }));
+            registrationData.kpayName = document.getElementById('kpay-name').value;
+            registrationData.kpayPhone = document.getElementById('kpay-no').value;
         } else {
-            // ID မရှိရင်မှ အသစ် Add လုပ်မယ် (ပထမအကြိမ်ဆိုရင်)
-            const docRef = await db.collection("registrations").add({ ...updateData, mode: mapData[currentIndex].mode });
-            watchStatus(docRef.id);
+            const soloRow = document.querySelector('#page-1vs1 .player-row');
+            registrationData.playerName = soloRow.querySelectorAll('input')[0].value;
+            registrationData.mlbbId = soloRow.querySelectorAll('input')[1].value;
+            registrationData.kpayName = document.getElementById('kpay-name-solo').value;
+            registrationData.kpayPhone = document.getElementById('kpay-no-solo').value;
         }
 
+        // ၁။ Firestore ထဲကို Data တင်ခြင်း
+        const docRef = await db.collection("registrations").add(registrationData);
+        
+        // ၂။ Admin ဆီ Telegram Noti ပို့ခြင်း (Webhook)
+        await fetch('/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                regId: docRef.id, 
+                data: registrationData 
+            })
+        });
+
         document.getElementById('waiting-msg').innerText = "Payment ကို Admin မှ စစ်ဆေးနေပါသည်။ ခဏစောင့်ပေးပါ...";
-        // ခလုတ်ပြန်ဖျောက်
-        document.getElementById('submit-btn').style.display = 'none';
+        watchStatus(docRef.id);
 
     } catch (error) {
         alert("Error: " + error.message);
@@ -272,23 +293,26 @@ function watchStatus(docId) {
                 document.getElementById('page-match-center').style.display = 'flex';
                 if (typeof loadMatchRooms === 'function') loadMatchRooms();
             } 
-            // ... ရှိပြီးသား code အောက်မှာ ...
-            else if (data.status === "rejected") {
-                // ၁။ Error Message ပြမယ်
-                if (waitingMsg) {
-                    waitingMsg.innerHTML = `❌ သင့်၏ Registration ကို ပယ်ချလိုက်ပါသည်။ <br> 
-                                            အကြောင်းရင်း: <b>${data.rejectReason || "အချက်အလက်မပြည့်စုံခြင်း"}</b>`;
-                }
-
-                // ၂။ Submit Proof ခလုတ်ကို ပြန်ပေါ်ပေးမယ်
-                const submitBtn = document.getElementById('submit-proof-btn'); // မင်းရဲ့ button ID ကို သေချာစစ်ပါ
-                if (submitBtn) {
-                    submitBtn.style.display = 'block'; 
-                    submitBtn.innerText = "Re-submit Proof"; // ခလုတ်စာသားကို ပြင်ပေးလို့ရတယ်
-                }
-            }
-            // ...
-     // --- [မူလသင်ရေးထားသော Rule များ] ---
+                else if (data.status === "rejected") {
+                                // Reject Reason များကို မြန်မာစာသားအဖြစ် ပြောင်းလဲခြင်း
+                                const reasons = {
+                                    'fee': 'Fee ကြေး မလုံလောက်ပါ',
+                                    'identity': 'Name သို့မဟုတ် ID မမှန်ကန်ပါ',
+                                    'payment': 'K-Pay အချက်အလက် မှားယွင်းနေပါသည်',
+                                    'logo': 'တင်ထားသောပုံမှာ ညစ်ညမ်းနေပါသည်'
+                                };
+                                
+                                // data.rejectReason က 'fee' ဆိုရင် 'Fee ကြေး မလုံလောက်ပါ' လို့ ပေါ်လာမယ်
+                                const reasonText = reasons[data.rejectReason] || "အချက်အလက်မပြည့်စုံခြင်း သို့မဟုတ် ငွေလွှဲပြေစာမမှန်ခြင်း";
+                                
+                                if (waitingMsg) {
+                                    waitingMsg.innerText = `❌ သင်၏ Registration ကို ပယ်ချလိုက်ပါသည်။\nအကြောင်းရင်း: ${reasonText}`;
+                                }
+                                // "Back to Form" ခလုတ်ကို ပြန်ပြမယ်
+                                const backBtn = document.getElementById('back-to-form-btn'); // သင့် HTML ထဲက ခလုတ် ID
+                                if (backBtn) backBtn.style.display = 'block';
+                                                    }
+            // --- [မူလသင်ရေးထားသော Rule များ] ---
             if (data.status === "confirm" && (data.matchStatus === "none" || data.matchStatus === "waiting") && !data.currentMatchId) {
                 const playingLobby = document.getElementById('page-playing-lobby');
                 if (playingLobby) playingLobby.style.display = 'none';
@@ -303,32 +327,20 @@ function watchStatus(docId) {
         }
     });
 }
-
+// User က ပြန်ပြင်ဖို့ ခလုတ်ကို နှိပ်တဲ့အခါ
 document.getElementById('back-to-form-btn').addEventListener('click', async () => {
-    try {
-        // ၁။ Status ကို pending ပြန်ပြောင်း
-        await db.collection("registrations").doc(myTeamInfo.id).update({
-            status: "pending",
-            rejectReason: null
-        });
-
-        // ၂။ UI ရှင်းလင်းခြင်း (အရေးကြီးသည်)
-        document.getElementById('waiting-msg').style.display = 'none';
-        document.getElementById('back-to-form-btn').style.display = 'none';
-        
-        // ဓာတ်ပုံ preview များကို ဖျောက်ပြီး နေရာလွတ်စေခြင်း
-        document.getElementById('ssPreview').style.display = 'none';
-        document.getElementById('ss-placeholder').style.display = 'flex';
-        
-        // ၃။ ပုံမှန် registration form page သို့ ပြန်ပို့ပေးပါ
-        document.getElementById('page-payment-proof').style.display = 'none';
-        // သင်၏ form page id အပေါ်မူတည်၍ ပြောင်းပေးပါ (ဥပမာ - page-5vs5 သို့မဟုတ် page-1vs1)
-        document.getElementById(myTeamInfo.mode === '5vs5' ? 'page-5vs5' : 'page-1vs1').style.display = 'block';
-
-        alert("Registration ပြန်လည်ပြင်ဆင်နိုင်ပါပြီ။");
-    } catch (error) {
-        console.error("Error updating status:", error);
-    }
+    // 1. Database ထဲက status ကို pending ပြန်ပြောင်းမယ်
+    await db.collection("registrations").doc(myTeamInfo.id).update({
+        status: "pending",
+        rejectReason: null // အရင် error message ကို ဖျက်လိုက်မယ်
+    });
+    
+    // 2. Form ပြန်ပြမယ်
+    document.getElementById('page-payment-proof').style.display = 'block';
+    document.getElementById('back-to-form-btn').style.display = 'none';
+    
+    // 3. Status ပြောင်းသွားရင် စာသားကိုလည်း clear လုပ်ပေးမယ်
+    document.getElementById('waiting-msg').innerText = "ကျေးဇူးပြု၍ ပြေစာအသစ် တင်ပေးပါ";
 });
 
 function switchTab(tabName, element) {

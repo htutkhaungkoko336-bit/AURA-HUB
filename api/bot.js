@@ -99,8 +99,7 @@ bot.action(/rj_(.+)_(.+)/, async (ctx) => {
         // တစ်ခါတည်း update လုပ်ပါ
         await docRef.update({ 
             status: "rejected", 
-            rejectReason: reason,
-            isResubmission: true  // <--- ဒီနေရာလေးမှာ ထည့်ပေးလိုက်ပါ
+            rejectReason: reason 
         });        
         const userData = doc.data();
         if(userData.userId) {
