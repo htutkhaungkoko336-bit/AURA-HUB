@@ -62,26 +62,36 @@ bot.action(/regConfirm_(.+)/, async (ctx) => {
     ctx.answerCbQuery("Confirmed!");
 });
 
+// ၁။ Registration အတွက် Reject အကြောင်းအရင်းရွေးခိုင်းခြင်း
 bot.action(/regReject_(.+)/, async (ctx) => {
-    await db.collection("registrations").doc(ctx.match[1].trim()).update({ status: "rejected" });
-    await ctx.editMessageText("❌ Registration ပယ်ချလိုက်ပါပြီ။");
-    ctx.answerCbQuery("Rejected!");
-});
-
-// --- Result & Reject Logic ---
-// ၁။ ပထမအဆင့် Reject ခလုတ်နှိပ်လျှင် အကြောင်းအရင်းရွေးခိုင်းရန်
-bot.action(/reject_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
-    await ctx.editMessageCaption("❌ Reject လုပ်ရသည့် အကြောင်းအရင်းကို ရွေးချယ်ပါ:", {
-        reply_markup: getRejectKeyboard(docId)
-    });
-    ctx.answerCbQuery();
+    // getRejectKeyboard က pending_photos အတွက် ရေးထားတာမို့ 
+    // registration အတွက်လည်း အဆင်ပြေအောင် ဒီအတိုင်း သုံးလို့ရပါတယ်
+    await ctx.editMessageReplyMarkup(getRejectKeyboard(docId));
+    ctx.answerCbQuery("အကြောင်းအရင်း ရွေးပေးပါ");
 });
 
-// ၂။ အကြောင်းအရင်း တစ်ခုခု ရွေးလိုက်လျှင် User ထံစာပို့ပြီး Reject လုပ်ခြင်း
+// ၂။ အကြောင်းအရင်းရွေးလိုက်လျှင် (Registration အတွက်)
+// သင်၏ rj_ action ထဲမှာ pending_photos ကိုပဲ ရှာနေတာဖြစ်လို့ 
+// registration အတွက်ပါ အလုပ်လုပ်အောင် ဒီလိုလေး ပြင်ပေးပါ
 bot.action(/rj_(.+)_(.+)/, async (ctx) => {
     const reason = ctx.match[1];
     const docId = ctx.match[2];
+    
+    // အရင်ဆုံး registrations ထဲမှာ ရှိမရှိ စစ်ပါ
+    let docRef = db.collection("registrations").doc(docId);
+    let doc = await docRef.get();
+    
+    // အကယ်၍ registration မှာ မရှိမှ pending_photos ထဲ ရှာပါ (Result အတွက်)
+    let isRegistration = true;
+    if (!doc.exists) {
+        docRef = db.collection("pending_photos").doc(docId);
+        doc = await docRef.get();
+        isRegistration = false;
+    }
+
+    if (!doc.exists) return ctx.answerCbQuery("❌ Data မရှိပါ။");
+    
     const reasonMap = { 
         'fee': 'Fee ကြေး မလုံလောက်ခြင်း', 
         'identity': 'Name သို့မဟုတ် ID မမှန်ကန်ခြင်း', 
@@ -89,18 +99,20 @@ bot.action(/rj_(.+)_(.+)/, async (ctx) => {
         'logo': 'ညစ်ညမ်းပုံတင်ခြင်း' 
     };
 
-    const doc = await db.collection("pending_photos").doc(docId).get();
-    if (!doc.exists) return ctx.answerCbQuery("❌ Data မရှိပါ။");
-    
     try {
-        await ctx.telegram.sendMessage(doc.data().userId, `❌ သင်၏ ရလဒ် Screenshot ကို ပယ်ချလိုက်ပါပြီ။\n\n📝 အကြောင်းရင်း: ${reasonMap[reason]}\n🔄 ကျေးဇူးပြု၍ ပြန်လည်ပြင်ဆင်ပြီး ပုံအသစ်တင်ပေးပါ။`);
+        await docRef.update({ status: "rejected" });
+        
+        const userData = doc.data();
+        if(userData.userId) {
+            await ctx.telegram.sendMessage(userData.userId, `❌ သင်၏ Registration/Result ကို ပယ်ချလိုက်ပါပြီ။\n\n📝 အကြောင်းရင်း: ${reasonMap[reason]}\n🔄 ကျေးဇူးပြု၍ ပြန်လည်ပြင်ဆင်ပြီး ပုံအသစ်တင်ပေးပါ။`);
+        }
+        
         await ctx.editMessageCaption(`✅ ${reasonMap[reason]} ကြောင့် Reject လုပ်ပြီးကြောင်း အကြောင်းကြားလိုက်ပါပြီ။`);
     } catch (err) {
-        await ctx.editMessageCaption(`✅ ပယ်ချပြီးပါပြီ (User ထံသို့ Message ပို့မရပါ)။`);
+        await ctx.editMessageCaption(`✅ Reject လုပ်ပြီးပါပြီ။`);
     }
     ctx.answerCbQuery("Reject လုပ်ပြီးပါပြီ");
 });
-
 // --- Start, Photo, Selection, View, Confirm ---
 bot.start(async (ctx) => {
     const userId = ctx.from.id.toString();
