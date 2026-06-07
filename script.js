@@ -331,7 +331,7 @@ function watchStatus(docId) {
                 const submitBtn = document.getElementById('submit-btn');
                 if (submitBtn) {
                     submitBtn.style.display = 'block';
-                    submitBtn.innerText = "ပြန်လည်တင်ပြမည် (Resubmit)";
+                    submitBtn.innerText = "Resubmit";
                 }
                 
                 // Back to Form ခလုတ် ပြန်ပြခြင်း
