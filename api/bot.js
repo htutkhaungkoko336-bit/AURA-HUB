@@ -71,45 +71,48 @@ bot.action(/regReject_(.+)/, async (ctx) => {
     ctx.answerCbQuery("အကြောင်းအရင်း ရွေးပေးပါ");
 });
 
-// ၂။ အကြောင်းအရင်းရွေးလိုက်လျှင် (Registration အတွက်)
-// သင်၏ rj_ action ထဲမှာ pending_photos ကိုပဲ ရှာနေတာဖြစ်လို့ 
-// registration အတွက်ပါ အလုပ်လုပ်အောင် ဒီလိုလေး ပြင်ပေးပါ
 bot.action(/rj_(.+)_(.+)/, async (ctx) => {
     const reason = ctx.match[1];
     const docId = ctx.match[2];
     
-    // အရင်ဆုံး registrations ထဲမှာ ရှိမရှိ စစ်ပါ
+    // အကြောင်းအရင်းများ
+    const reasonMap = { 
+        'fee': 'Fee ကြေး မလုံလောက်ပါ', 
+        'identity': 'Name သို့မဟုတ် ID မမှန်ကန်ပါ', 
+        'payment': 'K-Pay အချက်အလက် မှားယွင်းနေပါသည်', 
+        'logo': 'တင်ထားသောပုံမှာ ညစ်ညမ်းနေပါသည်' 
+    };
+
+    // Database ထဲမှာ အရင်ရှာပါ
     let docRef = db.collection("registrations").doc(docId);
     let doc = await docRef.get();
     
-    // အကယ်၍ registration မှာ မရှိမှ pending_photos ထဲ ရှာပါ (Result အတွက်)
-    let isRegistration = true;
+    // registration မှာ မရှိရင် pending_photos မှာ ရှာပါ
     if (!doc.exists) {
         docRef = db.collection("pending_photos").doc(docId);
         doc = await docRef.get();
-        isRegistration = false;
     }
 
     if (!doc.exists) return ctx.answerCbQuery("❌ Data မရှိပါ။");
     
-    const reasonMap = { 
-        'fee': 'Fee ကြေး မလုံလောက်ခြင်း', 
-        'identity': 'Name သို့မဟုတ် ID မမှန်ကန်ခြင်း', 
-        'payment': 'K-Pay အချက်အလက် မှားယွင်းခြင်း', 
-        'logo': 'ညစ်ညမ်းပုံတင်ခြင်း' 
-    };
-
     try {
-        await docRef.update({ status: "rejected" });
-        
+        // တစ်ခါတည်း update လုပ်ပါ
+        await docRef.update({ 
+            status: "rejected", 
+            rejectReason: reason 
+        });        
         const userData = doc.data();
         if(userData.userId) {
-            await ctx.telegram.sendMessage(userData.userId, `❌ သင်၏ Registration/Result ကို ပယ်ချလိုက်ပါပြီ။\n\n📝 အကြောင်းရင်း: ${reasonMap[reason]}\n🔄 ကျေးဇူးပြု၍ ပြန်လည်ပြင်ဆင်ပြီး ပုံအသစ်တင်ပေးပါ။`);
+            // User ဆီ စာပို့ခြင်း
+            const msg = `❌ သင်၏ Registration/Result ကို ပယ်ချလိုက်ပါပြီ။\n\n📝 အကြောင်းရင်း: <b>${reasonMap[reason]}</b>\n🔄 ကျေးဇူးပြု၍ ပြန်လည်ပြင်ဆင်ပြီး ပုံအသစ်တင်ပေးပါ။`;
+            await ctx.telegram.sendMessage(userData.userId, msg, { parse_mode: 'HTML' });
         }
         
-        await ctx.editMessageCaption(`✅ ${reasonMap[reason]} ကြောင့် Reject လုပ်ပြီးကြောင်း အကြောင်းကြားလိုက်ပါပြီ။`);
+        // Admin Group ထဲမှာ စာသားပြောင်းခြင်း
+        await ctx.editMessageText(`✅ ${reasonMap[reason]} ကြောင့် Reject လုပ်ပြီးကြောင်း အကြောင်းကြားလိုက်ပါပြီ။`);
     } catch (err) {
-        await ctx.editMessageCaption(`✅ Reject လုပ်ပြီးပါပြီ။`);
+        console.error(err);
+        await ctx.editMessageText(`✅ Reject လုပ်ပြီးပါပြီ။`);
     }
     ctx.answerCbQuery("Reject လုပ်ပြီးပါပြီ");
 });
