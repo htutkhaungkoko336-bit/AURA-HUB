@@ -213,52 +213,31 @@ async function submitProof() {
 
     try {
         const paymentURL = await uploadToImgBB(ssFile);
-        let squadLogoURL = sqLogoFile ? await uploadToImgBB(sqLogoFile) : "https://i.ibb.co/4pGm0Zf/default-logo.png";
+        let squadLogoURL = sqLogoFile ? await uploadToImgBB(sqLogoFile) : (myTeamInfo?.squadLogo || "https://i.ibb.co/4pGm0Zf/default-logo.png");
 
-        const mode = mapData[currentIndex].mode;
-        let registrationData = {
-            mode: mode,
-            fee: selectedFee,
+        // script.js ထဲက submitProof() function ထဲမှာ
+        let updateData = {
             paymentURL: paymentURL,
             squadLogo: squadLogoURL,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             status: "pending",
-            matchStatus: "none",
-            isResubmission: window.isResubmission || false // အဓိက အချက်!
+            isResubmission: false, // <--- ဒီမှာ false ပြန်လုပ်ပေးလိုက်ပါ
+            rejectReason: firebase.firestore.FieldValue.delete()
         };
 
-        // Player Data များကို စုစည်းခြင်း
-        if (mode === "5vs5") {
-            registrationData.squadName = document.getElementById('squad-name').value;
-            registrationData.players = Array.from(document.querySelectorAll('#page-5vs5 .player-row')).map(row => ({
-                name: row.querySelectorAll('input')[0].value,
-                id: row.querySelectorAll('input')[1].value
-            }));
-            registrationData.kpayName = document.getElementById('kpay-name').value;
-            registrationData.kpayPhone = document.getElementById('kpay-no').value;
+        // လက်ရှိ ရှိပြီးသား ID (myTeamInfo.id) ရှိမရှိစစ်ပြီး Update လုပ်မယ်
+        if (myTeamInfo && myTeamInfo.id) {
+            await db.collection("registrations").doc(myTeamInfo.id).update(updateData);
+            alert("အောင်မြင်စွာ ပြန်လည်တင်သွင်းပြီးပါပြီ။ Admin ပြန်စစ်ပေးပါလိမ့်မယ်။");
         } else {
-            const soloRow = document.querySelector('#page-1vs1 .player-row');
-            registrationData.playerName = soloRow.querySelectorAll('input')[0].value;
-            registrationData.mlbbId = soloRow.querySelectorAll('input')[1].value;
-            registrationData.kpayName = document.getElementById('kpay-name-solo').value;
-            registrationData.kpayPhone = document.getElementById('kpay-no-solo').value;
+            // ID မရှိရင်မှ အသစ် Add လုပ်မယ် (ပထမအကြိမ်ဆိုရင်)
+            const docRef = await db.collection("registrations").add({ ...updateData, mode: mapData[currentIndex].mode });
+            watchStatus(docRef.id);
         }
 
-        // ၁။ Firestore ထဲကို Data တင်ခြင်း
-        const docRef = await db.collection("registrations").add(registrationData);
-        
-        // ၂။ Admin ဆီ Telegram Noti ပို့ခြင်း (Webhook)
-        await fetch('/api/notify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                regId: docRef.id, 
-                data: registrationData 
-            })
-        });
-
         document.getElementById('waiting-msg').innerText = "Payment ကို Admin မှ စစ်ဆေးနေပါသည်။ ခဏစောင့်ပေးပါ...";
-        watchStatus(docRef.id);
+        // ခလုတ်ပြန်ဖျောက်
+        document.getElementById('submit-btn').style.display = 'none';
 
     } catch (error) {
         alert("Error: " + error.message);
@@ -293,29 +272,22 @@ function watchStatus(docId) {
                 document.getElementById('page-match-center').style.display = 'flex';
                 if (typeof loadMatchRooms === 'function') loadMatchRooms();
             } 
+            // ... ရှိပြီးသား code အောက်မှာ ...
             else if (data.status === "rejected") {
-                // 1. Reject အကြောင်းရင်းများကို မြန်မာလို ပြပေးခြင်း
-                const reasonMap = {
-                    'fee': 'Fee ကြေး မလုံလောက်ပါ',
-                    'identity': 'Name သို့မဟုတ် ID မမှန်ကန်ပါ',
-                    'payment': 'K-Pay အချက်အလက် မှားယွင်းနေပါသည်',
-                    'logo': 'တင်ထားသောပုံမှာ ညစ်ညမ်းနေပါသည်'
-                };
-                const reasonText = reasonMap[data.rejectReason] || "အချက်အလက် မပြည့်စုံခြင်း";
+                // ၁။ Error Message ပြမယ်
+                if (waitingMsg) {
+                    waitingMsg.innerHTML = `❌ သင့်၏ Registration ကို ပယ်ချလိုက်ပါသည်။ <br> 
+                                            အကြောင်းရင်း: <b>${data.rejectReason || "အချက်အလက်မပြည့်စုံခြင်း"}</b>`;
+                }
 
-                const waitingMsg = document.getElementById('waiting-msg');
-                const backBtn = document.getElementById('back-to-form-btn');
-                const submitProofBtn = document.getElementById('submit-proof-btn'); // ဒီခလုတ်ရှိရင်
-
-                waitingMsg.style.display = 'block';
-                waitingMsg.innerHTML = `<p style="color: #ff4444;">❌ ပယ်ချခံရပါသည်: ${reasonText}</p>`;
-                
-                if (backBtn) backBtn.style.display = 'inline-block';
-                
-                // ဒီနေရာမှာ အရေးကြီးတာက proof တင်တဲ့ ခလုတ်ကို ပြန်ပြပေးဖို့ပါ
-                if (submitProofBtn) submitProofBtn.style.display = 'block'; 
+                // ၂။ Submit Proof ခလုတ်ကို ပြန်ပေါ်ပေးမယ်
+                const submitBtn = document.getElementById('submit-proof-btn'); // မင်းရဲ့ button ID ကို သေချာစစ်ပါ
+                if (submitBtn) {
+                    submitBtn.style.display = 'block'; 
+                    submitBtn.innerText = "Re-submit Proof"; // ခလုတ်စာသားကို ပြင်ပေးလို့ရတယ်
+                }
             }
-
+            // ...
      // --- [မူလသင်ရေးထားသော Rule များ] ---
             if (data.status === "confirm" && (data.matchStatus === "none" || data.matchStatus === "waiting") && !data.currentMatchId) {
                 const playingLobby = document.getElementById('page-playing-lobby');
