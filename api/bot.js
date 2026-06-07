@@ -237,11 +237,53 @@ bot.action(/confirm_(.+)/, async (ctx) => {
 });
 
 // 6. Reject Action
+// --- Reject Reason Keyboard (အပေါ်နားမှာ ထည့်ပါ) ---
+const getRejectKeyboard = (docId) => {
+    return {
+        inline_keyboard: [
+            [{ text: '⚠️ Fee မလုံလောက်', callback_data: `rj_fee_${docId}` }],
+            [{ text: '⚠️ Name / ID မမှန်', callback_data: `rj_identity_${docId}` }],
+            [{ text: '⚠️ K-Pay အချက်အလက်မှား', callback_data: `rj_payment_${docId}` }],
+            [{ text: '🚫 ညစ်ညမ်းပုံ', callback_data: `rj_logo_${docId}` }]
+        ]
+    };
+};
+
+// --- Reject Action (မူရင်းကို အစားထိုးပါ) ---
 bot.action(/reject_(.+)/, async (ctx) => {
-    const doc = await db.collection("pending_photos").doc(ctx.match[1]).get();
-    if (doc.exists) await ctx.telegram.sendMessage(doc.data().userId, "❌ ရလဒ်စစ်ဆေးမှု မအောင်မြင်ပါ။ ပုံအသစ်ပြန်တင်ပေးပါ။");
-    await ctx.editMessageCaption("❌ ပယ်ချပြီးပါပြီ။", { reply_markup: { inline_keyboard: [] } });
-    ctx.answerCbQuery("ပယ်ချပြီးပါပြီ");
+    const docId = ctx.match[1];
+    await ctx.editMessageCaption("❌ Reject လုပ်ရသည့် အကြောင်းအရင်းကို ရွေးချယ်ပါ:", {
+        reply_markup: getRejectKeyboard(docId)
+    });
+    ctx.answerCbQuery();
+});
+
+// --- Reason Selection Logic (အသစ်ထည့်ပါ) ---
+bot.action(/rj_(.+)_(.+)/, async (ctx) => {
+    const reason = ctx.match[1];
+    const docId = ctx.match[2];
+
+    const reasonMap = {
+        'fee': 'Fee ကြေး မလုံလောက်ခြင်း',
+        'identity': 'Name သို့မဟုတ် ID မမှန်ကန်ခြင်း',
+        'payment': 'K-Pay အချက်အလက် မှားယွင်းခြင်း',
+        'logo': 'ညစ်ညမ်းပုံတင်ခြင်း'
+    };
+
+    const doc = await db.collection("pending_photos").doc(docId).get();
+    if (!doc.exists) return ctx.answerCbQuery("❌ Data မရှိပါ။");
+    
+    const userId = doc.data().userId;
+
+    // User ဆီ အကြောင်းကြားစာပို့ခြင်း
+    await ctx.telegram.sendMessage(userId, 
+        `❌ သင်၏ ရလဒ် Screenshot ကို ပယ်ချလိုက်ပါပြီ။\n\n` +
+        `📝 အကြောင်းရင်း: ${reasonMap[reason]}\n` +
+        `🔄 ကျေးဇူးပြု၍ အချက်အလက်များ ပြန်လည်ပြင်ဆင်ပြီး ပုံအသစ်ပြန်တင်ပေးပါ။`
+    );
+
+    await ctx.editMessageCaption(`✅ ${reasonMap[reason]} ကြောင့် Reject လုပ်ပြီးကြောင်း User ဆီ အကြောင်းကြားလိုက်ပါပြီ။`);
+    ctx.answerCbQuery("Reject လုပ်ပြီးပါပြီ");
 });
 
 module.exports = async (req, res) => {
