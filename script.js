@@ -327,6 +327,18 @@ function watchStatus(docId) {
         }
     });
 }
+// အချက်အလက် ပြန်လည်ပြင်ဆင်မည် ကို နှိပ်လျှင်
+document.getElementById('back-to-form-btn').addEventListener('click', function() {
+    // ၁။ Payment Proof Page ကို ဖျောက်ပြီး Form ပြန်ပြပါ
+    document.getElementById('page-payment-proof').style.display = 'none';
+    
+    // ၂။ ဘယ် Form (5vs5 သို့မဟုတ် 1vs1) ကို ပြန်ပြရမလဲဆိုတာ ဆုံးဖြတ်ပါ
+    // သင့် app မှာ 5vs5 ဆိုရင်
+    document.getElementById('page-5vs5').style.display = 'block'; 
+    
+    // ၃။ Waiting message ကို ခဏဖျောက်ထားပါ
+    document.getElementById('waiting-msg').style.display = 'none';
+});
 // User က Edit လုပ်ပြီး Confirm နှိပ်တဲ့အခါ
 async function resubmitRegistration() {
     const docId = myTeamInfo.id; // စောစောက အဟောင်း ID
@@ -338,6 +350,7 @@ async function resubmitRegistration() {
     });
     alert("သင်၏ အချက်အလက်များကို Admin ထံ ပြန်လည်ပေးပို့ပြီးပါပြီ။");
 }
+
 function switchTab(tabName, element) {
     currentMatchTab = tabName;
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));

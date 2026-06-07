@@ -267,13 +267,31 @@ module.exports = async (req, res) => {
     try { await bot.handleUpdate(req.body); return res.status(200).send('OK'); } 
     catch (err) { return res.status(500).send('Error'); }
 };
-// သင်၏ bot.js တွင် Resubmit အတွက် function တစ်ခု ထပ်ထည့်ပါ
 bot.action(/resubmit_(.+)/, async (ctx) => {
-    const docId = ctx.match[1];
+    const docId = ctx.match[1].trim();
+    
+    // Database မှာ status ကို pending ပြန်လုပ်မယ်
     await db.collection("registrations").doc(docId).update({ 
         status: "pending", 
         reSubmitted: true 
     });
-    // Admin Group ထဲသို့ ပြန်လည် အကြောင်းကြားခြင်း
-    await ctx.reply("🔄 User က အချက်အလက် ပြန်တင်ထားပါသည်။ ပြန်စစ်ပေးပါ။");
+
+    // Admin Group ထဲသို့ Notification အသစ်ပြန်ပို့မယ်
+    const doc = await db.collection("registrations").doc(docId).get();
+    const data = doc.data();
+
+    const msg = `🔄 <b>Re-submission Request</b>\n\nSquad: ${data.squadName}\nStatus: ပြန်လည်ပြင်ဆင်ထားပါသည်၊ စစ်ဆေးပေးပါ။`;
+
+    // Admin Group ထဲကို ခလုတ်တွေနဲ့ တကွ ပြန်ပို့မယ်
+    await bot.telegram.sendMessage(REG_GROUP_ID, msg, {
+        parse_mode: 'HTML',
+        reply_markup: { 
+            inline_keyboard: [
+                [{ text: '✅ Confirm', callback_data: `regConfirm_${docId}` }, 
+                 { text: '❌ Reject', callback_data: `regReject_${docId}` }]
+            ] 
+        }
+    });
+
+    ctx.answerCbQuery("Admin ထံသို့ ပြန်လည်ပေးပို့ပြီးပါပြီ");
 });
