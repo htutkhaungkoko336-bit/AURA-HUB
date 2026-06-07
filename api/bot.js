@@ -147,25 +147,42 @@ bot.action(/view_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
     const message = ctx.callbackQuery.message;
     const isInfoVisible = (message.caption || "").includes("🔍 MATCH DETAILS");
+    
     if (isInfoVisible) {
-        await ctx.editMessageCaption("📸 *ရလဒ် Screenshot*", { parse_mode: 'Markdown', reply_markup: message.reply_markup });
+        await ctx.editMessageCaption("📸 *ရလဒ် Screenshot*", { 
+            parse_mode: 'Markdown', 
+            reply_markup: message.reply_markup 
+        });
     } else {
         const doc = await db.collection("pending_photos").doc(docId).get();
         if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက်မရှိပါ။");
-        const { matchId } = doc.data();
+        const { matchId, timestamp } = doc.data(); // timestamp ကို ဒီကယူပါမယ်
         const matchDoc = await db.collection("matches").doc(matchId).get();
         const matchData = matchDoc.data();
+        
         const [leaderA, leaderB] = await Promise.all([
             db.collection("registrations").doc(matchData.teamA_LeaderId).get(),
             db.collection("registrations").doc(matchData.teamB_LeaderId).get()
         ]);
         const dataA = leaderA.data(); const dataB = leaderB.data();
-        const info = `<b>🔍 MATCH DETAILS</b>\n💰 Fee: ${matchData.fee || 0}\n━━━━━━━━━━━━━━\n<b>🏆 TEAM A: ${matchData.teamA}</b>\n📞 K-Pay: <code>${dataA.kpayPhone || 'မပါရှိပါ'}</code>\n${dataA.players.map(p => `👤 ${p.name}`).join('\n')}\n\n<b>🏆 TEAM B: ${matchData.teamB}</b>\n📞 K-Pay: <code>${dataB.kpayPhone || 'မပါရှိပါ'}</code>\n${dataB.players.map(p => `👤 ${p.name}`).join('\n')}`;
-        await ctx.editMessageCaption(info, { parse_mode: 'HTML', reply_markup: message.reply_markup });
+        
+        // English Format Time
+        const timeStr = timestamp ? new Date(timestamp.toDate()).toLocaleString('en-US', { 
+            year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true 
+        }) : "N/A";
+
+        // ဒီနေရာမှာ သင်ရေးချင်တဲ့ note ကို ရေးပါ
+        const adminNote = "📝 ဤနေရာတွင် သင်ရေးလိုသော စာသားကို ရေးပါ။";
+
+        const info = `<b>🔍 MATCH DETAILS</b>\n🕒 <b>Time:</b> ${timeStr}\n💰 <b>Fee:</b> ${matchData.fee || 0}\n━━━━━━━━━━━━━━\n<b>🏆 TEAM A: ${matchData.teamA}</b>\n📞 K-Pay: <code>${dataA.kpayPhone || 'မပါရှိပါ'}</code>\n${dataA.players.map(p => `👤 ${p.name}`).join('\n')}\n\n<b>🏆 TEAM B: ${matchData.teamB}</b>\n📞 K-Pay: <code>${dataB.kpayPhone || 'မပါရှိပါ'}</code>\n${dataB.players.map(p => `👤 ${p.name}`).join('\n')}\n\n━━━━━━━━━━━━━━\n${adminNote}`;
+        
+        await ctx.editMessageCaption(info, { 
+            parse_mode: 'HTML', 
+            reply_markup: message.reply_markup 
+        });
     }
     ctx.answerCbQuery();
 });
-
 // 5. Confirm Action
 bot.action(/confirm_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
