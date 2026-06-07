@@ -327,29 +327,21 @@ function watchStatus(docId) {
         }
     });
 }
-// အချက်အလက် ပြန်လည်ပြင်ဆင်မည် ကို နှိပ်လျှင်
-document.getElementById('back-to-form-btn').addEventListener('click', function() {
-    // ၁။ Payment Proof Page ကို ဖျောက်ပြီး Form ပြန်ပြပါ
-    document.getElementById('page-payment-proof').style.display = 'none';
-    
-    // ၂။ ဘယ် Form (5vs5 သို့မဟုတ် 1vs1) ကို ပြန်ပြရမလဲဆိုတာ ဆုံးဖြတ်ပါ
-    // သင့် app မှာ 5vs5 ဆိုရင်
-    document.getElementById('page-5vs5').style.display = 'block'; 
-    
-    // ၃။ Waiting message ကို ခဏဖျောက်ထားပါ
-    document.getElementById('waiting-msg').style.display = 'none';
-});
-// User က Edit လုပ်ပြီး Confirm နှိပ်တဲ့အခါ
-async function resubmitRegistration() {
-    const docId = myTeamInfo.id; // စောစောက အဟောင်း ID
-    await db.collection("registrations").doc(docId).update({
-        status: "pending", // ဒီနေရာမှာ pending ပြန်လုပ်လိုက်ရင် Admin ဆီ notify ပြန်တက်လာမယ်
-        squadName: document.getElementById('squad-name').value,
-        // ... တခြား field တွေ
-        reSubmitted: true
+// User က ပြန်ပြင်ဖို့ ခလုတ်ကို နှိပ်တဲ့အခါ
+document.getElementById('back-to-form-btn').addEventListener('click', async () => {
+    // 1. Database ထဲက status ကို pending ပြန်ပြောင်းမယ်
+    await db.collection("registrations").doc(myTeamInfo.id).update({
+        status: "pending",
+        rejectReason: null // အရင် error message ကို ဖျက်လိုက်မယ်
     });
-    alert("သင်၏ အချက်အလက်များကို Admin ထံ ပြန်လည်ပေးပို့ပြီးပါပြီ။");
-}
+    
+    // 2. Form ပြန်ပြမယ်
+    document.getElementById('page-payment-proof').style.display = 'block';
+    document.getElementById('back-to-form-btn').style.display = 'none';
+    
+    // 3. Status ပြောင်းသွားရင် စာသားကိုလည်း clear လုပ်ပေးမယ်
+    document.getElementById('waiting-msg').innerText = "ကျေးဇူးပြု၍ ပြေစာအသစ် တင်ပေးပါ";
+});
 
 function switchTab(tabName, element) {
     currentMatchTab = tabName;
