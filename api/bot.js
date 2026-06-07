@@ -267,3 +267,13 @@ module.exports = async (req, res) => {
     try { await bot.handleUpdate(req.body); return res.status(200).send('OK'); } 
     catch (err) { return res.status(500).send('Error'); }
 };
+// သင်၏ bot.js တွင် Resubmit အတွက် function တစ်ခု ထပ်ထည့်ပါ
+bot.action(/resubmit_(.+)/, async (ctx) => {
+    const docId = ctx.match[1];
+    await db.collection("registrations").doc(docId).update({ 
+        status: "pending", 
+        reSubmitted: true 
+    });
+    // Admin Group ထဲသို့ ပြန်လည် အကြောင်းကြားခြင်း
+    await ctx.reply("🔄 User က အချက်အလက် ပြန်တင်ထားပါသည်။ ပြန်စစ်ပေးပါ။");
+});

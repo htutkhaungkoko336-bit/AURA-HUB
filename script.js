@@ -327,22 +327,17 @@ function watchStatus(docId) {
         }
     });
 }
-// User က ပြန်ပြင်ဖို့ ခလုတ်ကို နှိပ်တဲ့အခါ
-document.getElementById('back-to-form-btn').addEventListener('click', async () => {
-    // 1. Database ထဲက status ကို pending ပြန်ပြောင်းမယ်
-    await db.collection("registrations").doc(myTeamInfo.id).update({
-        status: "pending",
-        rejectReason: null // အရင် error message ကို ဖျက်လိုက်မယ်
+// User က Edit လုပ်ပြီး Confirm နှိပ်တဲ့အခါ
+async function resubmitRegistration() {
+    const docId = myTeamInfo.id; // စောစောက အဟောင်း ID
+    await db.collection("registrations").doc(docId).update({
+        status: "pending", // ဒီနေရာမှာ pending ပြန်လုပ်လိုက်ရင် Admin ဆီ notify ပြန်တက်လာမယ်
+        squadName: document.getElementById('squad-name').value,
+        // ... တခြား field တွေ
+        reSubmitted: true
     });
-    
-    // 2. Form ပြန်ပြမယ်
-    document.getElementById('page-payment-proof').style.display = 'block';
-    document.getElementById('back-to-form-btn').style.display = 'none';
-    
-    // 3. Status ပြောင်းသွားရင် စာသားကိုလည်း clear လုပ်ပေးမယ်
-    document.getElementById('waiting-msg').innerText = "ကျေးဇူးပြု၍ ပြေစာအသစ် တင်ပေးပါ";
-});
-
+    alert("သင်၏ အချက်အလက်များကို Admin ထံ ပြန်လည်ပေးပို့ပြီးပါပြီ။");
+}
 function switchTab(tabName, element) {
     currentMatchTab = tabName;
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
