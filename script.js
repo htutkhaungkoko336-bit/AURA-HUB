@@ -305,20 +305,17 @@ function watchStatus(docId) {
 
                 const waitingMsg = document.getElementById('waiting-msg');
                 const backBtn = document.getElementById('back-to-form-btn');
+                const submitProofBtn = document.getElementById('submit-proof-btn'); // ဒီခလုတ်ရှိရင်
 
-                if (waitingMsg) {
-                    waitingMsg.style.display = 'block'; // စာသား box ကိုပြမယ်
-                    waitingMsg.innerHTML = `
-                        <p style="color: #ff4444; font-weight: bold;">❌ Registration ပယ်ချခံရပါသည်</p>
-                        <p style="font-size: 0.8rem; margin: 5px 0;">အကြောင်းရင်း: ${reasonText}</p>
-                    `;
-                }
+                waitingMsg.style.display = 'block';
+                waitingMsg.innerHTML = `<p style="color: #ff4444;">❌ ပယ်ချခံရပါသည်: ${reasonText}</p>`;
                 
-                // 2. ပြန်ပြင်ရန်ခလုတ်ကို ပြပေးခြင်း
-                if (backBtn) {
-                    backBtn.style.display = 'inline-block';
-                }
-            }       
+                if (backBtn) backBtn.style.display = 'inline-block';
+                
+                // ဒီနေရာမှာ အရေးကြီးတာက proof တင်တဲ့ ခလုတ်ကို ပြန်ပြပေးဖို့ပါ
+                if (submitProofBtn) submitProofBtn.style.display = 'block'; 
+            }
+
      // --- [မူလသင်ရေးထားသော Rule များ] ---
             if (data.status === "confirm" && (data.matchStatus === "none" || data.matchStatus === "waiting") && !data.currentMatchId) {
                 const playingLobby = document.getElementById('page-playing-lobby');
@@ -337,23 +334,28 @@ function watchStatus(docId) {
 
 document.getElementById('back-to-form-btn').addEventListener('click', async () => {
     try {
-        // Database ကို pending ပြန်ပြောင်းခြင်း
+        // ၁။ Status ကို pending ပြန်ပြောင်း
         await db.collection("registrations").doc(myTeamInfo.id).update({
             status: "pending",
             rejectReason: null
         });
 
-        // UI ကို ပြန်ပြောင်းခြင်း
+        // ၂။ UI ရှင်းလင်းခြင်း (အရေးကြီးသည်)
         document.getElementById('waiting-msg').style.display = 'none';
         document.getElementById('back-to-form-btn').style.display = 'none';
         
-        // အရင်က တင်ထားတဲ့ Screenshot preview တွေကိုလည်း clear လုပ်ချင်ရင် ဒီမှာလုပ်နိုင်ပါတယ်
+        // ဓာတ်ပုံ preview များကို ဖျောက်ပြီး နေရာလွတ်စေခြင်း
         document.getElementById('ssPreview').style.display = 'none';
         document.getElementById('ss-placeholder').style.display = 'flex';
         
+        // ၃။ ပုံမှန် registration form page သို့ ပြန်ပို့ပေးပါ
+        document.getElementById('page-payment-proof').style.display = 'none';
+        // သင်၏ form page id အပေါ်မူတည်၍ ပြောင်းပေးပါ (ဥပမာ - page-5vs5 သို့မဟုတ် page-1vs1)
+        document.getElementById(myTeamInfo.mode === '5vs5' ? 'page-5vs5' : 'page-1vs1').style.display = 'block';
+
         alert("Registration ပြန်လည်ပြင်ဆင်နိုင်ပါပြီ။");
     } catch (error) {
-        console.error("Error:", error);
+        console.error("Error updating status:", error);
     }
 });
 
