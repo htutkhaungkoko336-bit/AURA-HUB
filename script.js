@@ -197,6 +197,10 @@ async function submitRegistration(formData) {
 
     alert("အောင်မြင်စွာ တင်ပြီးပါပြီ!");
 }
+// အပေါ်ဆုံးမှာ global variable တွေ ထားပေးပါ
+let currentRegId = null; 
+window.isResubmission = false; 
+
 async function submitProof() {
     if (window.event) window.event.preventDefault();
 
@@ -210,6 +214,7 @@ async function submitProof() {
 
     document.getElementById('submit-btn').style.display = 'none';
     document.getElementById('waiting-msg').style.display = 'block';
+    document.getElementById('waiting-msg').innerText = "Processing...";
 
     try {
         const paymentURL = await uploadToImgBB(ssFile);
@@ -222,12 +227,12 @@ async function submitProof() {
             paymentURL: paymentURL,
             squadLogo: squadLogoURL,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            status: "pending",
+            status: "pending", // Resubmit လုပ်ရင်လည်း status ကို pending ပြန်လုပ်မယ်
             matchStatus: "none",
-            isResubmission: window.isResubmission || false // အဓိက အချက်!
+            isResubmission: window.isResubmission
         };
 
-        // Player Data များကို စုစည်းခြင်း
+        // Player Data များ
         if (mode === "5vs5") {
             registrationData.squadName = document.getElementById('squad-name').value;
             registrationData.players = Array.from(document.querySelectorAll('#page-5vs5 .player-row')).map(row => ({
@@ -244,21 +249,30 @@ async function submitProof() {
             registrationData.kpayPhone = document.getElementById('kpay-no-solo').value;
         }
 
-        // ၁။ Firestore ထဲကို Data တင်ခြင်း
-        const docRef = await db.collection("registrations").add(registrationData);
+        let docRefId;
+
+        // Logic: Resubmit ဆိုရင် update, အသစ်ဆိုရင် add
+        if (window.isResubmission && currentRegId) {
+            await db.collection("registrations").doc(currentRegId).update(registrationData);
+            docRefId = currentRegId;
+        } else {
+            const docRef = await db.collection("registrations").add(registrationData);
+            docRefId = docRef.id;
+            currentRegId = docRefId; // နောက်တစ်ခါအတွက် ID ကို မှတ်ထားမယ်
+        }
         
-        // ၂။ Admin ဆီ Telegram Noti ပို့ခြင်း (Webhook)
+        // Admin ဆီ Notify ပို့ခြင်း
         await fetch('/api/notify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                regId: docRef.id, 
+                regId: docRefId, 
                 data: registrationData 
             })
         });
 
         document.getElementById('waiting-msg').innerText = "Payment ကို Admin မှ စစ်ဆေးနေပါသည်။ ခဏစောင့်ပေးပါ...";
-        watchStatus(docRef.id);
+        watchStatus(docRefId);
 
     } catch (error) {
         alert("Error: " + error.message);
@@ -284,35 +298,48 @@ function watchStatus(docId) {
         if (doc.exists) {
             const data = doc.data();
             myTeamInfo = { id: doc.id, ...data };
-            const waitingMsg = document.getElementById('waiting-msg'); // Payment ပြတဲ့ page ထဲက text
+            const waitingMsg = document.getElementById('waiting-msg');
 
-            // --- [အသစ်ထည့်ရန်] Admin က Confirm/Reject လုပ်တာကို စောင့်ကြည့်ခြင်း ---
+            // --- Admin က Confirm/Reject လုပ်တာကို စောင့်ကြည့်ခြင်း ---
             if (data.status === "confirm") {
-                // Confirm ဖြစ်ရင် ပွဲစဉ်ရှာတဲ့နေရာ (Match Center) ကို ပို့ပေးမယ်
+                // Confirm ဖြစ်ရင် Match Center ကို ပို့ပေးမယ်
                 document.getElementById('page-payment-proof').style.display = 'none';
                 document.getElementById('page-match-center').style.display = 'flex';
                 if (typeof loadMatchRooms === 'function') loadMatchRooms();
             } 
-                else if (data.status === "rejected") {
-                                // Reject Reason များကို မြန်မာစာသားအဖြစ် ပြောင်းလဲခြင်း
-                                const reasons = {
-                                    'fee': 'Fee ကြေး မလုံလောက်ပါ',
-                                    'identity': 'Name သို့မဟုတ် ID မမှန်ကန်ပါ',
-                                    'payment': 'K-Pay အချက်အလက် မှားယွင်းနေပါသည်',
-                                    'logo': 'တင်ထားသောပုံမှာ ညစ်ညမ်းနေပါသည်'
-                                };
-                                
-                                // data.rejectReason က 'fee' ဆိုရင် 'Fee ကြေး မလုံလောက်ပါ' လို့ ပေါ်လာမယ်
-                                const reasonText = reasons[data.rejectReason] || "အချက်အလက်မပြည့်စုံခြင်း သို့မဟုတ် ငွေလွှဲပြေစာမမှန်ခြင်း";
-                                
-                                if (waitingMsg) {
-                                    waitingMsg.innerText = `❌ သင်၏ Registration ကို ပယ်ချလိုက်ပါသည်။\nအကြောင်းရင်း: ${reasonText}`;
-                                }
-                                // "Back to Form" ခလုတ်ကို ပြန်ပြမယ်
-                                const backBtn = document.getElementById('back-to-form-btn'); // သင့် HTML ထဲက ခလုတ် ID
-                                if (backBtn) backBtn.style.display = 'block';
-                                                    }
-            // --- [မူလသင်ရေးထားသော Rule များ] ---
+            else if (data.status === "rejected") {
+                // Reject Reason များကို ပြသခြင်း
+                const reasons = {
+                    'fee': 'Fee ကြေး မလုံလောက်ပါ',
+                    'identity': 'Name သို့မဟုတ် ID မမှန်ကန်ပါ',
+                    'payment': 'K-Pay အချက်အလက် မှားယွင်းနေပါသည်',
+                    'logo': 'တင်ထားသောပုံမှာ ညစ်ညမ်းနေပါသည်'
+                };
+                
+                const reasonText = reasons[data.rejectReason] || "အချက်အလက်မပြည့်စုံခြင်း သို့မဟုတ် ငွေလွှဲပြေစာမမှန်ခြင်း";
+                
+                if (waitingMsg) {
+                    waitingMsg.style.display = 'block';
+                    waitingMsg.innerText = `❌ သင်၏ Registration ကို ပယ်ချလိုက်ပါသည်။\nအကြောင်းရင်း: ${reasonText}`;
+                }
+
+                // --- Resubmit အတွက် ပြင်ဆင်ခြင်း ---
+                window.isResubmission = true;
+                currentRegId = doc.id; // အဟောင်း ID ကို မှတ်ထားလိုက်တယ်
+
+                // Submit Button ပြန်ပေါ်လာအောင် လုပ်ခြင်း
+                const submitBtn = document.getElementById('submit-btn');
+                if (submitBtn) {
+                    submitBtn.style.display = 'block';
+                    submitBtn.innerText = "ပြန်လည်တင်ပြမည် (Resubmit)";
+                }
+                
+                // Back to Form ခလုတ် ပြန်ပြခြင်း
+                const backBtn = document.getElementById('back-to-form-btn');
+                if (backBtn) backBtn.style.display = 'block';
+            }
+
+            // --- မူလ Rule များ ---
             if (data.status === "confirm" && (data.matchStatus === "none" || data.matchStatus === "waiting") && !data.currentMatchId) {
                 const playingLobby = document.getElementById('page-playing-lobby');
                 if (playingLobby) playingLobby.style.display = 'none';
