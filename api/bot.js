@@ -156,7 +156,11 @@ bot.action(/view_(.+)/, async (ctx) => {
     } else {
         const doc = await db.collection("pending_photos").doc(docId).get();
         if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက်မရှိပါ။");
-        const { matchId, timestamp } = doc.data(); // timestamp ကို ဒီကယူပါမယ်
+        
+        const data = doc.data();
+        const matchId = data.matchId;
+        const timestamp = data.timestamp; // Firestore Timestamp
+        
         const matchDoc = await db.collection("matches").doc(matchId).get();
         const matchData = matchDoc.data();
         
@@ -166,13 +170,14 @@ bot.action(/view_(.+)/, async (ctx) => {
         ]);
         const dataA = leaderA.data(); const dataB = leaderB.data();
         
-        // English Format Time
-        const timeStr = timestamp ? new Date(timestamp.toDate()).toLocaleString('en-US', { 
-            year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true 
+        // အချိန်မှန်စေရန် ပြင်ဆင်ခြင်း (Firestore timestamp.seconds ကို အသုံးပြုပါ)
+        const timeStr = timestamp ? new Date(timestamp.seconds * 1000).toLocaleString('en-US', { 
+            timeZone: 'Asia/Yangon',
+            year: 'numeric', month: 'short', day: 'numeric', 
+            hour: '2-digit', minute: '2-digit', hour12: true 
         }) : "N/A";
 
-        // ဒီနေရာမှာ သင်ရေးချင်တဲ့ note ကို ရေးပါ
-        const adminNote = "📝 ဤနေရာတွင် သင်ရေးလိုသော စာသားကို ရေးပါ။";
+        const adminNote = "📝 အာညော်ငှာဆရော";
 
         const info = `<b>🔍 MATCH DETAILS</b>\n🕒 <b>Time:</b> ${timeStr}\n💰 <b>Fee:</b> ${matchData.fee || 0}\n━━━━━━━━━━━━━━\n<b>🏆 TEAM A: ${matchData.teamA}</b>\n📞 K-Pay: <code>${dataA.kpayPhone || 'မပါရှိပါ'}</code>\n${dataA.players.map(p => `👤 ${p.name}`).join('\n')}\n\n<b>🏆 TEAM B: ${matchData.teamB}</b>\n📞 K-Pay: <code>${dataB.kpayPhone || 'မပါရှိပါ'}</code>\n${dataB.players.map(p => `👤 ${p.name}`).join('\n')}\n\n━━━━━━━━━━━━━━\n${adminNote}`;
         
