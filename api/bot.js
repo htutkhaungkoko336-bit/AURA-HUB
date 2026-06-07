@@ -99,21 +99,28 @@ bot.action(/rj_(.+)_(.+)/, async (ctx) => {
         'logo': 'ညစ်ညမ်းပုံတင်ခြင်း' 
     };
 
-    try {
+try {
         await docRef.update({ status: "rejected" });
         
         const userData = doc.data();
         if(userData.userId) {
-            await ctx.telegram.sendMessage(userData.userId, `❌ သင်၏ Registration/Result ကို ပယ်ချလိုက်ပါပြီ။\n\n📝 အကြောင်းရင်း: ${reasonMap[reason]}\n🔄 ကျေးဇူးပြု၍ ပြန်လည်ပြင်ဆင်ပြီး ပုံအသစ်တင်ပေးပါ။`);
+            // ဒီနေရာလေးကို ပြင်ပေးပါ
+            const msgToUser = `❌ သင်၏ Registration ကို ပယ်ချလိုက်ပါပြီ။\n\n📝 အကြောင်းရင်း: <b>${reasonMap[reason]}</b>\n🔄 ကျေးဇူးပြု၍ ပြန်လည်ပြင်ဆင်ပြီး ပုံအသစ်တင်ပေးပါ။`;
+            
+            await ctx.telegram.sendMessage(userData.userId, msgToUser, { 
+                parse_mode: 'HTML' // HTML format သုံးထားလို့ <b> tag အလုပ်လုပ်ပါမယ်
+            });
         }
         
-        await ctx.editMessageCaption(`✅ ${reasonMap[reason]} ကြောင့် Reject လုပ်ပြီးကြောင်း အကြောင်းကြားလိုက်ပါပြီ။`);
+        // Admin group ထဲမှာ ပေါ်နေတဲ့ ခလုတ်တွေကို ဖျက်ပြီး စာသားပြောင်းပေးခြင်း
+        await ctx.editMessageText(`✅ ${reasonMap[reason]} ကြောင့် Reject လုပ်ပြီးကြောင်း အကြောင်းကြားလိုက်ပါပြီ။`);
+        
     } catch (err) {
-        await ctx.editMessageCaption(`✅ Reject လုပ်ပြီးပါပြီ။`);
+        console.error(err);
+        await ctx.editMessageText(`✅ Reject လုပ်ပြီးပါပြီ။`);
     }
     ctx.answerCbQuery("Reject လုပ်ပြီးပါပြီ");
-});
-// --- Start, Photo, Selection, View, Confirm ---
+});// --- Start, Photo, Selection, View, Confirm ---
 bot.start(async (ctx) => {
     const userId = ctx.from.id.toString();
     if (isAdmin(userId)) return ctx.reply("👋 Admin Panel သို့ ကြိုဆိုပါသည်။ /admin ဟု ရိုက်၍ Menu ခေါ်ပါ။");
