@@ -224,6 +224,7 @@ async function submitProof() {
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             status: "pending",
             matchStatus: "none",
+            isResubmission: window.isResubmission || false // အဓိက အချက်!
         };
 
         // Player Data များကို စုစည်းခြင်း

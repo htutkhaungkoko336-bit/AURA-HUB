@@ -10,7 +10,9 @@ export default async function handler(req, res) {
     const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
     const REGISTRATION_GROUP_ID = process.env.REGISTRATION_GROUP_ID;
 
-    // Time ကို English ပုံစံအတိုင်းပဲ ထုတ်ပေးပါမယ် (ဒီတစ်ခုပဲထားပါ)
+    // ၁။ Re-submission Tag (စစ်ဆေးခြင်း)
+    const resubTag = data.isResubmission ? "⚠️ *[Re-submission]*\n" : "";
+
     const timestamp = new Date().toLocaleString('en-US', { 
         timeZone: 'Asia/Yangon',
         year: 'numeric',
@@ -32,8 +34,8 @@ export default async function handler(req, res) {
     // ၃။ Squad Logo လင့်ခ်ရှိရင် ထည့်ရန်
     const logoSection = data.squadLogo ? `\n🖼️ [View Squad Logo](${data.squadLogo})` : "";
 
-    // မက်ဆေ့ချ် ပုံစံ
-    const message = `🔔 *New Registration Received!*\n\n` +
+    // ၄။ မက်ဆေ့ချ် ပုံစံ (resubTag ကို ထိပ်ဆုံးမှာ ထည့်သွင်းထားပါတယ်)
+    const message = `${resubTag}🔔 *New Registration Received!*\n\n` +
                     `🕒 *Time:* ${timestamp}\n` +
                     `🎮 *Mode:* ${data.mode}\n` +
                     `💰 *Fee:* ${data.fee} Ks\n\n` +
