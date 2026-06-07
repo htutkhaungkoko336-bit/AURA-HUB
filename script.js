@@ -293,26 +293,33 @@ function watchStatus(docId) {
                 document.getElementById('page-match-center').style.display = 'flex';
                 if (typeof loadMatchRooms === 'function') loadMatchRooms();
             } 
-                else if (data.status === "rejected") {
-                                // Reject Reason များကို မြန်မာစာသားအဖြစ် ပြောင်းလဲခြင်း
-                                const reasons = {
-                                    'fee': 'Fee ကြေး မလုံလောက်ပါ',
-                                    'identity': 'Name သို့မဟုတ် ID မမှန်ကန်ပါ',
-                                    'payment': 'K-Pay အချက်အလက် မှားယွင်းနေပါသည်',
-                                    'logo': 'တင်ထားသောပုံမှာ ညစ်ညမ်းနေပါသည်'
-                                };
-                                
-                                // data.rejectReason က 'fee' ဆိုရင် 'Fee ကြေး မလုံလောက်ပါ' လို့ ပေါ်လာမယ်
-                                const reasonText = reasons[data.rejectReason] || "အချက်အလက်မပြည့်စုံခြင်း သို့မဟုတ် ငွေလွှဲပြေစာမမှန်ခြင်း";
-                                
-                                if (waitingMsg) {
-                                    waitingMsg.innerText = `❌ သင်၏ Registration ကို ပယ်ချလိုက်ပါသည်။\nအကြောင်းရင်း: ${reasonText}`;
-                                }
-                                // "Back to Form" ခလုတ်ကို ပြန်ပြမယ်
-                                const backBtn = document.getElementById('back-to-form-btn'); // သင့် HTML ထဲက ခလုတ် ID
-                                if (backBtn) backBtn.style.display = 'block';
-                                                    }
-            // --- [မူလသင်ရေးထားသော Rule များ] ---
+            else if (data.status === "rejected") {
+                // 1. Reject အကြောင်းရင်းများကို မြန်မာလို ပြပေးခြင်း
+                const reasonMap = {
+                    'fee': 'Fee ကြေး မလုံလောက်ပါ',
+                    'identity': 'Name သို့မဟုတ် ID မမှန်ကန်ပါ',
+                    'payment': 'K-Pay အချက်အလက် မှားယွင်းနေပါသည်',
+                    'logo': 'တင်ထားသောပုံမှာ ညစ်ညမ်းနေပါသည်'
+                };
+                const reasonText = reasonMap[data.rejectReason] || "အချက်အလက် မပြည့်စုံခြင်း";
+
+                const waitingMsg = document.getElementById('waiting-msg');
+                const backBtn = document.getElementById('back-to-form-btn');
+
+                if (waitingMsg) {
+                    waitingMsg.style.display = 'block'; // စာသား box ကိုပြမယ်
+                    waitingMsg.innerHTML = `
+                        <p style="color: #ff4444; font-weight: bold;">❌ Registration ပယ်ချခံရပါသည်</p>
+                        <p style="font-size: 0.8rem; margin: 5px 0;">အကြောင်းရင်း: ${reasonText}</p>
+                    `;
+                }
+                
+                // 2. ပြန်ပြင်ရန်ခလုတ်ကို ပြပေးခြင်း
+                if (backBtn) {
+                    backBtn.style.display = 'inline-block';
+                }
+            }       
+     // --- [မူလသင်ရေးထားသော Rule များ] ---
             if (data.status === "confirm" && (data.matchStatus === "none" || data.matchStatus === "waiting") && !data.currentMatchId) {
                 const playingLobby = document.getElementById('page-playing-lobby');
                 if (playingLobby) playingLobby.style.display = 'none';
@@ -327,20 +334,27 @@ function watchStatus(docId) {
         }
     });
 }
-// User က ပြန်ပြင်ဖို့ ခလုတ်ကို နှိပ်တဲ့အခါ
+
 document.getElementById('back-to-form-btn').addEventListener('click', async () => {
-    // 1. Database ထဲက status ကို pending ပြန်ပြောင်းမယ်
-    await db.collection("registrations").doc(myTeamInfo.id).update({
-        status: "pending",
-        rejectReason: null // အရင် error message ကို ဖျက်လိုက်မယ်
-    });
-    
-    // 2. Form ပြန်ပြမယ်
-    document.getElementById('page-payment-proof').style.display = 'block';
-    document.getElementById('back-to-form-btn').style.display = 'none';
-    
-    // 3. Status ပြောင်းသွားရင် စာသားကိုလည်း clear လုပ်ပေးမယ်
-    document.getElementById('waiting-msg').innerText = "ကျေးဇူးပြု၍ ပြေစာအသစ် တင်ပေးပါ";
+    try {
+        // Database ကို pending ပြန်ပြောင်းခြင်း
+        await db.collection("registrations").doc(myTeamInfo.id).update({
+            status: "pending",
+            rejectReason: null
+        });
+
+        // UI ကို ပြန်ပြောင်းခြင်း
+        document.getElementById('waiting-msg').style.display = 'none';
+        document.getElementById('back-to-form-btn').style.display = 'none';
+        
+        // အရင်က တင်ထားတဲ့ Screenshot preview တွေကိုလည်း clear လုပ်ချင်ရင် ဒီမှာလုပ်နိုင်ပါတယ်
+        document.getElementById('ssPreview').style.display = 'none';
+        document.getElementById('ss-placeholder').style.display = 'flex';
+        
+        alert("Registration ပြန်လည်ပြင်ဆင်နိုင်ပါပြီ။");
+    } catch (error) {
+        console.error("Error:", error);
+    }
 });
 
 function switchTab(tabName, element) {
