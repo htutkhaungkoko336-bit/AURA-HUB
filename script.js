@@ -441,7 +441,7 @@ function loadMatchRooms() {
 
 else if (currentMatchTab === 'result') {
     // 2. Limit ကို 20 အဖြစ် စတင်သတ်မှတ်ထားပါ (Global variable ထဲမှာ)
-    if (typeof resultLimit === 'undefined') resultLimit = 20;
+    if (typeof resultLimit === 'undefined') resultLimit = 10;
 
     currentListener = db.collection("results")
         .orderBy("timestamp", "desc")
