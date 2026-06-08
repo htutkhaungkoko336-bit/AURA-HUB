@@ -447,13 +447,20 @@ function loadMatchRooms() {
 else if (currentMatchTab === 'result') {
     if (typeof resultLimit === 'undefined') resultLimit = 10;
 
+    // 1. limit မသုံးတော့ဘဲ Data အကုန်ဆွဲထုတ်ပြီးမှ JS နဲ့ ဖြတ်ယူပါမယ်
     currentListener = db.collection("results")
         .orderBy("timestamp", "desc")
-        .limit(resultLimit)
         .onSnapshot((querySnapshot) => {
             container.innerHTML = "";
             
-            querySnapshot.forEach(doc => {
+            // 2. ရလာတဲ့ Docs အားလုံးကို Array ထဲထည့်ပါ
+            const allDocs = querySnapshot.docs; 
+            
+            // 3. resultLimit (ဥပမာ 20) ထိရှိရင် 10 နဲ့ 20 ကြားကို ဖြတ်ယူပါ
+            // slice(start, end) မှာ start က (လက်ရှိ limit - 10) ဖြစ်ရပါမယ်
+            const displayDocs = allDocs.slice(resultLimit - 10, resultLimit);
+
+            displayDocs.forEach(doc => {
                 const data = doc.data();
                 const isTeamAWinner = data.winner === 'teamA';
                 const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString('en-GB') : "";
@@ -480,7 +487,7 @@ else if (currentMatchTab === 'result') {
                 `;
             });
 
-            // ခလုတ်များ ထည့်သည့်အပိုင်း
+            // 4. Navigation ခလုတ်များ
             container.innerHTML += `
                 <div id="navigationWrapper" style="display: flex; gap: 10px; margin-top: 10px;">
                     ${resultLimit > 10 ? `
@@ -489,7 +496,7 @@ else if (currentMatchTab === 'result') {
                         </button>
                     ` : ''}
                     
-                    ${querySnapshot.docs.length === resultLimit ? `
+                    ${resultLimit < allDocs.length ? `
                         <button onclick="increaseLimit()" style="flex: 1; padding: 10px; background: #c9a66b; border: none; color: #fff; border-radius: 5px; cursor: pointer;">
                             NEXT
                         </button>
