@@ -567,18 +567,6 @@ async function showMatchDetail(matchId, teamAName, teamBName) {
         body.innerHTML = "Error loading data.";
     }
 }
-// --- [FIXED]: ရှင်းလင်းပြီး ထိရောက်သော Listener ---
-db.collection("results")
-    .orderBy("timestamp", "desc")
-    .limit(10)
-    .onSnapshot((snapshot) => {
-        // အသစ်တစ်ခုခု ထပ်ဝင်လာမှပဲ Refresh လုပ်ပါ
-        const hasNewChanges = snapshot.docChanges().some(change => change.type === "added");
-        if (hasNewChanges) {
-            console.log("New result detected!");
-            loadResultTab(); // UI ကို အသစ်နဲ့ အစားထိုးမယ်
-        }
-    });
 
 // showResultTab() function ကို ဖျက်ပစ်ပါ (မလိုအပ်တော့ပါ)
 // ✨ မိမိဖွင့်ထားသော အခန်းအား ဖျက်သိမ်းပြီး ပြန်ထွက်သည့် Function
