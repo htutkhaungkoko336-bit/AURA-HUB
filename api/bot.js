@@ -71,11 +71,43 @@ bot.action(/regReject_(.+)/, async (ctx) => {
     ctx.answerCbQuery("အကြောင်းအရင်း ရွေးပေးပါ");
 });
 // Result အတွက် Reject ခလုတ် အလုပ်လုပ်စေရန်
+// အကြောင်းအရင်း ရွေးခိုင်းသည့် Keyboard မလိုတော့ဘဲ တိုက်ရိုက် Reject ချခြင်း
 bot.action(/reject_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
-    // Reject အကြောင်းအရင်းရွေးခိုင်းတဲ့ Keyboard ကို ပြပေးမယ်
-    await ctx.editMessageReplyMarkup(getRejectKeyboard(docId));
-    ctx.answerCbQuery("အကြောင်းအရင်း ရွေးပေးပါ");
+    
+    // Database ထဲမှာ pending_photos ကို အရင်ရှာပါ
+    let docRef = db.collection("pending_photos").doc(docId);
+    let doc = await docRef.get();
+    
+    // မရှိရင် registrations မှာ ရှာပါ
+    if (!doc.exists) {
+        docRef = db.collection("registrations").doc(docId);
+        doc = await docRef.get();
+    }
+
+    if (!doc.exists) return ctx.answerCbQuery("❌ Data မရှိပါ။");
+    
+    try {
+        // Status ကို rejected ပြောင်းမယ်
+        await docRef.update({ 
+            status: "rejected", 
+            rejectReason: "invalid_screenshot" // အကြောင်းအရင်းအသစ်
+        });        
+        
+        const data = doc.data();
+        if(data.userId) {
+            // သင်လိုချင်သည့် စာသားအတိုင်း User ထံ ပို့ပေးခြင်း
+            const msg = `❌ သင်တင်လိုက်သော Result Screenshot မမှန်ကန်ပါ။\n🔄 ကျေးဇူးပြု၍ မှန်ကန်သော ပုံအသစ်ကို ပြန်လည်တင်ပေးပါ။`;
+            await ctx.telegram.sendMessage(data.userId, msg, { parse_mode: 'HTML' });
+        }
+        
+        // Admin Group ထဲမှာလည်း အကြောင်းကြားခြင်း
+        await ctx.editMessageText(`✅ Result Screenshot မမှန်ကန်သဖြင့် Reject လုပ်လိုက်ပါပြီ။`);
+    } catch (err) {
+        console.error(err);
+        await ctx.editMessageText(`❌ Reject လုပ်ရာတွင် Error ဖြစ်နေသည်။`);
+    }
+    ctx.answerCbQuery("Reject လုပ်ပြီးပါပြီ");
 });
 bot.action(/rj_(.+)_(.+)/, async (ctx) => {
     const reason = ctx.match[1];
