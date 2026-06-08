@@ -378,12 +378,14 @@ function switchTab(tabName, element) {
 }
 function increaseLimit() {
     resultLimit += 10;
-    loadMatchRooms(); 
+    loadMatchRooms(); // Tab ကို ပြန်ခေါ်ပြီး Listener ကို အသစ်လုပ်ပေးမယ်
 }
 
 function decreaseLimit() {
-    resultLimit -= 10;
-    loadMatchRooms();
+    if (resultLimit > 10) {
+        resultLimit -= 10;
+        loadMatchRooms();
+    }
 }
 function loadMatchRooms() {
     const container = document.getElementById('match-content');
@@ -445,19 +447,17 @@ function loadMatchRooms() {
 else if (currentMatchTab === 'result') {
     if (typeof resultLimit === 'undefined') resultLimit = 10;
 
-    // limit မသုံးတော့ဘဲ အကုန်ဆွဲမယ် (Real-time အကုန်သိနေအောင်)
     currentListener = db.collection("results")
         .orderBy("timestamp", "desc")
+        .limit(resultLimit)
         .onSnapshot((querySnapshot) => {
             container.innerHTML = "";
-            const allDocs = querySnapshot.docs; // Doc အကုန်လုံးကို Array ထဲထည့်
-
-            // အခုပြမယ့် ၁၀ ခုကို ဖြတ်ယူမယ်
-            const displayDocs = allDocs.slice(resultLimit - 10, resultLimit);
-
-            displayDocs.forEach(doc => {
+            
+            querySnapshot.forEach(doc => {
                 const data = doc.data();
-                // ... (သင့်ရဲ့ card ထည့်တဲ့ code များ) ...            
+                const isTeamAWinner = data.winner === 'teamA';
+                const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString('en-GB') : "";
+
                 container.innerHTML += `
                     <div style="background: #1a1a1a; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer;" 
                         onclick="showMatchDetail('${data.matchId}', '${data.teamA}', '${data.teamB}')">
@@ -481,7 +481,7 @@ else if (currentMatchTab === 'result') {
             });
 
             // ခလုတ်များ ထည့်သည့်အပိုင်း
-container.innerHTML += `
+            container.innerHTML += `
                 <div id="navigationWrapper" style="display: flex; gap: 10px; margin-top: 10px;">
                     ${resultLimit > 10 ? `
                         <button onclick="decreaseLimit()" style="flex: 1; padding: 10px; background: #333; border: 1px solid #c9a66b; color: #c9a66b; border-radius: 5px; cursor: pointer;">
@@ -489,14 +489,14 @@ container.innerHTML += `
                         </button>
                     ` : ''}
                     
-                    ${resultLimit < allDocs.length ? `
+                    ${querySnapshot.docs.length === resultLimit ? `
                         <button onclick="increaseLimit()" style="flex: 1; padding: 10px; background: #c9a66b; border: none; color: #fff; border-radius: 5px; cursor: pointer;">
                             NEXT
                         </button>
                     ` : ''}
                 </div>
             `;
-                });
+        });
 }
 //  WAITING TAB ---
     else {
