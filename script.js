@@ -376,22 +376,14 @@ function switchTab(tabName, element) {
     element.classList.add('active');
     loadMatchRooms();
 }
-let pageIndex = 0;
-let lastDoc = null; 
-let historyDocs = [null]; // စာမျက်နှာအလိုက် lastDoc ကို သိမ်းထားဖို့
-
-function nextPage() {
-    pageIndex++;
-    // နောက်ဆုံးရတဲ့ doc ကို သိမ်းပြီး query အသစ်ဆွဲမယ်
-    // ဒီနေရာမှာ သင့်ရဲ့ logic အရ စာမျက်နှာအလိုက် doc တွေကို array နဲ့ သိမ်းဖို့ လိုအပ်ပါတယ်
+function increaseLimit() {
+    resultLimit += 10;
     loadMatchRooms(); 
 }
 
-function prevPage() {
-    if (pageIndex > 0) {
-        pageIndex--;
-        loadMatchRooms();
-    }
+function decreaseLimit() {
+    resultLimit -= 10;
+    loadMatchRooms();
 }
 function loadMatchRooms() {
     const container = document.getElementById('match-content');
@@ -451,25 +443,21 @@ function loadMatchRooms() {
             });
     } 
 else if (currentMatchTab === 'result') {
-    // Global variable တစ်ခုအနေနဲ့ lastDoc ကို အပေါ်ဆုံးမှာ ကြေညာထားပါ (let lastDoc = null;)
-    
+    if (typeof resultLimit === 'undefined') resultLimit = 10;
+
+    // limit မသုံးတော့ဘဲ အကုန်ဆွဲမယ် (Real-time အကုန်သိနေအောင်)
     currentListener = db.collection("results")
         .orderBy("timestamp", "desc")
-        .limit(10) // တစ်ခါဆွဲရင် ၁၀ ခု
-        .startAfter(lastDoc || 0) // နောက်ဆုံးမှတ်ထားတဲ့နေရာကနေ ဆက်ယူမယ်
         .onSnapshot((querySnapshot) => {
             container.innerHTML = "";
-            
-            if (querySnapshot.empty) {
-                container.innerHTML = `<p style="text-align:center; color:#333;">No results.</p>`;
-                return;
-            }
+            const allDocs = querySnapshot.docs; // Doc အကုန်လုံးကို Array ထဲထည့်
 
-            querySnapshot.forEach(doc => {
+            // အခုပြမယ့် ၁၀ ခုကို ဖြတ်ယူမယ်
+            const displayDocs = allDocs.slice(resultLimit - 10, resultLimit);
+
+            displayDocs.forEach(doc => {
                 const data = doc.data();
-                const isTeamAWinner = data.winner === 'teamA';
-                const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString('en-GB') : "";
-
+                // ... (သင့်ရဲ့ card ထည့်တဲ့ code များ) ...            
                 container.innerHTML += `
                     <div style="background: #1a1a1a; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer;" 
                         onclick="showMatchDetail('${data.matchId}', '${data.teamA}', '${data.teamB}')">
@@ -492,23 +480,23 @@ else if (currentMatchTab === 'result') {
                 `;
             });
 
-            // နောက်ဆုံး Document ကို သိမ်းထား (Next အတွက်)
-            const lastDocSnapshot = querySnapshot.docs[querySnapshot.docs.length - 1];
-
-            container.innerHTML += `
+            // ခလုတ်များ ထည့်သည့်အပိုင်း
+container.innerHTML += `
                 <div id="navigationWrapper" style="display: flex; gap: 10px; margin-top: 10px;">
-                    ${pageIndex > 0 ? `
-                        <button onclick="prevPage()" style="flex: 1; padding: 10px; background: #333; border: 1px solid #c9a66b; color: #c9a66b; border-radius: 5px; cursor: pointer;">
+                    ${resultLimit > 10 ? `
+                        <button onclick="decreaseLimit()" style="flex: 1; padding: 10px; background: #333; border: 1px solid #c9a66b; color: #c9a66b; border-radius: 5px; cursor: pointer;">
                             PREVIOUS
                         </button>
                     ` : ''}
                     
-                    <button onclick="nextPage()" style="flex: 1; padding: 10px; background: #c9a66b; border: none; color: #fff; border-radius: 5px; cursor: pointer;">
-                        NEXT
-                    </button>
+                    ${resultLimit < allDocs.length ? `
+                        <button onclick="increaseLimit()" style="flex: 1; padding: 10px; background: #c9a66b; border: none; color: #fff; border-radius: 5px; cursor: pointer;">
+                            NEXT
+                        </button>
+                    ` : ''}
                 </div>
             `;
-        });
+                });
 }
 //  WAITING TAB ---
     else {
