@@ -440,65 +440,57 @@ function loadMatchRooms() {
 // --- RESULT TAB (Refined Minimalist) ---
 
 else if (currentMatchTab === 'result') {
-    // 2. Limit ကို 20 အဖြစ် စတင်သတ်မှတ်ထားပါ (Global variable ထဲမှာ)
+    // 1. Limit ကို Global အဖြစ် ထားပေးပါ (အပေါ်ဆုံးမှာ)
     if (typeof resultLimit === 'undefined') resultLimit = 10;
 
     currentListener = db.collection("results")
         .orderBy("timestamp", "desc")
-        .limit(resultLimit) // အရင်က 10 ကို variable နဲ့ အစားထိုး
+        .limit(resultLimit)
         .onSnapshot((querySnapshot) => {
+            // Container ကို အရင်ရှင်းပါ
             container.innerHTML = "";
             
+            // 2. Loop တစ်ခါပဲ ပတ်ပါ
             querySnapshot.forEach(doc => {
                 const data = doc.data();
                 const isTeamAWinner = data.winner === 'teamA';
                 const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString('en-GB') : "";
 
-            // Result Tab ထဲက Result Card Code အပိုင်းကို ဒီလို ပြင်လိုက်ပါ
-            container.innerHTML += `
-                <div style="background: #1a1a1a; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer;" 
-                    onclick="showMatchDetail('${data.matchId}', '${data.teamA}', '${data.teamB}')">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <span style="font-size: 0.75rem; color: #c9a66b; font-weight: bold;">💰 ${data.fee} Ks</span>
-                        <span style="font-size: 0.75rem; color: #666;">${dateStr}</span>
-                    </div>
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div style="text-align: center; flex: 1;">
-                            <div style="color: #fff; font-weight: 600; font-size: 0.95rem;">${data.teamA}</div>
-                            <div style="color: #d4af37; font-size: 0.75rem; font-weight:bold; margin-top: 6px;">${isTeamAWinner ? 'WINNER' : 'LOSER'}</div>
+                // Card တွေကို ဒီနေရာမှာ တစ်ခုချင်းစီ ဆောက်ပါ
+                container.innerHTML += `
+                    <div style="background: #1a1a1a; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer;" 
+                        onclick="showMatchDetail('${data.matchId}', '${data.teamA}', '${data.teamB}')">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-size: 0.75rem; color: #c9a66b; font-weight: bold;">💰 ${data.fee} Ks</span>
+                            <span style="font-size: 0.75rem; color: #666;">${dateStr}</span>
                         </div>
-                        <div style="color: #444; font-size: 0.7rem; font-weight: bold; margin: 0 10px;">VS</div>
-                        <div style="text-align: center; flex: 1;">
-                            <div style="color: #fff; font-weight: 600; font-size: 0.95rem;">${data.teamB}</div>
-                            <div style="color: #d4af37; font-size: 0.75rem; font-weight:bold; margin-top: 6px;">${!isTeamAWinner ? 'WINNER' : 'LOSER'}</div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="text-align: center; flex: 1;">
+                                <div style="color: #fff; font-weight: 600; font-size: 0.95rem;">${data.teamA}</div>
+                                <div style="color: #d4af37; font-size: 0.75rem; font-weight:bold; margin-top: 6px;">${isTeamAWinner ? 'WINNER' : 'LOSER'}</div>
+                            </div>
+                            <div style="color: #444; font-size: 0.7rem; font-weight: bold; margin: 0 10px;">VS</div>
+                            <div style="text-align: center; flex: 1;">
+                                <div style="color: #fff; font-weight: 600; font-size: 0.95rem;">${data.teamB}</div>
+                                <div style="color: #d4af37; font-size: 0.75rem; font-weight:bold; margin-top: 6px;">${!isTeamAWinner ? 'WINNER' : 'LOSER'}</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `;
-            // 3. Data အကုန်ဆွဲပြီးမှ Load More ခလုတ်ကို ပြမယ်
-        // ... snapshot.forEach စတင်သည့်နေရာ ...
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                // ... (Result Card HTML တွေကို ဒီမှာ ဆက်ရေးပါ) ...
-                resultsContainer.innerHTML += `...`;
+                `;
             });
-            // ... snapshot.forEach ပြီးဆုံးသည့်နေရာ ...
 
-            // LOAD MORE ခလုတ်ကို Loop ရဲ့ အပြင်ဘက်မှာ တစ်ခါပဲ ထည့်ပါ
-            if (snapshot.docs.length === 10) {
-                resultsContainer.innerHTML += `
+            // 3. Loop အပြင်ဘက်မှာမှ LOAD MORE ခလုတ်ကို ထည့်ပါ
+            if (querySnapshot.docs.length === resultLimit) {
+                container.innerHTML += `
                     <div id="loadMoreWrapper" style="text-align:center; padding:10px;">
-                        <button onclick="loadResults(true)" style="width: 100%; padding: 10px; background: #c9a66b; border: none; color: #fff; border-radius: 5px; cursor: pointer;">
+                        <button onclick="increaseLimit()" style="width: 100%; padding: 10px; background: #c9a66b; border: none; color: #fff; border-radius: 5px; cursor: pointer;">
                             LOAD MORE
                         </button>
                     </div>
                 `;
-        }
-            });
+            }
         });
-}
-// --- WAITING TAB ---
+}// --- WAITING TAB ---
     else {
         if (!myTeamInfo || !myTeamInfo.fee) return;
         
