@@ -567,44 +567,6 @@ async function showMatchDetail(matchId, teamAName, teamBName) {
         body.innerHTML = "Error loading data.";
     }
 }
-async function loadResultTab() {
-    const resultContainer = document.getElementById('match-content');
-    
-    // UI ကို အရင်ဆုံး Loading ပြမယ်
-    resultContainer.innerHTML = '<p style="text-align:center; color:#888;">Loading matches...</p>';
-
-    try {
-        const snapshot = await db.collection("results")
-            .orderBy("timestamp", "desc")
-            .limit(10)
-            .get();
-
-        // Data မရှိရင်
-        if (snapshot.empty) {
-            resultContainer.innerHTML = '<p style="text-align:center;">No results found.</p>';
-            return;
-        }
-
-        // ရှိရင် အရင် Loading စာသားကို ရှင်းပြီးမှ အသစ်ပြန်ရေးမယ်
-        resultContainer.innerHTML = ''; 
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            resultContainer.innerHTML += `
-                <div style="background: #111; border: 1px solid #333; padding: 15px; border-radius: 10px; margin-bottom: 10px;">
-                    <p style="font-size: 0.75rem; color: #c9a66b;">Fee: ${data.fee} Ks</p>
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
-                        <span>🏆 ${data.teamA}</span>
-                        <span style="color:#888;">vs</span>
-                        <span>${data.teamB}</span>
-                    </div>
-                    <p style="text-align: center; color: #00ff00; margin-top: 8px;">Winner: ${data.winner}</p>
-                </div>
-            `;
-        });
-    } catch (err) {
-        console.error("Error loading results: ", err);
-    }
-}// --- [NEW] RESULT TAB AUTO-UPDATE & SWITCHING LOGIC ---
 // --- [FIXED]: ရှင်းလင်းပြီး ထိရောက်သော Listener ---
 db.collection("results")
     .orderBy("timestamp", "desc")
