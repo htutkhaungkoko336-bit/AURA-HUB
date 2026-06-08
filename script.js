@@ -380,6 +380,12 @@ function increaseLimit() {
     resultLimit += 10; // 20 ထပ်တိုး
     loadMatchRooms(); // Tab ကို ပြန် refresh လုပ်ပေး
 }
+function decreaseLimit() {
+    if (resultLimit > 10) {
+        resultLimit -= 10;
+        loadMatchRooms();
+    }
+}
 function loadMatchRooms() {
     const container = document.getElementById('match-content');
     const createRoomBtn = document.querySelector('.create-room-card');
@@ -437,26 +443,20 @@ function loadMatchRooms() {
                 });
             });
     } 
-// --- RESULT TAB (Refined Minimalist) ---
-
 else if (currentMatchTab === 'result') {
-    // 1. Limit ကို Global အဖြစ် ထားပေးပါ (အပေါ်ဆုံးမှာ)
     if (typeof resultLimit === 'undefined') resultLimit = 10;
 
     currentListener = db.collection("results")
         .orderBy("timestamp", "desc")
         .limit(resultLimit)
         .onSnapshot((querySnapshot) => {
-            // Container ကို အရင်ရှင်းပါ
             container.innerHTML = "";
             
-            // 2. Loop တစ်ခါပဲ ပတ်ပါ
             querySnapshot.forEach(doc => {
                 const data = doc.data();
                 const isTeamAWinner = data.winner === 'teamA';
                 const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString('en-GB') : "";
 
-                // Card တွေကို ဒီနေရာမှာ တစ်ခုချင်းစီ ဆောက်ပါ
                 container.innerHTML += `
                     <div style="background: #1a1a1a; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer;" 
                         onclick="showMatchDetail('${data.matchId}', '${data.teamA}', '${data.teamB}')">
@@ -479,18 +479,25 @@ else if (currentMatchTab === 'result') {
                 `;
             });
 
-            // 3. Loop အပြင်ဘက်မှာမှ LOAD MORE ခလုတ်ကို ထည့်ပါ
-            if (querySnapshot.docs.length === resultLimit) {
-                container.innerHTML += `
-                    <div id="loadMoreWrapper" style="text-align:center; padding:10px;">
-                        <button onclick="increaseLimit()" style="width: 100%; padding: 10px; background: #c9a66b; border: none; color: #fff; border-radius: 5px; cursor: pointer;">
-                            LOAD MORE
+            // ခလုတ်များ ထည့်သည့်အပိုင်း
+            container.innerHTML += `
+                <div id="navigationWrapper" style="display: flex; gap: 10px; margin-top: 10px;">
+                    ${resultLimit > 10 ? `
+                        <button onclick="decreaseLimit()" style="flex: 1; padding: 10px; background: #333; border: 1px solid #c9a66b; color: #c9a66b; border-radius: 5px; cursor: pointer;">
+                            PREVIOUS
                         </button>
-                    </div>
-                `;
-            }
+                    ` : ''}
+                    
+                    ${querySnapshot.docs.length === resultLimit ? `
+                        <button onclick="increaseLimit()" style="flex: 1; padding: 10px; background: #c9a66b; border: none; color: #fff; border-radius: 5px; cursor: pointer;">
+                            NEXT
+                        </button>
+                    ` : ''}
+                </div>
+            `;
         });
-}// --- WAITING TAB ---
+}
+//  WAITING TAB ---
     else {
         if (!myTeamInfo || !myTeamInfo.fee) return;
         
