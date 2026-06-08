@@ -376,6 +376,54 @@ function switchTab(tabName, element) {
     element.classList.add('active');
     loadMatchRooms();
 }
+
+// Result tab အတွက် သီးသန့် Function
+async function loadResults(isLoadMore = false) {
+    const container = document.getElementById('match-content'); // သင့်ရဲ့ container ID ကို ပြန်စစ်ပါ
+    if (!isLoadMore) container.innerHTML = '<p style="text-align:center; color:#444;">Loading...</p>';
+
+    let query = db.collection("results")
+        .orderBy("timestamp", "desc")
+        .limit(20);
+
+    if (isLoadMore && lastVisible) {
+        query = query.startAfter(lastVisible);
+    }
+
+    try {
+        const snapshot = await query.get();
+        if (!isLoadMore) container.innerHTML = "";
+
+        if (snapshot.empty && !isLoadMore) {
+            container.innerHTML = `<p style="text-align:center; color:#333;">No results found.</p>`;
+            return;
+        }
+
+        lastVisible = snapshot.docs[snapshot.docs.length - 1];
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const isTeamAWinner = data.winner === 'teamA';
+            const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString('en-GB') : "";
+
+            container.innerHTML += `
+                <div style="background: #1a1a1a; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer;" 
+                    onclick="showMatchDetail('${data.matchId}', '${data.teamA}', '${data.teamB}')">
+                    ... (သင့်ရဲ့ result HTML code) ...
+                </div>
+            `;
+        });
+
+        if (snapshot.docs.length === 20) {
+            container.innerHTML += `
+                <button onclick="loadResults(true)" style="width:100%; padding:10px; background:#333; border:none; color:#fff; border-radius:5px;">Load More</button>
+            `;
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 function loadMatchRooms() {
     const container = document.getElementById('match-content');
     const createRoomBtn = document.querySelector('.create-room-card');
@@ -433,44 +481,9 @@ function loadMatchRooms() {
                 });
             });
     } 
-// --- RESULT TAB (Refined Minimalist) ---
 else if (currentMatchTab === 'result') {
-    currentListener = db.collection("results")
-        .orderBy("timestamp", "desc")
-        .limit(10)
-        .onSnapshot((querySnapshot) => {
-            container.innerHTML = "";
-            querySnapshot.forEach(doc => {
-                const data = doc.data();
-                const isTeamAWinner = data.winner === 'teamA';
-                const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString('en-GB') : "";
-
-            // Result Tab ထဲက Result Card Code အပိုင်းကို ဒီလို ပြင်လိုက်ပါ
-            container.innerHTML += `
-                <div style="background: #1a1a1a; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer;" 
-                    onclick="showMatchDetail('${data.matchId}', '${data.teamA}', '${data.teamB}')">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <span style="font-size: 0.75rem; color: #c9a66b; font-weight: bold;">💰 ${data.fee} Ks</span>
-                        <span style="font-size: 0.75rem; color: #666;">${dateStr}</span>
-                    </div>
-                    
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div style="text-align: center; flex: 1;">
-                            <div style="color: #fff; font-weight: 600; font-size: 0.95rem;">${data.teamA}</div>
-                            <div style="color: #d4af37; font-size: 0.75rem; font-weight:bold; margin-top: 6px;">${isTeamAWinner ? 'WINNER' : 'LOSER'}</div>
-                        </div>
-                        <div style="color: #444; font-size: 0.7rem; font-weight: bold; margin: 0 10px;">VS</div>
-                        <div style="text-align: center; flex: 1;">
-                            <div style="color: #fff; font-weight: 600; font-size: 0.95rem;">${data.teamB}</div>
-                            <div style="color: #d4af37; font-size: 0.75rem; font-weight:bold; margin-top: 6px;">${!isTeamAWinner ? 'WINNER' : 'LOSER'}</div>
-                        </div>
-                    </div>
-                </div>
-            `;
-            });
-        });
-}
-// --- WAITING TAB ---
+    loadResults(false); 
+}// --- WAITING TAB ---
     else {
         if (!myTeamInfo || !myTeamInfo.fee) return;
         
