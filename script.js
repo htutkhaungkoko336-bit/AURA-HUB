@@ -384,7 +384,7 @@ async function loadResults(isLoadMore = false) {
 
     let query = db.collection("results")
         .orderBy("timestamp", "desc")
-        .limit(20);
+        .limit(10);
 
     if (isLoadMore && lastVisible) {
         query = query.startAfter(lastVisible);
