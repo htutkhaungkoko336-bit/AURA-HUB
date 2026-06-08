@@ -477,15 +477,24 @@ else if (currentMatchTab === 'result') {
                 </div>
             `;
             // 3. Data အကုန်ဆွဲပြီးမှ Load More ခလုတ်ကို ပြမယ်
-            if (querySnapshot.docs.length === resultLimit) {
-                container.innerHTML += `
-                    <div style="text-align:center; padding:10px;">
-                        <button id="loadMoreBtn" onclick="increaseLimit()" style="background:#c9a66b; border:none; padding:8px 20px; border-radius:5px; cursor:pointer; font-weight:bold;">
+        // ... snapshot.forEach စတင်သည့်နေရာ ...
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                // ... (Result Card HTML တွေကို ဒီမှာ ဆက်ရေးပါ) ...
+                resultsContainer.innerHTML += `...`;
+            });
+            // ... snapshot.forEach ပြီးဆုံးသည့်နေရာ ...
+
+            // LOAD MORE ခလုတ်ကို Loop ရဲ့ အပြင်ဘက်မှာ တစ်ခါပဲ ထည့်ပါ
+            if (snapshot.docs.length === 10) {
+                resultsContainer.innerHTML += `
+                    <div id="loadMoreWrapper" style="text-align:center; padding:10px;">
+                        <button onclick="loadResults(true)" style="width: 100%; padding: 10px; background: #c9a66b; border: none; color: #fff; border-radius: 5px; cursor: pointer;">
                             LOAD MORE
                         </button>
                     </div>
                 `;
-            }
+        }
             });
         });
 }
