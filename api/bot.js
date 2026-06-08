@@ -75,11 +75,10 @@ bot.action(/regReject_(.+)/, async (ctx) => {
 bot.action(/reject_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
     
-    // Database ထဲမှာ pending_photos ကို အရင်ရှာပါ
+    // Database မှ data ရယူခြင်း (pending_photos ကို အရင်ရှာပါ)
     let docRef = db.collection("pending_photos").doc(docId);
     let doc = await docRef.get();
     
-    // မရှိရင် registrations မှာ ရှာပါ
     if (!doc.exists) {
         docRef = db.collection("registrations").doc(docId);
         doc = await docRef.get();
@@ -90,24 +89,31 @@ bot.action(/reject_(.+)/, async (ctx) => {
     try {
         // Status ကို rejected ပြောင်းမယ်
         await docRef.update({ 
-            status: "rejected", 
-            rejectReason: "invalid_screenshot" // အကြောင်းအရင်းအသစ်
+            status: "rejected" 
         });        
         
         const data = doc.data();
         if(data.userId) {
-            // သင်လိုချင်သည့် စာသားအတိုင်း User ထံ ပို့ပေးခြင်း
+            // User ဆီ ပို့မည့် စာ
             const msg = `❌ သင်တင်လိုက်သော Result Screenshot မမှန်ကန်ပါ။\n🔄 ကျေးဇူးပြု၍ မှန်ကန်သော ပုံအသစ်ကို ပြန်လည်တင်ပေးပါ။`;
             await ctx.telegram.sendMessage(data.userId, msg, { parse_mode: 'HTML' });
         }
         
-        // Admin Group ထဲမှာလည်း အကြောင်းကြားခြင်း
-        await ctx.editMessageText(`✅ Result Screenshot မမှန်ကန်သဖြင့် Reject လုပ်လိုက်ပါပြီ။`);
+        // Admin Group ထဲက စာကို ပြင်မယ် (View Match Info ခလုတ်တစ်ခုတည်းနဲ့)
+        await ctx.editMessageCaption("❌ ပွဲရလဒ်ကို ပယ်ချထားပါသည်။", {
+            parse_mode: 'HTML',
+            reply_markup: {
+                inline_keyboard: [
+                    [{ text: '🔍 View Match Info', callback_data: `view_${docId}` }]
+                ]
+            }
+        });
+        
+        ctx.answerCbQuery("ပယ်ချလိုက်ပါပြီ");
     } catch (err) {
         console.error(err);
-        await ctx.editMessageText(`❌ Reject လုပ်ရာတွင် Error ဖြစ်နေသည်။`);
+        ctx.answerCbQuery("❌ Error ဖြစ်နေသည်။");
     }
-    ctx.answerCbQuery("Reject လုပ်ပြီးပါပြီ");
 });
 bot.action(/rj_(.+)_(.+)/, async (ctx) => {
     const reason = ctx.match[1];
