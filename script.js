@@ -376,13 +376,20 @@ function switchTab(tabName, element) {
     element.classList.add('active');
     loadMatchRooms();
 }
-function increaseLimit() {
-    resultLimit += 10; // 20 ထပ်တိုး
-    loadMatchRooms(); // Tab ကို ပြန် refresh လုပ်ပေး
+let pageIndex = 0;
+let lastDoc = null; 
+let historyDocs = [null]; // စာမျက်နှာအလိုက် lastDoc ကို သိမ်းထားဖို့
+
+function nextPage() {
+    pageIndex++;
+    // နောက်ဆုံးရတဲ့ doc ကို သိမ်းပြီး query အသစ်ဆွဲမယ်
+    // ဒီနေရာမှာ သင့်ရဲ့ logic အရ စာမျက်နှာအလိုက် doc တွေကို array နဲ့ သိမ်းဖို့ လိုအပ်ပါတယ်
+    loadMatchRooms(); 
 }
-function decreaseLimit() {
-    if (resultLimit > 10) {
-        resultLimit -= 10;
+
+function prevPage() {
+    if (pageIndex > 0) {
+        pageIndex--;
         loadMatchRooms();
     }
 }
@@ -444,14 +451,20 @@ function loadMatchRooms() {
             });
     } 
 else if (currentMatchTab === 'result') {
-    if (typeof resultLimit === 'undefined') resultLimit = 10;
-
+    // Global variable တစ်ခုအနေနဲ့ lastDoc ကို အပေါ်ဆုံးမှာ ကြေညာထားပါ (let lastDoc = null;)
+    
     currentListener = db.collection("results")
         .orderBy("timestamp", "desc")
-        .limit(resultLimit)
+        .limit(10) // တစ်ခါဆွဲရင် ၁၀ ခု
+        .startAfter(lastDoc || 0) // နောက်ဆုံးမှတ်ထားတဲ့နေရာကနေ ဆက်ယူမယ်
         .onSnapshot((querySnapshot) => {
             container.innerHTML = "";
             
+            if (querySnapshot.empty) {
+                container.innerHTML = `<p style="text-align:center; color:#333;">No results.</p>`;
+                return;
+            }
+
             querySnapshot.forEach(doc => {
                 const data = doc.data();
                 const isTeamAWinner = data.winner === 'teamA';
@@ -479,20 +492,20 @@ else if (currentMatchTab === 'result') {
                 `;
             });
 
-            // ခလုတ်များ ထည့်သည့်အပိုင်း
+            // နောက်ဆုံး Document ကို သိမ်းထား (Next အတွက်)
+            const lastDocSnapshot = querySnapshot.docs[querySnapshot.docs.length - 1];
+
             container.innerHTML += `
                 <div id="navigationWrapper" style="display: flex; gap: 10px; margin-top: 10px;">
-                    ${resultLimit > 10 ? `
-                        <button onclick="decreaseLimit()" style="flex: 1; padding: 10px; background: #333; border: 1px solid #c9a66b; color: #c9a66b; border-radius: 5px; cursor: pointer;">
+                    ${pageIndex > 0 ? `
+                        <button onclick="prevPage()" style="flex: 1; padding: 10px; background: #333; border: 1px solid #c9a66b; color: #c9a66b; border-radius: 5px; cursor: pointer;">
                             PREVIOUS
                         </button>
                     ` : ''}
                     
-                    ${querySnapshot.docs.length === resultLimit ? `
-                        <button onclick="increaseLimit()" style="flex: 1; padding: 10px; background: #c9a66b; border: none; color: #fff; border-radius: 5px; cursor: pointer;">
-                            NEXT
-                        </button>
-                    ` : ''}
+                    <button onclick="nextPage()" style="flex: 1; padding: 10px; background: #c9a66b; border: none; color: #fff; border-radius: 5px; cursor: pointer;">
+                        NEXT
+                    </button>
                 </div>
             `;
         });
