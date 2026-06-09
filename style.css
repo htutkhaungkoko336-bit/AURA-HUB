@@ -1,6 +1,14 @@
 * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
-body { background-color: #000; color: #fff; margin: 0; padding: 0; display: flex; justify-content: center; height: 100vh; overflow: hidden; }
-
+body { 
+    background-color: #000; 
+    color: #fff; 
+    margin: 0; 
+    padding: 0; 
+    display: flex; 
+    justify-content: center; 
+    height: 100svh; /* 100vh အစား 100svh သုံးပါ */
+    overflow: hidden; 
+}
 .app-container, .sub-page { width: 100%; max-width: 450px; height: 100%; padding: 15px; display: flex; flex-direction: column; }
 
 /* Header & Modal Styles */
