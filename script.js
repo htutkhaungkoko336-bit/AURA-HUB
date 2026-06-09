@@ -306,31 +306,31 @@ function startLobbyListener(fee, mode) {
 
     if (currentListener) currentListener();
 
-    currentListener = db.collection("registrations")
-        .where("fee", "==", parseInt(fee))
-        .where("mode", "==", mode)
-        .where("matchStatus", "==", "waiting")
-        .onSnapshot((snapshot) => {
-            listContainer.innerHTML = ""; 
-
-            if (!snapshot.empty) {
-                boxContainer.style.display = "block";
-                snapshot.forEach(doc => {
-                    const data = doc.data();
-                    const name = data.squadName || data.playerName || "Player";
-                    
-                    // ID code ဖျက်၊ TEAM စာသားထည့်
-                    listContainer.innerHTML += `
-                        <div class="lobby-row" style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #333;">
-                            <span style="color: #fff;">TEAM - ${name}</span>
-                            <span class="waiting-text" style="color: #c9a66b;">waiting...</span>
-                        </div>
-                    `;
-                });
-            } else {
-                boxContainer.style.display = "none";
-            }
-        });
+currentListener = db.collection("registrations")
+    .where("fee", "==", parseInt(fee))
+    .where("mode", "==", mode)
+    .where("matchStatus", "==", "waiting")
+    .orderBy("timestamp", "desc") // ဒီနေရာမှာ အသစ်ဆုံးကို အပေါ်တင်ဖို့အတွက် desc သုံးပါ
+    .onSnapshot((snapshot) => {
+        listContainer.innerHTML = ""; 
+        
+        if (!snapshot.empty) {
+            boxContainer.style.display = "block";
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const name = data.squadName || data.playerName || "Player";
+                
+                listContainer.innerHTML += `
+                    <div class="lobby-row" style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #333;">
+                        <span style="color: #fff;">TEAM - ${name}</span>
+                        <span class="waiting-text" style="color: #c9a66b;">waiting...</span>
+                    </div>
+                `;
+            });
+        } else {
+            boxContainer.style.display = "none";
+        }
+    });
 }
 // သင့် joinRoom function ထဲတွင် ခေါ်သုံးရန်
 // joinRoom(fee) ထဲမှာ - startLobbyListener(fee, mode); ကို ထည့်လိုက်ပါ
