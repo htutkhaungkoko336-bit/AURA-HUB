@@ -69,6 +69,9 @@ function joinRoom(fee) {
     const mode = mapData[currentIndex].mode;
     document.getElementById('page-room-select').style.display = 'none';
 
+    // Preview ကို စတင်နားထောင်ပါ
+    startLobbyListener(fee, mode);
+
     if (mode === "5vs5") {
         document.getElementById('page-5vs5').style.display = 'flex';
         document.getElementById('fee-5vs5').innerText = "Entry Fee: " + fee + " Ks";
@@ -77,13 +80,17 @@ function joinRoom(fee) {
         document.getElementById('fee-1vs1').innerText = "Entry Fee: " + fee + " Ks";
     }
 }
-
 function leaveRoom() {
+    // Preview Listener ကို ပိတ်မယ်
+    if (currentListener) {
+        currentListener();
+        currentListener = null;
+    }
+    
     document.getElementById('page-5vs5').style.display = 'none';
     document.getElementById('page-1vs1').style.display = 'none';
     document.getElementById('page-room-select').style.display = 'flex';
 }
-
 function goToPayment() {
     const mode = mapData[currentIndex].mode;
     let name, phone;
@@ -291,6 +298,39 @@ function backToRegistration() {
 }
 
 window.onload = updateDisplay;
+
+// Live Lobby Preview Function
+function startLobbyListener(fee, mode) {
+    const listContainer = document.getElementById(`lobby-list-${mode}`);
+    const boxContainer = document.getElementById(`lobby-preview-${mode}`);
+
+    // အရင်က ဖွင့်ထားတဲ့ listener ရှိရင် ပိတ်မယ်
+    if (currentListener) currentListener();
+
+    // Firestore ကနေ Real-time စောင့်ကြည့်မယ်
+    currentListener = db.collection("registrations")
+        .where("fee", "==", parseInt(fee))
+        .where("mode", "==", mode)
+        .where("matchStatus", "==", "waiting")
+        .onSnapshot((snapshot) => {
+            listContainer.innerHTML = ""; // အရင်ပြထားတာတွေဖျက်
+
+            if (!snapshot.empty) {
+                boxContainer.style.display = "block"; // လူရှိရင် ပြမယ်
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const displayName = data.squadName || data.playerName || "Player";
+                    listContainer.innerHTML += `
+                        <div class="lobby-item" style="font-size: 0.65rem; color: #aaa; margin-bottom: 3px;">
+                            #${doc.id.slice(-4)} - ${displayName} is waiting...
+                        </div>
+                    `;
+                });
+            } else {
+                boxContainer.style.display = "none"; // လူမရှိရင် ပိတ်ထားမယ်
+            }
+        });
+}
 
 // --- MATCH CENTER SYSTEM ---
 function watchStatus(docId) {

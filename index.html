@@ -126,11 +126,11 @@
             </div>       
             
             <!-- RE-ADDED: LOBBY PREVIEW -->
-            <div class="mini-lobby" style="margin-top: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
+            <div class="mini-lobby" id="lobby-preview-5vs5" style="margin-top: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; display: none;">
                 <h3 style="font-size: 0.7rem; color: #c9a66b; margin: 0 0 5px 0;">LIVE LOBBY PREVIEW</h3>
-                <div class="lobby-item" style="font-size: 0.65rem; color: #aaa;">#0124 - Waiting for Opponent (1/2)</div>
+                <div id="lobby-list-5vs5" style="font-size: 0.65rem; color: #aaa;">
+                    </div>
             </div>
-
             <button class="rule-btn gold-btn" style="margin-top: 20px;" onclick="goToPayment()">Confirm & Pay</button>
             <button class="rule-btn" onclick="leaveRoom()" style="margin-top: 10px;">Back to Selection</button>
         </div>
@@ -150,11 +150,11 @@
             </div>
 
             <!-- RE-ADDED: LOBBY PREVIEW -->
-            <div class="mini-lobby" style="margin-top: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px;">
-                <h3 style="font-size: 0.7rem; color: #c9a66b; margin: 0 0 5px 0;">LIVE LOBBY PREVIEW</h3>
-                <div class="lobby-item" style="font-size: 0.65rem; color: #aaa;">#0125 - Searching for Match...</div>
-            </div>
-
+        <div class="mini-lobby" id="lobby-preview-1vs1" style="margin-top: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; display: none;">
+            <h3 style="font-size: 0.7rem; color: #c9a66b; margin: 0 0 5px 0;">LIVE LOBBY PREVIEW</h3>
+            <div id="lobby-list-1vs1" style="font-size: 0.65rem; color: #aaa;">
+                </div>
+        </div>
             <button class="rule-btn gold-btn" style="margin-top: 20px;" onclick="goToPayment()">Confirm To Pay</button>
             <button class="rule-btn" onclick="leaveRoom()" style="margin-top: 10px;">Back to Selection</button> 
         </div>
