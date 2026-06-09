@@ -300,42 +300,38 @@ function backToRegistration() {
 window.onload = updateDisplay;
 
 // Live Lobby Preview Function
-// Live Lobby Listener Function
 function startLobbyListener(fee, mode) {
     const listContainer = document.getElementById(`lobby-list-${mode}`);
     const boxContainer = document.getElementById(`lobby-preview-${mode}`);
 
-    // အရင်ဖွင့်ထားတဲ့ listener ရှိရင် ပိတ်မယ်
     if (currentListener) currentListener();
 
-    // Firestore ကနေ waiting နေတဲ့သူတွေကိုပဲ live နားထောင်မယ်
     currentListener = db.collection("registrations")
         .where("fee", "==", parseInt(fee))
         .where("mode", "==", mode)
         .where("matchStatus", "==", "waiting")
         .onSnapshot((snapshot) => {
-            listContainer.innerHTML = ""; // အရင်စာရင်းတွေဖျက်
+            listContainer.innerHTML = ""; 
 
             if (!snapshot.empty) {
-                boxContainer.style.display = "block"; // လူရှိရင် ပြမယ်
+                boxContainer.style.display = "block";
                 snapshot.forEach(doc => {
                     const data = doc.data();
                     const name = data.squadName || data.playerName || "Player";
                     
-                    // List Item Design
+                    // ID code ဖျက်၊ TEAM စာသားထည့်
                     listContainer.innerHTML += `
-                        <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #333;">
-                            <span>#${doc.id.slice(-4)} - ${name}</span>
-                            <span style="color: #c9a66b;">waiting...</span>
+                        <div class="lobby-row" style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #333;">
+                            <span style="color: #fff;">TEAM - ${name}</span>
+                            <span class="waiting-text" style="color: #c9a66b;">waiting...</span>
                         </div>
                     `;
                 });
             } else {
-                boxContainer.style.display = "none"; // လူမရှိရင် ပိတ်ထားမယ်
+                boxContainer.style.display = "none";
             }
         });
 }
-
 // သင့် joinRoom function ထဲတွင် ခေါ်သုံးရန်
 // joinRoom(fee) ထဲမှာ - startLobbyListener(fee, mode); ကို ထည့်လိုက်ပါ
 // --- MATCH CENTER SYSTEM ---

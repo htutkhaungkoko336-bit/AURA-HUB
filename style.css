@@ -398,3 +398,33 @@ body { background-color: #000; color: #fff; margin: 0; padding: 0; display: flex
     justify-content: center;
     z-index: 9999; /* တခြားဟာတွေအပေါ်ဆုံးမှာ ရှိနေအောင် */
 }
+.lobby-scroll-container {
+    max-height: 120px; /* ၅ ခုလောက်ပဲပေါ်မယ် */
+    overflow-y: auto;
+    padding-right: 5px;
+}
+/* Live Lobby Preview Container */
+.mini-lobby {
+    margin-top: 15px;
+    background: #222;
+    padding: 12px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    display: none;
+}
+
+/* Scroll ဖြစ်အောင် ပြင်ထားသည့်နေရာ */
+#lobby-list-5vs5, #lobby-list-1vs1 {
+    max-height: 120px; /* 5 ခုလောက်ပဲပေါ်အောင် 120px လောက်ထားလိုက်ပါ */
+    overflow-y: auto;  /* scroll ဖြစ်စေတယ် */
+    padding-right: 5px;
+}
+
+/* Scrollbar design လေးအတွက် (Optional) */
+#lobby-list-5vs5::-webkit-scrollbar, #lobby-list-1vs1::-webkit-scrollbar {
+    width: 4px;
+}
+#lobby-list-5vs5::-webkit-scrollbar-thumb, #lobby-list-1vs1::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 2px;
+}
