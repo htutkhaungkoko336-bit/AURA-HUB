@@ -126,10 +126,12 @@
             </div>       
             
             <!-- RE-ADDED: LOBBY PREVIEW -->
-            <div class="mini-lobby" id="lobby-preview-5vs5" style="margin-top: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; display: none;">
-                <h3 style="font-size: 0.7rem; color: #c9a66b; margin: 0 0 5px 0;">LIVE LOBBY PREVIEW</h3>
-                <div id="lobby-list-5vs5" style="font-size: 0.65rem; color: #aaa;">
-                    </div>
+            <div class="mini-lobby" id="lobby-preview-5vs5" style="margin-top: 15px; background: #222; padding: 12px; border-radius: 8px; border: 1px solid #444; display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <h3 style="font-size: 0.7rem; color: #c9a66b; margin: 0;">LIVE LOBBY</h3>
+                    <span style="font-size: 0.6rem; color: #4caf50; animation: pulse 2s infinite;">● WAITING</span>
+                </div>
+                <div id="lobby-list-5vs5" style="font-size: 0.75rem; color: #eee;"></div>
             </div>
             <button class="rule-btn gold-btn" style="margin-top: 20px;" onclick="goToPayment()">Confirm & Pay</button>
             <button class="rule-btn" onclick="leaveRoom()" style="margin-top: 10px;">Back to Selection</button>
@@ -150,12 +152,13 @@
             </div>
 
             <!-- RE-ADDED: LOBBY PREVIEW -->
-        <div class="mini-lobby" id="lobby-preview-1vs1" style="margin-top: 15px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; display: none;">
-            <h3 style="font-size: 0.7rem; color: #c9a66b; margin: 0 0 5px 0;">LIVE LOBBY PREVIEW</h3>
-            <div id="lobby-list-1vs1" style="font-size: 0.65rem; color: #aaa;">
+            <div class="mini-lobby" id="lobby-preview-1vs1" style="margin-top: 15px; background: #222; padding: 12px; border-radius: 8px; border: 1px solid #444; display: none;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <h3 style="font-size: 0.7rem; color: #c9a66b; margin: 0;">LIVE LOBBY</h3>
+                    <span style="font-size: 0.6rem; color: #4caf50; animation: pulse 2s infinite;">● WAITING</span>
                 </div>
-        </div>
-            <button class="rule-btn gold-btn" style="margin-top: 20px;" onclick="goToPayment()">Confirm To Pay</button>
+                <div id="lobby-list-1vs1" style="font-size: 0.75rem; color: #eee;"></div>
+            </div>
             <button class="rule-btn" onclick="leaveRoom()" style="margin-top: 10px;">Back to Selection</button> 
         </div>
     </div>

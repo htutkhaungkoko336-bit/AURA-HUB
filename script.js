@@ -300,29 +300,33 @@ function backToRegistration() {
 window.onload = updateDisplay;
 
 // Live Lobby Preview Function
+// Live Lobby Listener Function
 function startLobbyListener(fee, mode) {
     const listContainer = document.getElementById(`lobby-list-${mode}`);
     const boxContainer = document.getElementById(`lobby-preview-${mode}`);
 
-    // အရင်က ဖွင့်ထားတဲ့ listener ရှိရင် ပိတ်မယ်
+    // အရင်ဖွင့်ထားတဲ့ listener ရှိရင် ပိတ်မယ်
     if (currentListener) currentListener();
 
-    // Firestore ကနေ Real-time စောင့်ကြည့်မယ်
+    // Firestore ကနေ waiting နေတဲ့သူတွေကိုပဲ live နားထောင်မယ်
     currentListener = db.collection("registrations")
         .where("fee", "==", parseInt(fee))
         .where("mode", "==", mode)
         .where("matchStatus", "==", "waiting")
         .onSnapshot((snapshot) => {
-            listContainer.innerHTML = ""; // အရင်ပြထားတာတွေဖျက်
+            listContainer.innerHTML = ""; // အရင်စာရင်းတွေဖျက်
 
             if (!snapshot.empty) {
                 boxContainer.style.display = "block"; // လူရှိရင် ပြမယ်
                 snapshot.forEach(doc => {
                     const data = doc.data();
-                    const displayName = data.squadName || data.playerName || "Player";
+                    const name = data.squadName || data.playerName || "Player";
+                    
+                    // List Item Design
                     listContainer.innerHTML += `
-                        <div class="lobby-item" style="font-size: 0.65rem; color: #aaa; margin-bottom: 3px;">
-                            #${doc.id.slice(-4)} - ${displayName} is waiting...
+                        <div style="display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #333;">
+                            <span>#${doc.id.slice(-4)} - ${name}</span>
+                            <span style="color: #c9a66b;">waiting...</span>
                         </div>
                     `;
                 });
@@ -332,6 +336,8 @@ function startLobbyListener(fee, mode) {
         });
 }
 
+// သင့် joinRoom function ထဲတွင် ခေါ်သုံးရန်
+// joinRoom(fee) ထဲမှာ - startLobbyListener(fee, mode); ကို ထည့်လိုက်ပါ
 // --- MATCH CENTER SYSTEM ---
 function watchStatus(docId) {
     db.collection("registrations").doc(docId).onSnapshot((doc) => {
