@@ -6,6 +6,7 @@ body {
     padding: 0; 
     display: flex; 
     justify-content: center; 
+    overscroll-behavior-y: none; /* Pull-to-refresh ကို တားဆီးပေးတယ် */
     height: 100svh; /* 100vh အစား 100svh သုံးပါ */
     overflow: hidden; 
 }
