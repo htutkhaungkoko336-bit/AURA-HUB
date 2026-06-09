@@ -93,21 +93,47 @@ function leaveRoom() {
 }
 function goToPayment() {
     const mode = mapData[currentIndex].mode;
-    let name, phone;
+    let isValid = true;
 
     if (mode === "5vs5") {
-        name = document.getElementById('kpay-name').value;
-        phone = document.getElementById('kpay-no').value;
+        // ၁။ Squad Name စစ်မယ်
+        const squadName = document.getElementById('squad-name').value;
+        if (!squadName) isValid = false;
+
+        // ၂။ Player ၅ ယောက်လုံးရဲ့ Name & ID စစ်မယ်
+        const playerRows = document.querySelectorAll('#page-5vs5 .player-row input');
+        playerRows.forEach(input => {
+            if (!input.value) isValid = false;
+        });
+
+        // ၃။ K-Pay အချက်အလက် စစ်မယ်
+        const kName = document.getElementById('kpay-name').value;
+        const kNo = document.getElementById('kpay-no').value;
+        if (!kName || !kNo) isValid = false;
+
     } else {
-        name = document.getElementById('kpay-name-solo').value;
-        phone = document.getElementById('kpay-no-solo').value;
+        // 1vs1 အတွက် စစ်မယ်
+        const soloName = document.querySelector('#page-1vs1 .player-row input[type="text"]').value;
+        const soloID = document.querySelector('#page-1vs1 .player-row input[type="number"]').value;
+        const kName = document.getElementById('kpay-name-solo').value;
+        const kNo = document.getElementById('kpay-no-solo').value;
+
+        if (!soloName || !soloID || !kName || !kNo) isValid = false;
     }
 
-    if (!name || !phone) {
-        alert("K-Pay အချက်အလက်များကို အရင်ဖြည့်သွင်းပေးပါ။");
+    // Logo တင်ထားခြင်း ရှိမရှိ စစ်ရန် (Optional)
+    if (mode === "5vs5" && document.getElementById('logoPreview').style.display === 'none') {
+        alert("Logo ပုံလေး ထည့်ပေးပါဦးခင်ဗျာ။");
         return;
     }
 
+    // အချက်အလက် မပြည့်စုံရင် Alert ပြပြီး ရပ်လိုက်မယ်
+    if (!isValid) {
+        alert("ကျေးဇူးပြု၍ အချက်အလက်အားလုံးကို ပြည့်စုံစွာ ဖြည့်စွက်ပေးပါ။");
+        return;
+    }
+
+    // အားလုံးပြည့်စုံမှ Payment Page ကို သွားမယ်
     document.getElementById('page-5vs5').style.display = 'none';
     document.getElementById('page-1vs1').style.display = 'none';
     document.getElementById('page-payment-proof').style.display = 'flex';
