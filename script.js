@@ -648,7 +648,7 @@ async function showMatchDetail(matchId, teamAName, teamBName) {
             <div style="width: 100%; color: #fff; padding: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
                     <div style="flex: 1;">
-                        <div style="text-align: center; font-weight: 900; font-size: 1.2rem; color: #fff; margin-bottom: 20px;">
+                        <div style="text-align: center; font-weight: 500; font-size: 1.2rem; color: #fff; margin-bottom: 20px;">
                             🚩 ${teamAName}
                         </div>
                         ${teamAPlayersHTML || '<div style="color:#555; text-align:center; font-size:0.75rem;">-</div>'}
@@ -659,7 +659,7 @@ async function showMatchDetail(matchId, teamAName, teamBName) {
                     </div>
 
                     <div style="flex: 1;">
-                        <div style="text-align: center; font-weight: 900; font-size: 1.2rem; color: #fff; margin-bottom: 20px;">
+                        <div style="text-align: center; font-weight: 500; font-size: 1.2rem; color: #fff; margin-bottom: 20px;">
                             🚩 ${teamBName}
                         </div>
                         ${teamBPlayersHTML || '<div style="color:#555; text-align:center; font-size:0.75rem;">-</div>'}
