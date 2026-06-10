@@ -1,5 +1,6 @@
 // --- DATA & STATE ---
 let currentListener = null;
+let currentMatchTab = 'waiting'; // ဒါကိုထည့်လိုက်ရင် "currentMatchTab is not defined" error ပျောက်သွားပါမယ်။
 const mapData = [
     { 
         mode: "5vs5", 
