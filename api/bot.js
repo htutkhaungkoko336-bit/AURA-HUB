@@ -171,7 +171,7 @@ bot.start(async (ctx) => {
         const matchDoc = await db.collection("matches").doc(matchId).get();
         if (!matchDoc.exists) return ctx.reply("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
         const matchData = matchDoc.data();
-        const matchTime = matchData.timestamp ? matchData.timestamp.toDate().toLocaleString('en-GB', { timeZone: 'Asia/Yangon' }) : "N/A";
+        const matchTime = matchData.matchTimestamp ? matchData.matchTimestamp.toDate().toLocaleString('en-GB', { timeZone: 'Asia/Yangon' }) : "N/A";
         const [leaderADoc, leaderBDoc] = await Promise.all([
             db.collection("registrations").doc(matchData.teamA_LeaderId).get(),
             db.collection("registrations").doc(matchData.teamB_LeaderId).get()
@@ -232,15 +232,14 @@ bot.action(/view_(.+)/, async (ctx) => {
         const data = doc.data();
         const matchDoc = await db.collection("matches").doc(data.matchId).get();
         const matchData = matchDoc.data();
-        const matchTime = matchData.timestamp ? matchData.timestamp.toDate().toLocaleString('en-GB', { timeZone: 'Asia/Yangon' }) : "N/A";
+        const matchTime = matchData.matchTimestamp ? matchData.matchTimestamp.toDate().toLocaleString('en-GB', { timeZone: 'Asia/Yangon' }) : "N/A";
         const [leaderA, leaderB] = await Promise.all([
             db.collection("registrations").doc(matchData.teamA_LeaderId).get(),
             db.collection("registrations").doc(matchData.teamB_LeaderId).get()
         ]);
         const dataA = leaderA.data(); const dataB = leaderB.data();
-        const info = `<b>🔍 MATCH DETAILS</b>\n🕒 <b>Time:</b> ${matchTime}\n💰 <b>Fee:</b> ${matchData.fee || 0}\n━━━━━━━━━━━━━━\n<b>🏆 TEAM A: ${matchData.teamA}</b>\n📞 K-Pay: <code>${dataA.kpayPhone || 'မပါရှိပါ'}</code>\n${dataA.players.map(p => `👤 ${p.name}`).join('\n')}\n\n<b>🏆 TEAM B: ${matchData.teamB}</b>\n📞 K-Pay: <code>${dataB.kpayPhone || 'မပါရှိပါ'}</code>\n${dataB.players.map(p => `👤 ${p.name}`).join('\n')}\n━━━━━━━━━━━━━━\n🎲 <b>First Pick:</b> ${matchData.firstPickWinner || 'N/A'}`;        await ctx.editMessageCaption(info, { parse_mode: 'HTML', reply_markup: message.reply_markup });
-    }
-    await ctx.editMessageCaption(info, { parse_mode: 'HTML', reply_markup: message.reply_markup });
+        const info = `<b>🔍 MATCH DETAILS</b>\n🕒 <b>Time:</b> ${matchTime}\n💰 <b>Fee:</b> ${matchData.fee || 0}\n━━━━━━━━━━━━━━\n<b>🏆 TEAM A: ${matchData.teamA}</b>\n📞 K-Pay: <code>${dataA.kpayPhone || 'မပါရှိပါ'}</code>\n${dataA.players.map(p => `👤 ${p.name}`).join('\n')}\n\n<b>🏆 TEAM B: ${matchData.teamB}</b>\n📞 K-Pay: <code>${dataB.kpayPhone || 'မပါရှိပါ'}</code>\n${dataB.players.map(p => `👤 ${p.name}`).join('\n')}\n━━━━━━━━━━━━━━\n🎲 <b>First Pick:</b> ${matchData.firstPickWinner || 'N/A'}`;    }
+        await ctx.editMessageCaption(info, { parse_mode: 'HTML', reply_markup: message.reply_markup });
     ctx.answerCbQuery();
 });
 
