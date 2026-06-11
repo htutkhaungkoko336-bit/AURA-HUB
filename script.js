@@ -14,6 +14,9 @@ const mapData = [
     }
 ];
 
+
+
+
 let currentIndex = 0;
 let selectedFee = 0;
 
