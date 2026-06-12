@@ -256,44 +256,6 @@ async function submitRegistration(formData) {
     }
 }
 // ပွဲဖျက်မယ့် ခလုတ်အတွက် function (ဒီ function ကို ခလုတ်နှိပ်ရင် ခေါ်ပါ)
-async function cancelMatch() {
-    const regId = localStorage.getItem('userRegId');
-
-    // ၁။ ID ရှိ၊ မရှိ အရင်စစ်ပါ
-    if (!regId) {
-        alert("❌ မှတ်ပုံတင် ID ရှာမတွေ့ပါ။ သင်မှတ်ပုံတင်ပြီးသားလား စစ်ဆေးပါ။");
-        return;
-    }
-
-    if (!confirm("ပွဲဖျက်ပြီး ငွေပြန်အမ်းမှု တောင်းဆိုမှာလား?")) return;
-
-    try {
-        // ၂။ Firestore မှာ status ကို update လုပ်ပါ
-        await db.collection("registrations").doc(regId).update({
-            status: "cancellation_requested"
-        });
-
-        // ၃။ Backend API ကို မှန်ကန်စွာ ပို့ပါ
-        const response = await fetch('/api/notify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                type: 'cancel_request', 
-                regId: regId,
-                leaderName: "User" // Backend က လိုအပ်တဲ့ field
-            })
-        });
-
-        if (response.ok) {
-            alert("✅ တောင်းဆိုမှု ပို့ပြီးပါပြီ။");
-        } else {
-            alert("API အမှားအယွင်းရှိပါသည်။");
-        }
-    } catch (e) {
-        console.error("Cancel Error:", e);
-        alert("အမှားအယွင်းရှိပါသည်။");
-    }
-}// Script ရဲ့ အောက်ဆုံးမှာ ဒီအပိုင်းကို ထည့်ထားပါ
 const savedRegId = localStorage.getItem('userRegId');
 
 if (savedRegId) {
@@ -391,6 +353,31 @@ async function submitProof() {
         alert("Error: " + error.message);
         document.getElementById('submit-btn').style.display = 'block';
         document.getElementById('waiting-msg').style.display = 'none';
+    }
+}
+async function cancelMatch() {
+    const regId = localStorage.getItem('currentRegId'); // သင့် ID သိမ်းထားတဲ့ key ကိုစစ်ပါ
+    
+    if (!regId) {
+        alert("ID မရှိတော့ပါ။");
+        return;
+    }
+
+    try {
+        // Firebase ကို မခေါ်ခင် ID ရှိမရှိ စစ်ပါ
+        const docRef = db.collection("registrations").doc(regId);
+        const doc = await docRef.get();
+        
+        if (!doc.exists) {
+            alert("Database ထဲတွင် ဤ ID ကို မတွေ့ရှိပါ။");
+            return;
+        }
+        
+        // အကယ်၍ အဆင်ပြေရင်မှ Update လုပ်ပါ
+        await docRef.update({ status: "cancelled" });
+        // ပြီးမှ Notify ပို့ပါ
+    } catch (error) {
+        console.error("Error:", error);
     }
 }
 function backToRegistration() {
