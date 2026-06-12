@@ -218,6 +218,16 @@ async function submitRegistration(formData) {
         // --- အရေးကြီးဆုံးအပိုင်း ---
         // အောင်မြင်စွာ မှတ်ပုံတင်ပြီးတာနဲ့ ဒီ ID ကို သိမ်းထားပါ
         localStorage.setItem('userRegId', docRef.id); 
+        // ၂။ Backend ကို Notify လုပ်ပါ
+        await fetch('/api/notify', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ 
+                type: 'registration', 
+                regId: docRef.id, // ဤနေရာတွင် docRef.id ကို သုံးပါ
+                data: formData 
+            })
+        });
         // ------------------------
 
         // ၂။ Telegram ကို Noti ချက်ချင်းပို့ပါ
@@ -244,7 +254,62 @@ async function submitRegistration(formData) {
         console.error("Error submitting registration:", error);
         alert("မှတ်ပုံတင်ခြင်း မအောင်မြင်ပါ။");
     }
-}// အပေါ်ဆုံးမှာ global variable တွေ ထားပေးပါ
+}
+// ပွဲဖျက်မယ့် ခလုတ်အတွက် function (ဒီ function ကို ခလုတ်နှိပ်ရင် ခေါ်ပါ)
+async function cancelMatch() {
+    const regId = localStorage.getItem('userRegId');
+
+    // ၁။ ID ရှိ၊ မရှိ အရင်စစ်ပါ
+    if (!regId) {
+        alert("❌ မှတ်ပုံတင် ID ရှာမတွေ့ပါ။ သင်မှတ်ပုံတင်ပြီးသားလား စစ်ဆေးပါ။");
+        return;
+    }
+
+    if (!confirm("ပွဲဖျက်ပြီး ငွေပြန်အမ်းမှု တောင်းဆိုမှာလား?")) return;
+
+    try {
+        // ၂။ Firestore မှာ status ကို update လုပ်ပါ
+        await db.collection("registrations").doc(regId).update({
+            status: "cancellation_requested"
+        });
+
+        // ၃။ Backend API ကို မှန်ကန်စွာ ပို့ပါ
+        const response = await fetch('/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                type: 'cancel_request', 
+                regId: regId,
+                leaderName: "User" // Backend က လိုအပ်တဲ့ field
+            })
+        });
+
+        if (response.ok) {
+            alert("✅ တောင်းဆိုမှု ပို့ပြီးပါပြီ။");
+        } else {
+            alert("API အမှားအယွင်းရှိပါသည်။");
+        }
+    } catch (e) {
+        console.error("Cancel Error:", e);
+        alert("အမှားအယွင်းရှိပါသည်။");
+    }
+}// Script ရဲ့ အောက်ဆုံးမှာ ဒီအပိုင်းကို ထည့်ထားပါ
+const savedRegId = localStorage.getItem('userRegId');
+
+if (savedRegId) {
+    db.collection("registrations").doc(savedRegId).onSnapshot((doc) => {
+        if (doc.exists) {
+            const data = doc.data();
+            // Admin က ငွေပြန်လွှဲပေးရင် Status ကို refunded လို့ ပြောင်းပေးရပါမယ်
+            if (data.status === "refunded") {
+                alert("✅ KPay လွှဲပြီးပါပြီ။ App မှ ထွက်ခွာပါမည်။");
+                localStorage.removeItem('userRegId');
+                window.location.reload(); 
+            }
+        }
+    });
+}
+// အပေါ်ဆုံးမှာ global variable တွေ ထားပေးပါ
 let currentRegId = null; 
 window.isResubmission = false; 
 
@@ -960,48 +1025,3 @@ function startSpinWheel(winnerName, nameA, nameB, matchId) {
         }, 6500);
     }, 100);
 }
-async function cancelMatch() {
-    const regId = localStorage.getItem('userRegId');
-
-    // ID မရှိရင် ရပ်လိုက်ပါ
-    if (!regId) {
-        alert("❌ မှတ်ပုံတင် ID ရှာမတွေ့ပါ။");
-        return;
-    }
-
-    if (!confirm("ပွဲဖျက်ပြီး ငွေပြန်အမ်းမှု တောင်းဆိုမှာလား?")) return;
-
-    try {
-        // Firestore မှာ status ပြောင်းခြင်း
-        await db.collection("registrations").doc(regId).update({
-            status: "cancellation_requested"
-        });
-
-        // API ဆီပို့ခြင်း
-        const response = await fetch('/api/notify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                type: 'cancel_request', 
-                regId: regId // ဒီနေရာမှာ regId ပို့တာပါ
-            })
-        });
-
-        if (response.ok) alert("✅ တောင်းဆိုမှု ပို့ပြီးပါပြီ။");
-    } catch (e) {
-        alert("အမှားအယွင်းရှိပါသည်။");
-    }
-}
-db.collection("registrations").doc(localStorage.getItem('userRegId'))
-  .onSnapshot((doc) => {
-      if (doc.data().status === "refunded") {
-          alert("✅ KPay လွှဲပြီးပါပြီ။");
-          localStorage.removeItem('userRegId'); // ID ဖြတ်
-          window.location.href = "/logout"; // Auto ထွက်သွားစေရန်
-      }
-  });
-fetch('/api/notify', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ type: 'registration', regId, data })
-});
