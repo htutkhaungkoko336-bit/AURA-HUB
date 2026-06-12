@@ -5,12 +5,12 @@ const mapData = [
     { 
         mode: "5vs5", 
         img: "5vs5.png", 
-        rules: "Room တိုင်းတွင် Feeကြေး 10% ကျသင့်မည်ဖြစ်သည်။ ။ Fee ကြေးသည် 5000လျှင် 500Ks ၊ 10000လျှင် 1000Ks ၊ 15000လျှင် 1500Ks ၊ 25000လျှင် 2500Ks ၊ 50000လျှင် 5000Ks ကျသင့်မည်။K Pay လွှဲရာတွင် feeကြေးအပါလွှဲပေးရမည်။ ပွဲစဉ်ဖျက်သိမ်းပါက Feeကြေးချန်၍ ကျန်သည့်ငွေကို ပြန်လည် လွှဲပေးမည်ဖြစ်သည်။" // ဒီနေရာမှာပဲ ပြင်ပါ
+        rules: "Room တိုင်းတွင် Feeကြေး 10% ကျသင့်မည်ဖြစ်သည်။ K Pay လွှဲရာတွင် feeကြေးအပါလွှဲပေးရမည်။ Fee ကြေးသည် 5000လျှင် 500Ks ၊ 10000လျှင် 1000Ks ၊ 15000လျှင် 1500Ks ၊ 25000လျှင် 2500Ks ၊ 50000လျှင် 5000Ks ကျသင့်မည်။ ပွဲစဉ်ဖျက်သိမ်းပါက Feeကြေးချန်၍ ကျန်သည့်ငွေကို ပြန်လည် လွှဲပေးမည်ဖြစ်သည်။" // ဒီနေရာမှာပဲ ပြင်ပါ
     },
     { 
         mode: "1vs1", 
         img: "1vs1.png", 
-        rules: "Room တိုင်းတွင် Feeကြေး 10% ကျသင့်မည်ဖြစ်သည်။ ။ Fee ကြေးသည် 5000လျှင် 500Ks ၊ 10000လျှင် 1000Ks ၊ 15000လျှင် 1500Ks ၊ 25000လျှင် 2500Ks ၊ 50000လျှင် 5000Ks ကျသင့်မည်။K Pay လွှဲရာတွင် feeကြေးအပါလွှဲပေးရမည်။ ပွဲစဉ်ဖျက်သိမ်းပါက Feeကြေးချန်၍ ကျန်သည့်ငွေကို ပြန်လည် လွှဲပေးမည်ဖြစ်သည်။" // ဒီနေရာမှာပဲ ပြင်ပါ
+        rules: "Room တိုင်းတွင် Feeကြေး 10% ကျသင့်မည်ဖြစ်သည်။ K Pay လွှဲရာတွင် feeကြေးအပါလွှဲပေးရမည်။ Fee ကြေးသည် 5000လျှင် 500Ks ၊ 10000လျှင် 1000Ks ၊ 15000လျှင် 1500Ks ၊ 25000လျှင် 2500Ks ၊ 50000လျှင် 5000Ks ကျသင့်မည်။ ပွဲစဉ်ဖျက်သိမ်းပါက Feeကြေးချန်၍ ကျန်သည့်ငွေကို ပြန်လည် လွှဲပေးမည်ဖြစ်သည်။" // ဒီနေရာမှာပဲ ပြင်ပါ
     }
 ];
 
@@ -207,69 +207,32 @@ async function uploadToImgBB(file) {
 
 // --- SUBMIT TO FIRESTORE ---
 async function submitRegistration(formData) {
-    try {
-        // ၁။ Firebase ကို အချက်အလက်ပို့ပါ
-        const docRef = await db.collection("registrations").add({
-            ...formData,
-            status: "pending",
-            createdAt: new Date()
-        });
-
-        // --- အရေးကြီးဆုံးအပိုင်း ---
-        // အောင်မြင်စွာ မှတ်ပုံတင်ပြီးတာနဲ့ ဒီ ID ကို သိမ်းထားပါ
-        localStorage.setItem('userRegId', docRef.id); 
-        // ၂။ Backend ကို Notify လုပ်ပါ
-        await fetch('/api/notify', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ 
-                type: 'registration', 
-                regId: docRef.id, // ဤနေရာတွင် docRef.id ကို သုံးပါ
-                data: formData 
-            })
-        });
-        // ------------------------
-
-        // ၂။ Telegram ကို Noti ချက်ချင်းပို့ပါ
-        const botToken = "YOUR_TELEGRAM_BOT_TOKEN";
-        const chatId = "YOUR_GROUP_ID";
-        const message = `🔔 *Registration အသစ်ဝင်လာပါပြီ!*\n\n` +
-                        `Name: ${formData.squadName}\n` +
-                        `Fee: ${formData.fee} Ks\n` +
-                        `ID: ${docRef.id}`;
-
-        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                chat_id: chatId,
-                text: message,
-                parse_mode: "Markdown"
-            })
-        });
-
-        alert("အောင်မြင်စွာ တင်ပြီးပါပြီ!");
-        
-    } catch (error) {
-        console.error("Error submitting registration:", error);
-        alert("မှတ်ပုံတင်ခြင်း မအောင်မြင်ပါ။");
-    }
-}
-// ပွဲဖျက်မယ့် ခလုတ်အတွက် function (ဒီ function ကို ခလုတ်နှိပ်ရင် ခေါ်ပါ)
-const savedRegId = localStorage.getItem('userRegId');
-
-if (savedRegId) {
-    db.collection("registrations").doc(savedRegId).onSnapshot((doc) => {
-        if (doc.exists) {
-            const data = doc.data();
-            // Admin က ငွေပြန်လွှဲပေးရင် Status ကို refunded လို့ ပြောင်းပေးရပါမယ်
-            if (data.status === "refunded") {
-                alert("✅ KPay လွှဲပြီးပါပြီ။ App မှ ထွက်ခွာပါမည်။");
-                localStorage.removeItem('userRegId');
-                window.location.reload(); 
-            }
-        }
+    // ၁။ Firebase ကို အချက်အလက်ပို့ပါ
+    const docRef = await db.collection("registrations").add({
+        ...formData,
+        status: "pending",
+        createdAt: new Date()
     });
+
+    // ၂။ Telegram ကို Noti ချက်ချင်းပို့ပါ
+    const botToken = "YOUR_TELEGRAM_BOT_TOKEN";
+    const chatId = "YOUR_GROUP_ID";
+    const message = `🔔 *Registration အသစ်ဝင်လာပါပြီ!*\n\n` +
+                    `Name: ${formData.squadName}\n` +
+                    `Fee: ${formData.fee} Ks\n` +
+                    `ID: ${docRef.id}`; // Database ထဲက ID ကို ယူသုံးတာပါ
+
+    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+            chat_id: chatId,
+            text: message,
+            parse_mode: "Markdown"
+        })
+    });
+
+    alert("အောင်မြင်စွာ တင်ပြီးပါပြီ!");
 }
 // အပေါ်ဆုံးမှာ global variable တွေ ထားပေးပါ
 let currentRegId = null; 
@@ -340,7 +303,6 @@ async function submitProof() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                type: 'registration',
                 regId: docRefId, 
                 data: registrationData 
             })
@@ -353,32 +315,6 @@ async function submitProof() {
         alert("Error: " + error.message);
         document.getElementById('submit-btn').style.display = 'block';
         document.getElementById('waiting-msg').style.display = 'none';
-    }
-}
-// နာမည်ပြောင်းလိုက်ပါ (Admin ဆီ Notify ပို့တဲ့အပိုင်း)
-// ဒီ function ကို button မှာ သုံးပါ
-async function requestRefund(regId, leaderName) {
-    if (!regId) return alert("ID မရှိပါ။");
-
-    try {
-        // Vercel deployment URL ကို သုံးပါ
-        const response = await fetch('https://aura-hub-bay.vercel.app/api/notify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                type: 'cancel_request', 
-                regId: regId, 
-                leaderName: leaderName 
-            })
-        });
-
-        if (response.ok) {
-            alert("ပွဲဖျက်ရန် တောင်းဆိုမှု ပို့ပြီးပါပြီ။");
-        } else {
-            alert("တောင်းဆိုမှု မအောင်မြင်ပါ။");
-        }
-    } catch (error) {
-        console.error("Error:", error);
     }
 }
 function backToRegistration() {

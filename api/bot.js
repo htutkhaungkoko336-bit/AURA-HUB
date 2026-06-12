@@ -164,7 +164,7 @@ bot.start(async (ctx) => {
     const userId = ctx.from.id.toString();
     if (isAdmin(userId)) return ctx.reply("👋 Admin Panel သို့ ကြိုဆိုပါသည်။ /admin ဟု ရိုက်၍ Menu ခေါ်ပါ။");
     const matchId = ctx.startPayload;
-    if (!matchId) return ctx.reply("🔥 AURA HUB Matchmaking Bot မှ ကြိုဆိုပါသည်။");
+    if (!matchId) return ctx.reply("🔥 AURA HUB Matchmaking Bot သို့ ကြိုဆိုပါသည်။");
     await db.collection("sessions").doc(userId).set({ currentMatchId: matchId }, { merge: true });
     
     try {
@@ -321,7 +321,7 @@ bot.action(/confirm_(.+)/, async (ctx) => {
             matchId: data.matchId 
         });
         
-        await ctx.telegram.sendMessage(data.userId, "🎉 ဂုဏ်ယူပါသည်။ အနိုင်ရရှိကြောင်း အတည်ပြုပြီးပါပြီ။ ငွေလွှဲပြေစာ (SS) ကို adminမှ ပေးပို့ပေးပါမည်။ ခနစောင့်ပေးပါ။");
+        await ctx.telegram.sendMessage(data.userId, "🎉 ဂုဏ်ယူပါသည်။ အနိုင်ရရှိကြောင်း အတည်ပြုပြီးပါပြီ။ ငွေလွှဲပြေစာ (SS) ပို့ပေးပါ။");
         ctx.answerCbQuery("အောင်မြင်ပါသည်။");
     } catch (err) {
         console.error("Batch Commit Error:", err);
@@ -348,94 +348,3 @@ module.exports = async (req, res) => {
     try { await bot.handleUpdate(req.body); return res.status(200).send('OK'); } 
     catch (err) { return res.status(500).send('Error'); }
 };
-// Refund Group ID သတ်မှတ်ပါ
-const REFUND_GROUP_ID = "-1003928964996";
-
-// Approve လုပ်လိုက်လျှင် (Refund Group ထဲမှာ အလုပ်လုပ်မယ်)
-// Approve လုပ်လိုက်လျှင် (Refund Group ထဲမှာ အလုပ်လုပ်မယ်)
-bot.action(/approve_refund_(.+)/, async (ctx) => {
-    const regId = ctx.match[1]; // ဒါက regId ပါ
-    try {
-        // ၁။ Registration Doc ကို အရင်ရှာပါ
-        const regDoc = await db.collection("registrations").doc(regId).get();
-        if (!regDoc.exists) return ctx.answerCbQuery("❌ Registration မတွေ့ပါ။");
-        
-        // ၂။ Match ID ကို ရယူပါ (သင့် DB ဖွဲ့စည်းပုံအရ regDoc ထဲမှာ matchId ရှိရပါမယ်)
-        const matchId = regDoc.data().matchId; 
-        if (!matchId) return ctx.answerCbQuery("❌ ပွဲစဉ် ID မတွေ့ပါ။");
-
-        // ၃။ Match ကို Update လုပ်ပါ
-        await db.collection("matches").doc(matchId).update({ status: "pending_refund" });
-        
-        await ctx.editMessageText(`✅ ${matchId} ကို အတည်ပြုပြီးပါပြီ။ ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ဤ Message ကို Reply ပြန်ပေးပါ။`);
-    } catch (e) {
-        console.error(e);
-        ctx.answerCbQuery("❌ Error ဖြစ်နေသည်။");
-    }
-});
-// ငွေလွှဲပြေစာ ပို့လိုက်လျှင် (Refund Group ထဲမှာပဲ အလုပ်လုပ်မယ်)
-bot.on('photo', async (ctx) => {
-    const chatId = ctx.chat.id.toString();
-    const repliedMsg = ctx.message.reply_to_message;
-    const photoId = ctx.message.photo.pop().file_id;
-
-    // ၁။ Refund Group အတွက် Logic
-    if (chatId === REFUND_GROUP_ID && repliedMsg && repliedMsg.text.includes("ပွဲဖျက်ရန် တောင်းဆိုမှု")) {
-        const matchId = repliedMsg.text.split(": ")[1]; 
-        if (!matchId) return ctx.reply("❌ Match ID ရှာမတွေ့ပါ။");
-
-        try {
-            await db.collection("matches").doc(matchId).update({
-                status: "refunded",
-                refundedAt: admin.firestore.FieldValue.serverTimestamp()
-            });
-
-            const matchDoc = await db.collection("matches").doc(matchId).get();
-            // userId က registration document ထဲမှာ ရှိနိုင်တာမို့ အဲဒီကနေပြန်ဆွဲထုတ်ပါ
-            if(matchDoc.exists && matchDoc.data().teamA_LeaderId) {
-                const regDoc = await db.collection("registrations").doc(matchDoc.data().teamA_LeaderId).get();
-                if(regDoc.exists && regDoc.data().userId) {
-                    await ctx.telegram.sendMessage(regDoc.data().userId, "✅ ငွေပြန်အမ်းမှု ပြီးမြောက်ပါပြီ။ ကျေးဇူးပြု၍ K-Pay Account ကို စစ်ဆေးပေးပါ။");
-                }
-            }
-            return ctx.reply("✅ ငွေလွှဲပြီးကြောင်း အတည်ပြုပြီးပါပြီ။");
-        } catch (e) {
-            return ctx.reply("❌ Error: " + e.message);
-        }
-    }
-
-    // ၂။ Admin Group ထဲမှာ Result Receipt (SS) ပို့ခြင်း
-    if (chatId === ADMIN_GROUP_ID && repliedMsg) {
-        const sessionSnapshot = await db.collection("sessions").where("adminMessageId", "==", repliedMsg.message_id).get();
-        if (!sessionSnapshot.empty) {
-            const doc = sessionSnapshot.docs[0];
-            const sessionData = doc.data();
-            await ctx.telegram.sendPhoto(sessionData.targetChatId, photoId, { caption: "💰 ငွေလွှဲပြေစာ ရောက်ရှိပါပြီ။\n\n🏆 ပွဲစဉ်ပြီးဆုံးသွားပါပြီ။" });
-            await doc.ref.delete();
-            return ctx.reply("✅ ပေးပို့ပြီးပါပြီ။");
-        }
-    }
-
-    // ၃။ ပုံမှန် Result Screenshot တင်ခြင်း
-    const sessionDoc = await db.collection("sessions").doc(ctx.from.id.toString()).get();
-    const matchId = sessionDoc.exists ? sessionDoc.data().currentMatchId : null;
-    
-    if (matchId) {
-        const docRef = await db.collection("pending_photos").add({ 
-            photoId, 
-            userId: ctx.from.id, 
-            matchId: matchId, 
-            timestamp: new Date(), 
-            selectedWinner: null 
-        });
-        
-        await bot.telegram.sendPhoto(ADMIN_GROUP_ID, photoId, {
-            caption: "📸 *ရလဒ် Screenshot*",
-            parse_mode: 'Markdown',
-            reply_markup: getAdminKeyboard(docRef.id, null)
-        });
-        return ctx.reply("✅ ပုံတင်ပြပြီးပါပြီ။ Admin စစ်ဆေးနေပါသည်၊ ခဏစောင့်ပေးပါ။");
-    } else {
-        return ctx.reply("❌ ပွဲစဉ် ID မတွေ့ရှိပါ။");
-    }
-});
