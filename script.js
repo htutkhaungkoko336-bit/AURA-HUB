@@ -950,25 +950,52 @@ function startSpinWheel(winnerName, nameA, nameB, matchId) {
         }, 6500);
     }, 100);
 }
-async function requestCancel(matchId) {
+async function requestCancel(matchId, leaderName) {
     if (!confirm("ပွဲကို တကယ်ဖျက်ပြီး ငွေပြန်အမ်းမှု တောင်းဆိုမှာလား?")) return;
 
     try {
-        // Status ကို cancellation_requested သို့ ပြောင်းခြင်း
+        // ၁။ Firestore မှာ status ပြောင်းခြင်း
         await db.collection("matches").doc(matchId).update({
-            status: "cancellation_requested",
-            cancelRequestedAt: firebase.firestore.FieldValue.serverTimestamp()
+            status: "cancellation_requested"
         });
+
+        // ၂။ Admin Group ဆီ notification ပို့ခြင်း (API ခေါ်ခြင်း)
+        await fetch('/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                type: 'cancel_request', 
+                matchId: matchId, 
+                leaderName: leaderName 
+            })
+        });
+
         alert("ပွဲဖျက်ရန် တောင်းဆိုမှု ပေးပို့ပြီးပါပြီ။ Admin အတည်ပြုချက် စောင့်ပါ။");
     } catch (error) {
-        console.error("Error: ", error);
+        console.error("Error:", error);
+        alert("အမှားအယွင်းရှိပါသည်။");
     }
-}
-// Web (script.js) ထဲတွင်
+}// Web (script.js) ထဲတွင်
+// Waiting Room သို့မဟုတ် Game Page ၏ script တွင်
 db.collection("matches").doc(matchId).onSnapshot((doc) => {
     const data = doc.data();
-    if (data.status === "refunded") {
-        alert("ငွေပြန်လွှဲပြီးပါပြီ။ ကျေးဇူးပြု၍ K-Pay ကို စစ်ပေးပါ။");
-        window.location.reload(); // Web ကနေ ပြန်ထွက်သွားအောင် လုပ်ခြင်း
+    
+    // Status က refunded ဖြစ်သွားရင် User ကို အသိပေးပြီး ဖယ်ထုတ်မည်
+    if (data && data.status === "refunded") {
+        alert("✅ ငွေပြန်လွှဲပြီးပါပြီ။ ကျေးဇူးပြု၍ သင်၏ K-Pay Account ကို စစ်ဆေးပေးပါ။");
+        
+        // Local Storage ရှင်းလင်းပြီး ပွဲစဉ်မှ ထွက်ခွာခြင်း
+        localStorage.removeItem('currentMatchId');
+        window.location.href = '/dashboard'; // သို့မဟုတ် ပင်မစာမျက်နှာသို့ ပြန်ပို့ခြင်း
     }
+});
+fetch('/api/notify', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ type: 'registration', regId, data })
+});
+fetch('/api/notify', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ type: 'cancel_request', matchId, leaderName: "User Name" })
 });
