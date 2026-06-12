@@ -63,31 +63,32 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: error.message });
   }
 }
-async function sendRefundToAdmin(docId) {
-    // ၁။ Database မှ User အချက်အလက်များကို အရင်ဆွဲထုတ်ပါ
-    const doc = await db.collection("registrations").doc(docId).get();
-    const data = doc.data();
+import axios from 'axios';
 
-    // ၂။ Refund GP အတွက် Message ပြင်ဆင်ပါ
-    const message = `🚨 <b>New Refund Request</b>\n\n` +
-                    `👤 <b>Name:</b> ${data.squadName || data.playerName}\n` +
+export default async function handler(req, res) {
+    if (req.method !== 'POST') return res.status(405).end();
+
+    const { regId, data } = req.body;
+    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+    const REFUND_GP = process.env.REFUND_GROUP_ID;
+
+    const message = `⚠️ <b>Refund တောင်းဆိုမှု အသစ်</b>\n\n` +
+                    `👤 <b>Name:</b> ${data.squadName || 'N/A'}\n` +
                     `💰 <b>Fee:</b> ${data.fee} Ks\n` +
-                    `💳 <b>K-Pay Phone:</b> <code>${data.kpayPhone}</code>\n` +
-                    `🆔 <b>Reg ID:</b> <code>${docId}</code>\n\n` +
-                    `<i>Admin, ကျေးဇူးပြု၍ စစ်ဆေးပြီး အောက်ပါခလုတ်များဖြင့် ဆုံးဖြတ်ပေးပါ။</i>`;
+                    `🆔 <b>Reg ID:</b> <code>${regId}</code>\n\n` +
+                    `<i>Admin, စစ်ဆေးပြီး အောက်ပါခလုတ်ကို ရွေးချယ်ပါ။</i>`;
 
-    // ၃။ Refund GP သို့ ပို့ပါ (Inline Buttons များဖြင့်)
-    await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-        chat_id: process.env.REFUND_GROUP_ID, // သီးသန့် Refund GP ID
+    await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        chat_id: REFUND_GP,
         text: message,
         parse_mode: 'HTML',
         reply_markup: {
-            inline_keyboard: [
-                [
-                    { text: '✅ Approve Refund', callback_data: `approveRefund_${docId}` },
-                    { text: '❌ Reject Refund', callback_data: `rejectRefund_${docId}` }
-                ]
-            ]
+            inline_keyboard: [[
+                { text: '✅ Approve', callback_data: `approveRefund_${regId}` },
+                { text: '❌ Reject', callback_data: `rejectRefund_${regId}` }
+            ]]
         }
     });
+
+    return res.status(200).json({ success: true });
 }

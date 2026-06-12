@@ -264,9 +264,10 @@ async function submitProof() {
             paymentURL: paymentURL,
             squadLogo: squadLogoURL,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            status: "pending", // Resubmit လုပ်ရင်လည်း status ကို pending ပြန်လုပ်မယ်
+            status: "pending",
             matchStatus: "none",
-            isResubmission: window.isResubmission
+            isResubmission: window.isResubmission,
+            regId: "" // အလွတ်ထားလိုက်ပါ (နောက်မှ update လုပ်မှာပါ)
         };
 
         // Player Data များ
@@ -433,40 +434,50 @@ function watchStatus(docId) {
                 });
 }
 async function requestRefund() {
-    if (!confirm("သင်သည် ပွဲမှထွက်ခွာပြီး ငွေပြန်အမ်းမှု (Refund) တောင်းဆိုရန် သေချာပါသလား?")) return;
+    // ၁။ အတည်ပြုချက်တောင်းပါ
+    if (!confirm("ပွဲမှထွက်ခွာပြီး Refund တောင်းဆိုရန် သေချာပါသလား?")) return;
 
-    const regId = localStorage.getItem('userRegId');
-    if (!regId) return alert("မှတ်ပုံတင်ထားခြင်းမရှိပါ။");
+    const currentRegId = localStorage.getItem('userRegId');
+
+    if (!currentRegId) {
+        alert("မှတ်ပုံတင်ထားခြင်းမရှိပါ။");
+        return;
+    }
 
     try {
-        // ၁။ Firestore status ကို refund ပြောင်းခြင်း
-        await db.collection("registrations").doc(regId).update({
-            status: "refund"
+        // ၂။ regId field ကို အသုံးပြုပြီး Query ရှာပါ
+        const querySnapshot = await db.collection("registrations")
+                                      .where("regId", "==", currentRegId)
+                                      .get();
+
+        if (querySnapshot.empty) {
+            alert("Database တွင် အချက်အလက် မတွေ့ရှိပါ။");
+            return;
+        }
+
+        // ၃။ Status ပြောင်းလဲခြင်း
+        const doc = querySnapshot.docs[0];
+        await doc.ref.update({ status: "refund" });
+
+        // ၄။ Admin ကို Noti ပို့ရန်အတွက် API ခေါ်ခြင်း (သင့် API URL ကို ထည့်ပါ)
+        await fetch('/api/notify-refund', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                regId: currentRegId, 
+                data: doc.data() 
+            })
         });
 
-        // ၂။ Telegram သို့ Noti ပို့ခြင်း (Admin Group အတွက်)
-        const botToken = "TELEGRAM_BOT_TOKEN";
-        const chatId = "REFUND_GROUP_ID";
-        const message = `⚠️ *Refund Request တောင်းဆိုခြင်း!*\n\n` +
-                        `ID: ${regId}\n` +
-                        `အခြေအနေ: User ပွဲမှထွက်ခွာပြီး Refund တောင်းဆိုပါသည်။\n` +
-                        `Admin များ K-Pay စစ်ဆေးပြီး Refund ပြန်ပေးရန် လိုအပ်ပါသည်။`;
-
-        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: "Markdown" })
-        });
-
-if (data.status === "refund-approved") {
-    // User ကို ပိုက်ဆံလွှဲပေးပြီးပြီ သို့မဟုတ် လွှဲပေးတော့မည်ဟု အသိပေးခြင်း
-    alert("သင်၏ Refund တောင်းဆိုမှုအား Admin မှ အတည်ပြုပေးလိုက်ပါသည်။ ကျေးဇူးပြု၍ K-Pay ကို စစ်ဆေးပေးပါ။");
-    window.location.href = "thank-you-page.html"; // User ကို Web ကနေ ထုတ်လိုက်ခြင်း
-}
+        alert("Refund တောင်းဆိုမှု အောင်မြင်ပါသည်။ Admin စစ်ဆေးနေပါပြီ။");
+        window.location.reload(); 
     } catch (e) {
-        alert("Error: " + e.message);
+        console.error("Error updating document:", e);
+        alert("အမှားအယွင်းရှိပါသည်။");
     }
 }
+
+
 // User က ပြန်ပြင်ဖို့ ခလုတ်ကို နှိပ်တဲ့အခါ
 document.getElementById('back-to-form-btn').addEventListener('click', async () => {
     // 1. Database ထဲက status ကို pending ပြန်ပြောင်းမယ်
