@@ -348,3 +348,38 @@ module.exports = async (req, res) => {
     try { await bot.handleUpdate(req.body); return res.status(200).send('OK'); } 
     catch (err) { return res.status(500).send('Error'); }
 };
+// Admin Group ထဲသို့ Notification ပို့ခြင်း
+async function notifyAdminCancel(matchId, leaderName) {
+    const keyboard = {
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: '✅ Approve Refund', callback_data: `approve_refund_${matchId}` }]
+            ]
+        }
+    };
+    await bot.telegram.sendMessage(ADMIN_GROUP_ID, `⚠️ ပွဲဖျက်ရန် တောင်းဆိုမှု: ${matchId}\nTeam Leader: ${leaderName}`, keyboard);
+}
+
+// Approve လုပ်လိုက်လျှင်
+bot.action(/approve_refund_(.+)/, async (ctx) => {
+    const matchId = ctx.match[1];
+    await db.collection("matches").doc(matchId).update({ status: "pending_refund" });
+    ctx.reply("အတည်ပြုပြီးပါပြီ။ ငွေလွှဲပြေစာကို Reply ပြန်ပေးပါ။");
+});
+bot.on('photo', async (ctx) => {
+    // Reply ပြန်ထားတဲ့ message ကို စစ်ဆေးပါ (matchId ကို သိရန်)
+    const repliedMsg = ctx.message.reply_to_message;
+    if (repliedMsg && repliedMsg.text.includes("ပွဲဖျက်ရန် တောင်းဆိုမှု")) {
+        const matchId = // repliedMsg ထဲက matchId ကို ဖြတ်ယူပါ;
+        
+        // Firebase မှာ status update လုပ်ပါ
+        await db.collection("matches").doc(matchId).update({
+            status: "refunded",
+            refundedAt: new Date()
+        });
+
+        // User ကို Web မှာ ငွေလွှဲပြီးကြောင်း ပေါ်လာစေရန် အကြောင်းကြားပါ
+        // (Firebase onSnapshot က ဒီ status ကို ဖမ်းပြီး Web မှာ ပြပါလိမ့်မယ်)
+        ctx.reply("ငွေပြန်အမ်းမှု ပြီးမြောက်ကြောင်း User ထံ အကြောင်းကြားလိုက်ပါပြီ။");
+    }
+});
