@@ -164,7 +164,7 @@ bot.start(async (ctx) => {
     const userId = ctx.from.id.toString();
     if (isAdmin(userId)) return ctx.reply("👋 Admin Panel သို့ ကြိုဆိုပါသည်။ /admin ဟု ရိုက်၍ Menu ခေါ်ပါ။");
     const matchId = ctx.startPayload;
-    if (!matchId) return ctx.reply("🔥 AURA HUB Matchmaking Bot သို့ ကြိုဆိုပါသည်။");
+    if (!matchId) return ctx.reply("🔥 AURA HUB Matchmaking Bot မှ ကြိုဆိုပါသည်။");
     await db.collection("sessions").doc(userId).set({ currentMatchId: matchId }, { merge: true });
     
     try {
@@ -321,7 +321,7 @@ bot.action(/confirm_(.+)/, async (ctx) => {
             matchId: data.matchId 
         });
         
-        await ctx.telegram.sendMessage(data.userId, "🎉 ဂုဏ်ယူပါသည်။ အနိုင်ရရှိကြောင်း အတည်ပြုပြီးပါပြီ။ ငွေလွှဲပြေစာ (SS) ပို့ပေးပါ။");
+        await ctx.telegram.sendMessage(data.userId, "🎉 ဂုဏ်ယူပါသည်။ အနိုင်ရရှိကြောင်း အတည်ပြုပြီးပါပြီ။ ငွေလွှဲပြေစာ (SS) ကို adminမှ ပေးပို့ပေးပါမည်။ ခနစောင့်ပေးပါ။");
         ctx.answerCbQuery("အောင်မြင်ပါသည်။");
     } catch (err) {
         console.error("Batch Commit Error:", err);
