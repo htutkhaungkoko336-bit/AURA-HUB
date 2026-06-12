@@ -950,28 +950,30 @@ function startSpinWheel(winnerName, nameA, nameB, matchId) {
         }, 6500);
     }, 100);
 }
-async function cancelMatch(regId, leaderName) {
+async function cancelMatch() {
+    const regId = localStorage.getItem('userRegId');
+
     if (!regId) {
-        alert("❌ မှတ်ပုံတင် ID ရှာမတွေ့ပါ။");
+        alert("❌ သင် မှတ်ပုံတင်ထားခြင်း မရှိသေးပါ။");
         return;
     }
 
     if (!confirm("ပွဲမစခင် ဖျက်သိမ်းပြီး ငွေပြန်အမ်းမှု တောင်းဆိုမှာလား?")) return;
 
     try {
-        // ၁။ registrations collection ထဲက status ကို ပြောင်းလိုက်မယ်
+        // Firebase မှာ Status ပြောင်းခြင်း
         await db.collection("registrations").doc(regId).update({
             status: "cancellation_requested"
         });
 
-        // ၂။ Admin ဆီ Notification ပို့မယ် (regId ကိုပဲ ပို့ပေးလိုက်မယ်)
+        // API ဆီ Notification ပို့ခြင်း
         await fetch('/api/notify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 type: 'cancel_request', 
-                regId: regId, // matchId အစား regId ကို သုံးမယ်
-                leaderName: leaderName 
+                regId: regId,
+                leaderName: "User" // လိုအပ်ရင် နာမည်ကို localStorage မှာ သိမ်းပြီး ဒီမှာ ပြန်ခေါ်သုံးပါ
             })
         });
 
@@ -980,7 +982,8 @@ async function cancelMatch(regId, leaderName) {
         console.error("Error:", error);
         alert("အမှားအယွင်းရှိပါသည်။");
     }
-}fetch('/api/notify', {
+}
+fetch('/api/notify', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ type: 'registration', regId, data })
