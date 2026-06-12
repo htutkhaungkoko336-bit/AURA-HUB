@@ -63,3 +63,11 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: error.message });
   }
 }
+
+// သင်၏ notify-cancel API route အတွင်း
+const msg = `⚠️ ပွဲဖျက်ရန် တောင်းဆိုမှု: ${matchId}\nTeam Leader: ${leaderName}`;
+await bot.telegram.sendMessage(REFUND_GROUP_ID, msg, {
+    reply_markup: {
+        inline_keyboard: [[{ text: '✅ Approve Refund', callback_data: `approve_refund_${matchId}` }]]
+    }
+});

@@ -348,38 +348,44 @@ module.exports = async (req, res) => {
     try { await bot.handleUpdate(req.body); return res.status(200).send('OK'); } 
     catch (err) { return res.status(500).send('Error'); }
 };
-// Admin Group ထဲသို့ Notification ပို့ခြင်း
-async function notifyAdminCancel(matchId, leaderName) {
-    const keyboard = {
-        reply_markup: {
-            inline_keyboard: [
-                [{ text: '✅ Approve Refund', callback_data: `approve_refund_${matchId}` }]
-            ]
-        }
-    };
-    await bot.telegram.sendMessage(ADMIN_GROUP_ID, `⚠️ ပွဲဖျက်ရန် တောင်းဆိုမှု: ${matchId}\nTeam Leader: ${leaderName}`, keyboard);
-}
+// Refund Group ID သတ်မှတ်ပါ
+const REFUND_GROUP_ID = "-1003928964996";
 
-// Approve လုပ်လိုက်လျှင်
+// Approve လုပ်လိုက်လျှင် (Refund Group ထဲမှာ အလုပ်လုပ်မယ်)
 bot.action(/approve_refund_(.+)/, async (ctx) => {
     const matchId = ctx.match[1];
-    await db.collection("matches").doc(matchId).update({ status: "pending_refund" });
-    ctx.reply("အတည်ပြုပြီးပါပြီ။ ငွေလွှဲပြေစာကို Reply ပြန်ပေးပါ။");
+    try {
+        await db.collection("matches").doc(matchId).update({ status: "pending_refund" });
+        await ctx.editMessageText(`✅ ${matchId} ကို အတည်ပြုပြီးပါပြီ။ ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ဤ Message ကို Reply ပြန်ပေးပါ။`);
+    } catch (e) {
+        ctx.answerCbQuery("❌ Error ဖြစ်နေသည်။");
+    }
 });
+
+// ငွေလွှဲပြေစာ ပို့လိုက်လျှင် (Refund Group ထဲမှာပဲ အလုပ်လုပ်မယ်)
 bot.on('photo', async (ctx) => {
-    // Reply ပြန်ထားတဲ့ message ကို စစ်ဆေးပါ (matchId ကို သိရန်)
     const repliedMsg = ctx.message.reply_to_message;
-    if (repliedMsg && repliedMsg.text.includes("ပွဲဖျက်ရန် တောင်းဆိုမှု")) {
-        const matchId = // repliedMsg ထဲက matchId ကို ဖြတ်ယူပါ;
+    
+    // Refund Group ထဲမှာဖြစ်ပြီး reply ပြန်ထားတဲ့ message ဖြစ်မှသာ
+    if (ctx.chat.id.toString() === REFUND_GROUP_ID && repliedMsg && repliedMsg.text.includes("ပွဲဖျက်ရန် တောင်းဆိုမှု")) {
         
-        // Firebase မှာ status update လုပ်ပါ
+        // Message ထဲက matchId ကို ဖြတ်ယူခြင်း (ပုံစံ: ⚠️ ပွဲဖျက်ရန် တောင်းဆိုမှု: MATCH_ID)
+        const matchId = repliedMsg.text.split(": ")[1]; 
+        
+        if (!matchId) return ctx.reply("❌ Match ID ရှာမတွေ့ပါ။");
+
         await db.collection("matches").doc(matchId).update({
             status: "refunded",
-            refundedAt: new Date()
+            refundedAt: admin.firestore.FieldValue.serverTimestamp()
         });
 
-        // User ကို Web မှာ ငွေလွှဲပြီးကြောင်း ပေါ်လာစေရန် အကြောင်းကြားပါ
-        // (Firebase onSnapshot က ဒီ status ကို ဖမ်းပြီး Web မှာ ပြပါလိမ့်မယ်)
-        ctx.reply("ငွေပြန်အမ်းမှု ပြီးမြောက်ကြောင်း User ထံ အကြောင်းကြားလိုက်ပါပြီ။");
+        // User ဆီကို bot ကတဆင့် တိုက်ရိုက် မပို့နိုင်ပါ (User ရဲ့ userId သိမှရပါမယ်)
+        // ဒါကြောင့် အရင်ဆုံး ပွဲစဉ် data ထဲက userId ကို အရင်ရှာပါ
+        const matchDoc = await db.collection("matches").doc(matchId).get();
+        if(matchDoc.exists && matchDoc.data().userId) {
+             await ctx.telegram.sendMessage(matchDoc.data().userId, "✅ ငွေပြန်အမ်းမှု ပြီးမြောက်ပါပြီ။ ကျေးဇူးပြု၍ K-Pay Account ကို စစ်ဆေးပေးပါ။");
+        }
+
+        ctx.reply("✅ ငွေလွှဲပြီးကြောင်း အတည်ပြုပြီးပါပြီ။");
     }
 });
