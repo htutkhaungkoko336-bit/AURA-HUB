@@ -378,6 +378,7 @@ async function submitProof() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
+                type: 'registration',
                 regId: docRefId, 
                 data: registrationData 
             })
