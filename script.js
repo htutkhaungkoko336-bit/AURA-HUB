@@ -950,16 +950,25 @@ function startSpinWheel(winnerName, nameA, nameB, matchId) {
         }, 6500);
     }, 100);
 }
-async function requestCancel(matchId, leaderName) {
+async function cancelMatch() {
+    // LocalStorage ထဲတွင် သိမ်းထားသော matchId ကို ပြန်ယူပါ
+    const matchId = localStorage.getItem('currentMatchId');
+    
+    // မှတ်ချက်: leaderName ကိုလည်း ပွဲစစဉ်ကတည်းက localStorage သို့မဟုတ် variable တစ်ခုခုတွင် သိမ်းထားသင့်သည်
+    const leaderName = "User Name"; 
+
+    if (!matchId) {
+        alert("❌ ပွဲစဉ် ID ရှာမတွေ့ပါ။");
+        return;
+    }
+
     if (!confirm("ပွဲကို တကယ်ဖျက်ပြီး ငွေပြန်အမ်းမှု တောင်းဆိုမှာလား?")) return;
 
     try {
-        // ၁။ Firestore မှာ status ပြောင်းခြင်း
         await db.collection("matches").doc(matchId).update({
             status: "cancellation_requested"
         });
 
-        // ၂။ Admin Group ဆီ notification ပို့ခြင်း (API ခေါ်ခြင်း)
         await fetch('/api/notify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -975,8 +984,11 @@ async function requestCancel(matchId, leaderName) {
         console.error("Error:", error);
         alert("အမှားအယွင်းရှိပါသည်။");
     }
-}// Web (script.js) ထဲတွင်
-// Waiting Room သို့မဟုတ် Game Page ၏ script တွင်
+}
+// ပွဲတစ်ခုခုကို အောင်မြင်စွာဖန်တီးပြီးတဲ့အခါ သို့မဟုတ် ပွဲတွေ့တဲ့အခါ
+function onMatchCreated(newMatchId) {
+    localStorage.setItem('currentMatchId', newMatchId);
+}// Waiting Room သို့မဟုတ် Game Page ၏ script တွင်
 db.collection("matches").doc(matchId).onSnapshot((doc) => {
     const data = doc.data();
     
