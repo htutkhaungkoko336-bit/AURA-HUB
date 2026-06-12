@@ -364,28 +364,67 @@ bot.action(/approve_refund_(.+)/, async (ctx) => {
 
 // ငွေလွှဲပြေစာ ပို့လိုက်လျှင် (Refund Group ထဲမှာပဲ အလုပ်လုပ်မယ်)
 bot.on('photo', async (ctx) => {
+    const chatId = ctx.chat.id.toString();
     const repliedMsg = ctx.message.reply_to_message;
-    
-    // Refund Group ထဲမှာဖြစ်ပြီး reply ပြန်ထားတဲ့ message ဖြစ်မှသာ
-    if (ctx.chat.id.toString() === REFUND_GROUP_ID && repliedMsg && repliedMsg.text.includes("ပွဲဖျက်ရန် တောင်းဆိုမှု")) {
-        
-        // Message ထဲက matchId ကို ဖြတ်ယူခြင်း (ပုံစံ: ⚠️ ပွဲဖျက်ရန် တောင်းဆိုမှု: MATCH_ID)
+    const photoId = ctx.message.photo.pop().file_id;
+
+    // ၁။ Refund Group အတွက် Logic
+    if (chatId === REFUND_GROUP_ID && repliedMsg && repliedMsg.text.includes("ပွဲဖျက်ရန် တောင်းဆိုမှု")) {
         const matchId = repliedMsg.text.split(": ")[1]; 
-        
         if (!matchId) return ctx.reply("❌ Match ID ရှာမတွေ့ပါ။");
 
-        await db.collection("matches").doc(matchId).update({
-            status: "refunded",
-            refundedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
+        try {
+            await db.collection("matches").doc(matchId).update({
+                status: "refunded",
+                refundedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
 
-        // User ဆီကို bot ကတဆင့် တိုက်ရိုက် မပို့နိုင်ပါ (User ရဲ့ userId သိမှရပါမယ်)
-        // ဒါကြောင့် အရင်ဆုံး ပွဲစဉ် data ထဲက userId ကို အရင်ရှာပါ
-        const matchDoc = await db.collection("matches").doc(matchId).get();
-        if(matchDoc.exists && matchDoc.data().userId) {
-             await ctx.telegram.sendMessage(matchDoc.data().userId, "✅ ငွေပြန်အမ်းမှု ပြီးမြောက်ပါပြီ။ ကျေးဇူးပြု၍ K-Pay Account ကို စစ်ဆေးပေးပါ။");
+            const matchDoc = await db.collection("matches").doc(matchId).get();
+            // userId က registration document ထဲမှာ ရှိနိုင်တာမို့ အဲဒီကနေပြန်ဆွဲထုတ်ပါ
+            if(matchDoc.exists && matchDoc.data().teamA_LeaderId) {
+                const regDoc = await db.collection("registrations").doc(matchDoc.data().teamA_LeaderId).get();
+                if(regDoc.exists && regDoc.data().userId) {
+                    await ctx.telegram.sendMessage(regDoc.data().userId, "✅ ငွေပြန်အမ်းမှု ပြီးမြောက်ပါပြီ။ ကျေးဇူးပြု၍ K-Pay Account ကို စစ်ဆေးပေးပါ။");
+                }
+            }
+            return ctx.reply("✅ ငွေလွှဲပြီးကြောင်း အတည်ပြုပြီးပါပြီ။");
+        } catch (e) {
+            return ctx.reply("❌ Error: " + e.message);
         }
+    }
 
-        ctx.reply("✅ ငွေလွှဲပြီးကြောင်း အတည်ပြုပြီးပါပြီ။");
+    // ၂။ Admin Group ထဲမှာ Result Receipt (SS) ပို့ခြင်း
+    if (chatId === ADMIN_GROUP_ID && repliedMsg) {
+        const sessionSnapshot = await db.collection("sessions").where("adminMessageId", "==", repliedMsg.message_id).get();
+        if (!sessionSnapshot.empty) {
+            const doc = sessionSnapshot.docs[0];
+            const sessionData = doc.data();
+            await ctx.telegram.sendPhoto(sessionData.targetChatId, photoId, { caption: "💰 ငွေလွှဲပြေစာ ရောက်ရှိပါပြီ။\n\n🏆 ပွဲစဉ်ပြီးဆုံးသွားပါပြီ။" });
+            await doc.ref.delete();
+            return ctx.reply("✅ ပေးပို့ပြီးပါပြီ။");
+        }
+    }
+
+    // ၃။ ပုံမှန် Result Screenshot တင်ခြင်း
+    const sessionDoc = await db.collection("sessions").doc(ctx.from.id.toString()).get();
+    const matchId = sessionDoc.exists ? sessionDoc.data().currentMatchId : null;
+    
+    if (matchId) {
+        const docRef = await db.collection("pending_photos").add({ 
+            photoId, 
+            userId: ctx.from.id, 
+            matchId: matchId, 
+            timestamp: new Date(), 
+            selectedWinner: null 
+        });
+        
+        await bot.telegram.sendPhoto(ADMIN_GROUP_ID, photoId, {
+            caption: "📸 *ရလဒ် Screenshot*",
+            parse_mode: 'Markdown',
+            reply_markup: getAdminKeyboard(docRef.id, null)
+        });
+        return ctx.reply("✅ ပုံတင်ပြပြီးပါပြီ။ Admin စစ်ဆေးနေပါသည်၊ ခဏစောင့်ပေးပါ။");
+    } else {
+        return ctx.reply("❌ ပွဲစဉ် ID မတွေ့ရှိပါ။");
     }
 });
