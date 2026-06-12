@@ -352,16 +352,27 @@ module.exports = async (req, res) => {
 const REFUND_GROUP_ID = "-1003928964996";
 
 // Approve လုပ်လိုက်လျှင် (Refund Group ထဲမှာ အလုပ်လုပ်မယ်)
+// Approve လုပ်လိုက်လျှင် (Refund Group ထဲမှာ အလုပ်လုပ်မယ်)
 bot.action(/approve_refund_(.+)/, async (ctx) => {
-    const matchId = ctx.match[1];
+    const regId = ctx.match[1]; // ဒါက regId ပါ
     try {
+        // ၁။ Registration Doc ကို အရင်ရှာပါ
+        const regDoc = await db.collection("registrations").doc(regId).get();
+        if (!regDoc.exists) return ctx.answerCbQuery("❌ Registration မတွေ့ပါ။");
+        
+        // ၂။ Match ID ကို ရယူပါ (သင့် DB ဖွဲ့စည်းပုံအရ regDoc ထဲမှာ matchId ရှိရပါမယ်)
+        const matchId = regDoc.data().matchId; 
+        if (!matchId) return ctx.answerCbQuery("❌ ပွဲစဉ် ID မတွေ့ပါ။");
+
+        // ၃။ Match ကို Update လုပ်ပါ
         await db.collection("matches").doc(matchId).update({ status: "pending_refund" });
+        
         await ctx.editMessageText(`✅ ${matchId} ကို အတည်ပြုပြီးပါပြီ။ ကျေးဇူးပြု၍ ငွေလွှဲပြေစာ (SS) ကို ဤ Message ကို Reply ပြန်ပေးပါ။`);
     } catch (e) {
+        console.error(e);
         ctx.answerCbQuery("❌ Error ဖြစ်နေသည်။");
     }
 });
-
 // ငွေလွှဲပြေစာ ပို့လိုက်လျှင် (Refund Group ထဲမှာပဲ အလုပ်လုပ်မယ်)
 bot.on('photo', async (ctx) => {
     const chatId = ctx.chat.id.toString();

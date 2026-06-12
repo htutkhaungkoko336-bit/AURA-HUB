@@ -356,19 +356,17 @@ async function submitProof() {
     }
 }
 // နာမည်ပြောင်းလိုက်ပါ (Admin ဆီ Notify ပို့တဲ့အပိုင်း)
+// ဒီ function ကို button မှာ သုံးပါ
 async function requestRefund(regId, leaderName) {
-    if (!regId) {
-        alert("ID မရှိတော့ပါ။");
-        return;
-    }
+    if (!regId) return alert("ID မရှိပါ။");
 
     try {
-        // API ကို Notify ပို့ခြင်း
-        const response = await fetch('/api/notify', {
+        // Vercel deployment URL ကို သုံးပါ
+        const response = await fetch('https://aura-hub-bay.vercel.app/api/notify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-                type: 'cancel_request', // Backend က ဒီ type ကို စစ်ထားပါတယ်
+                type: 'cancel_request', 
                 regId: regId, 
                 leaderName: leaderName 
             })
