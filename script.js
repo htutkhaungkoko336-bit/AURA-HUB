@@ -238,7 +238,6 @@ async function submitRegistration(formData) {
 let currentRegId = null; 
 window.isResubmission = false; 
 
-
 async function submitProof() {
     if (window.event) window.event.preventDefault();
 
@@ -265,10 +264,9 @@ async function submitProof() {
             paymentURL: paymentURL,
             squadLogo: squadLogoURL,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            status: "pending",
+            status: "pending", // Resubmit လုပ်ရင်လည်း status ကို pending ပြန်လုပ်မယ်
             matchStatus: "none",
-            isResubmission: window.isResubmission,
-            regId: "" // အလွတ်ထားလိုက်ပါ (နောက်မှ update လုပ်မှာပါ)
+            isResubmission: window.isResubmission
         };
 
         // Player Data များ
@@ -364,6 +362,8 @@ currentListener = db.collection("registrations")
         }
     });
 }
+// သင့် joinRoom function ထဲတွင် ခေါ်သုံးရန်
+// joinRoom(fee) ထဲမှာ - startLobbyListener(fee, mode); ကို ထည့်လိုက်ပါ
 // --- MATCH CENTER SYSTEM ---
 function watchStatus(docId) {
     db.collection("registrations").doc(docId).onSnapshot((doc) => {
@@ -411,7 +411,6 @@ function watchStatus(docId) {
                 if (backBtn) backBtn.style.display = 'block';
             }
 
-
             // --- မူလ Rule များ ---
             if (data.status === "confirm" && (data.matchStatus === "none" || data.matchStatus === "waiting") && !data.currentMatchId) {
                 const playingLobby = document.getElementById('page-playing-lobby');
@@ -424,61 +423,9 @@ function watchStatus(docId) {
             if (data.matchStatus === "playing" && data.currentMatchId) {
                 startMatchMonitoring(data.currentMatchId);
             }
-            // watchStatus function ထဲတွင် ထည့်ရန်
-            if (data.status === "refund") {
-                const waitingMsg = document.getElementById('waiting-msg');
-                if (waitingMsg) {
-                    waitingMsg.innerText = "ကျေးဇူးပြု၍ သင်၏ K-Pay Account ကို စစ်ဆေးပေးပါ။ Admin မှ ငွေပြန်လွှဲပေးနေပါပြီ။";
-                }
-            }
-                    }
-                });
-}
-async function requestRefund() {
-    // ၁။ အတည်ပြုချက်တောင်းပါ
-    if (!confirm("ပွဲမှထွက်ခွာပြီး Refund တောင်းဆိုရန် သေချာပါသလား?")) return;
-
-    const currentRegId = localStorage.getItem('userRegId');
-
-    if (!currentRegId) {
-        alert("မှတ်ပုံတင်ထားခြင်းမရှိပါ။");
-        return;
-    }
-
-    try {
-        // ၂။ regId field ကို အသုံးပြုပြီး Query ရှာပါ
-        const querySnapshot = await db.collection("registrations")
-                                      .where("regId", "==", currentRegId)
-                                      .get();
-
-        if (querySnapshot.empty) {
-            alert("Database တွင် အချက်အလက် မတွေ့ရှိပါ။");
-            return;
         }
-
-        // ၃။ Status ပြောင်းလဲခြင်း
-        const doc = querySnapshot.docs[0];
-        await doc.ref.update({ status: "refund" });
-
-        // ၄။ Admin ကို Noti ပို့ရန်အတွက် API ခေါ်ခြင်း (သင့် API URL ကို ထည့်ပါ)
-        await fetch('/api/notify-refund', { 
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                regId: currentRegId, 
-                data: doc.data() 
-            })
-        });
-
-        alert("Refund တောင်းဆိုမှု အောင်မြင်ပါသည်။ Admin စစ်ဆေးနေပါပြီ။");
-        window.location.reload(); 
-    } catch (e) {
-        console.error("Error updating document:", e);
-        alert("အမှားအယွင်းရှိပါသည်။");
-    }
+    });
 }
-
-
 // User က ပြန်ပြင်ဖို့ ခလုတ်ကို နှိပ်တဲ့အခါ
 document.getElementById('back-to-form-btn').addEventListener('click', async () => {
     // 1. Database ထဲက status ကို pending ပြန်ပြောင်းမယ်

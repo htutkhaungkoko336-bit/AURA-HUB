@@ -328,22 +328,6 @@ bot.action(/confirm_(.+)/, async (ctx) => {
         ctx.answerCbQuery("❌ Error: အတည်ပြု၍ မရပါ။");
     }
 });
-
-// Approve လုပ်လျှင်
-bot.action(/approveRefund_(.+)/, async (ctx) => {
-    const docId = ctx.match[1];
-    // status ကို refund-approved ပြောင်းခြင်း
-    await db.collection("registrations").doc(docId).update({ status: "refund-approved" });
-    await ctx.editMessageText("✅ Refund အတည်ပြုပြီးပါပြီ။");
-});
-
-// Reject လုပ်လျှင်
-bot.action(/rejectRefund_(.+)/, async (ctx) => {
-    const docId = ctx.match[1];
-    // status ကို confirm ပြန်ပြောင်းခြင်း (သို့မဟုတ် reject ပုံစံမျိုး)
-    await db.collection("registrations").doc(docId).update({ status: "confirm" });
-    await ctx.editMessageText("❌ Refund ကို ပယ်ချလိုက်ပါသည်။");
-});
 // --- Export ---
 module.exports = async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(200).end();

@@ -63,32 +63,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: error.message });
   }
 }
-import axios from 'axios';
-
-export default async function handler(req, res) {
-    if (req.method !== 'POST') return res.status(405).end();
-
-    const { regId, data } = req.body;
-    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-    const REFUND_GP = process.env.REFUND_GROUP_ID;
-
-    const message = `⚠️ <b>Refund တောင်းဆိုမှု အသစ်</b>\n\n` +
-                    `👤 <b>Name:</b> ${data.squadName || 'N/A'}\n` +
-                    `💰 <b>Fee:</b> ${data.fee} Ks\n` +
-                    `🆔 <b>Reg ID:</b> <code>${regId}</code>\n\n` +
-                    `<i>Admin, စစ်ဆေးပြီး အောက်ပါခလုတ်ကို ရွေးချယ်ပါ။</i>`;
-
-    await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        chat_id: REFUND_GP,
-        text: message,
-        parse_mode: 'HTML',
-        reply_markup: {
-            inline_keyboard: [[
-                { text: '✅ Approve', callback_data: `approveRefund_${regId}` },
-                { text: '❌ Reject', callback_data: `rejectRefund_${regId}` }
-            ]]
-        }
-    });
-
-    return res.status(200).json({ success: true });
-}
