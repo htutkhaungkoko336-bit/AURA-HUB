@@ -207,34 +207,44 @@ async function uploadToImgBB(file) {
 
 // --- SUBMIT TO FIRESTORE ---
 async function submitRegistration(formData) {
-    // ၁။ Firebase ကို အချက်အလက်ပို့ပါ
-    const docRef = await db.collection("registrations").add({
-        ...formData,
-        status: "pending",
-        createdAt: new Date()
-    });
+    try {
+        // ၁။ Firebase ကို အချက်အလက်ပို့ပါ
+        const docRef = await db.collection("registrations").add({
+            ...formData,
+            status: "pending",
+            createdAt: new Date()
+        });
 
-    // ၂။ Telegram ကို Noti ချက်ချင်းပို့ပါ
-    const botToken = "YOUR_TELEGRAM_BOT_TOKEN";
-    const chatId = "YOUR_GROUP_ID";
-    const message = `🔔 *Registration အသစ်ဝင်လာပါပြီ!*\n\n` +
-                    `Name: ${formData.squadName}\n` +
-                    `Fee: ${formData.fee} Ks\n` +
-                    `ID: ${docRef.id}`; // Database ထဲက ID ကို ယူသုံးတာပါ
+        // --- အရေးကြီးဆုံးအပိုင်း ---
+        // အောင်မြင်စွာ မှတ်ပုံတင်ပြီးတာနဲ့ ဒီ ID ကို သိမ်းထားပါ
+        localStorage.setItem('userRegId', docRef.id); 
+        // ------------------------
 
-    await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            chat_id: chatId,
-            text: message,
-            parse_mode: "Markdown"
-        })
-    });
+        // ၂။ Telegram ကို Noti ချက်ချင်းပို့ပါ
+        const botToken = "YOUR_TELEGRAM_BOT_TOKEN";
+        const chatId = "YOUR_GROUP_ID";
+        const message = `🔔 *Registration အသစ်ဝင်လာပါပြီ!*\n\n` +
+                        `Name: ${formData.squadName}\n` +
+                        `Fee: ${formData.fee} Ks\n` +
+                        `ID: ${docRef.id}`;
 
-    alert("အောင်မြင်စွာ တင်ပြီးပါပြီ!");
-}
-// အပေါ်ဆုံးမှာ global variable တွေ ထားပေးပါ
+        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: message,
+                parse_mode: "Markdown"
+            })
+        });
+
+        alert("အောင်မြင်စွာ တင်ပြီးပါပြီ!");
+        
+    } catch (error) {
+        console.error("Error submitting registration:", error);
+        alert("မှတ်ပုံတင်ခြင်း မအောင်မြင်ပါ။");
+    }
+}// အပေါ်ဆုံးမှာ global variable တွေ ထားပေးပါ
 let currentRegId = null; 
 window.isResubmission = false; 
 
@@ -950,34 +960,43 @@ function startSpinWheel(winnerName, nameA, nameB, matchId) {
         }, 6500);
     }, 100);
 }
+// ပွဲဖျက်သိမ်းခြင်း function
 async function cancelMatch() {
+    // ၁။ LocalStorage ထဲမှ မှတ်ပုံတင်စဉ်ကရခဲ့သော ID ကို ပြန်ယူပါ
     const regId = localStorage.getItem('userRegId');
 
+    // ID မရှိပါက အသိပေးပြီး ရပ်တန့်ပါ
     if (!regId) {
-        alert("❌ သင် မှတ်ပုံတင်ထားခြင်း မရှိသေးပါ။");
+        alert("❌ မှတ်ပုံတင် ID ရှာမတွေ့ပါ။ သင်မှတ်ပုံတင်ပြီးသားလား စစ်ဆေးပါ။");
         return;
     }
 
+    // ၂။ အတည်ပြုချက်တောင်းပါ
     if (!confirm("ပွဲမစခင် ဖျက်သိမ်းပြီး ငွေပြန်အမ်းမှု တောင်းဆိုမှာလား?")) return;
 
     try {
-        // Firebase မှာ Status ပြောင်းခြင်း
+        // ၃။ Firestore ထဲက status ကို cancellation_requested သို့ ပြောင်းပါ
         await db.collection("registrations").doc(regId).update({
             status: "cancellation_requested"
         });
 
-        // API ဆီ Notification ပို့ခြင်း
-        await fetch('/api/notify', {
+        // ၄။ Backend API (notify.js) သို့ ပို့ပေးပါ
+        const response = await fetch('/api/notify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 type: 'cancel_request', 
-                regId: regId,
-                leaderName: "User" // လိုအပ်ရင် နာမည်ကို localStorage မှာ သိမ်းပြီး ဒီမှာ ပြန်ခေါ်သုံးပါ
+                regId: regId, 
+                leaderName: "User Name" // လိုအပ်လျှင် ဒီနေရာမှာ Leader Name အမှန်ကို ထည့်ပါ
             })
         });
 
-        alert("ပွဲဖျက်ရန် တောင်းဆိုမှု ပေးပို့ပြီးပါပြီ။");
+        if (response.ok) {
+            alert("✅ ပွဲဖျက်ရန် တောင်းဆိုမှု ပေးပို့ပြီးပါပြီ။ Admin အတည်ပြုချက် စောင့်ပါ။");
+        } else {
+            throw new Error("API တုံ့ပြန်မှု မအောင်မြင်ပါ။");
+        }
+
     } catch (error) {
         console.error("Error:", error);
         alert("အမှားအယွင်းရှိပါသည်။");
