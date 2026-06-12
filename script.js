@@ -355,27 +355,30 @@ async function submitProof() {
         document.getElementById('waiting-msg').style.display = 'none';
     }
 }
-async function cancelMatch() {
-    const regId = localStorage.getItem('currentRegId'); // သင့် ID သိမ်းထားတဲ့ key ကိုစစ်ပါ
-    
+// နာမည်ပြောင်းလိုက်ပါ (Admin ဆီ Notify ပို့တဲ့အပိုင်း)
+async function requestRefund(regId, leaderName) {
     if (!regId) {
         alert("ID မရှိတော့ပါ။");
         return;
     }
 
     try {
-        // Firebase ကို မခေါ်ခင် ID ရှိမရှိ စစ်ပါ
-        const docRef = db.collection("registrations").doc(regId);
-        const doc = await docRef.get();
-        
-        if (!doc.exists) {
-            alert("Database ထဲတွင် ဤ ID ကို မတွေ့ရှိပါ။");
-            return;
+        // API ကို Notify ပို့ခြင်း
+        const response = await fetch('/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                type: 'cancel_request', // Backend က ဒီ type ကို စစ်ထားပါတယ်
+                regId: regId, 
+                leaderName: leaderName 
+            })
+        });
+
+        if (response.ok) {
+            alert("ပွဲဖျက်ရန် တောင်းဆိုမှု ပို့ပြီးပါပြီ။");
+        } else {
+            alert("တောင်းဆိုမှု မအောင်မြင်ပါ။");
         }
-        
-        // အကယ်၍ အဆင်ပြေရင်မှ Update လုပ်ပါ
-        await docRef.update({ status: "cancelled" });
-        // ပြီးမှ Notify ပို့ပါ
     } catch (error) {
         console.error("Error:", error);
     }
