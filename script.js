@@ -238,6 +238,7 @@ async function submitRegistration(formData) {
 let currentRegId = null; 
 window.isResubmission = false; 
 
+
 async function submitProof() {
     if (window.event) window.event.preventDefault();
 
