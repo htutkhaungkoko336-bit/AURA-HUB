@@ -1,16 +1,16 @@
-const axios = require('axios');
-const { Telegraf } = require('telegraf');
+import { Telegraf } from 'telegraf';
 
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-const bot = new Telegraf(BOT_TOKEN);
+// Vercel Environment variables ကို အသုံးပြုခြင်း
+const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
 export default async function handler(req, res) {
+  // Method စစ်ဆေးခြင်း
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
   try {
-    const { type, regId, matchId, data, leaderName } = req.body;
+    const { type, regId, data, leaderName } = req.body;
 
     // ၁။ Registration Notification
     if (type === 'registration') {
@@ -50,14 +50,17 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true });
     }
 
-    // ၂။ Cancellation Request Notification
+    // ၂။ Cancellation Request Notification (Reg ID ကို အခြေခံသည်)
     if (type === 'cancel_request') {
-      const REFUND_GROUP_ID = "-1003928964996";
-      const msg = `⚠️ ပွဲဖျက်ရန် တောင်းဆိုမှု: ${matchId}\nTeam Leader: ${leaderName}`;
+      const REFUND_GROUP_ID = process.env.REFUND_GROUP_ID || "-1003928964996";
+      
+      const msg = `⚠️ ပွဲဖျက်ရန် တောင်းဆိုမှု (Reg ID): ${regId}\nTeam Leader: ${leaderName}`;
       
       await bot.telegram.sendMessage(REFUND_GROUP_ID, msg, {
           reply_markup: {
-              inline_keyboard: [[{ text: '✅ Approve Refund', callback_data: `approve_refund_${matchId}` }]]
+              inline_keyboard: [[
+                  { text: '✅ Approve Refund', callback_data: `approve_refund_${regId}` }
+              ]]
           }
       });
       return res.status(200).json({ success: true });

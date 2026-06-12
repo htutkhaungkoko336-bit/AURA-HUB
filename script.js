@@ -950,64 +950,38 @@ function startSpinWheel(winnerName, nameA, nameB, matchId) {
         }, 6500);
     }, 100);
 }
-async function cancelMatch() {
-    // LocalStorage ထဲတွင် သိမ်းထားသော matchId ကို ပြန်ယူပါ
-    const matchId = localStorage.getItem('currentMatchId');
-    
-    // မှတ်ချက်: leaderName ကိုလည်း ပွဲစစဉ်ကတည်းက localStorage သို့မဟုတ် variable တစ်ခုခုတွင် သိမ်းထားသင့်သည်
-    const leaderName = "User Name"; 
-
-    if (!matchId) {
-        alert("❌ ပွဲစဉ် ID ရှာမတွေ့ပါ။");
+async function cancelMatch(regId, leaderName) {
+    if (!regId) {
+        alert("❌ မှတ်ပုံတင် ID ရှာမတွေ့ပါ။");
         return;
     }
 
-    if (!confirm("ပွဲကို တကယ်ဖျက်ပြီး ငွေပြန်အမ်းမှု တောင်းဆိုမှာလား?")) return;
+    if (!confirm("ပွဲမစခင် ဖျက်သိမ်းပြီး ငွေပြန်အမ်းမှု တောင်းဆိုမှာလား?")) return;
 
     try {
-        await db.collection("matches").doc(matchId).update({
+        // ၁။ registrations collection ထဲက status ကို ပြောင်းလိုက်မယ်
+        await db.collection("registrations").doc(regId).update({
             status: "cancellation_requested"
         });
 
+        // ၂။ Admin ဆီ Notification ပို့မယ် (regId ကိုပဲ ပို့ပေးလိုက်မယ်)
         await fetch('/api/notify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 type: 'cancel_request', 
-                matchId: matchId, 
+                regId: regId, // matchId အစား regId ကို သုံးမယ်
                 leaderName: leaderName 
             })
         });
 
-        alert("ပွဲဖျက်ရန် တောင်းဆိုမှု ပေးပို့ပြီးပါပြီ။ Admin အတည်ပြုချက် စောင့်ပါ။");
+        alert("ပွဲဖျက်ရန် တောင်းဆိုမှု ပေးပို့ပြီးပါပြီ။");
     } catch (error) {
         console.error("Error:", error);
         alert("အမှားအယွင်းရှိပါသည်။");
     }
-}
-// ပွဲတစ်ခုခုကို အောင်မြင်စွာဖန်တီးပြီးတဲ့အခါ သို့မဟုတ် ပွဲတွေ့တဲ့အခါ
-function onMatchCreated(newMatchId) {
-    localStorage.setItem('currentMatchId', newMatchId);
-}// Waiting Room သို့မဟုတ် Game Page ၏ script တွင်
-db.collection("matches").doc(matchId).onSnapshot((doc) => {
-    const data = doc.data();
-    
-    // Status က refunded ဖြစ်သွားရင် User ကို အသိပေးပြီး ဖယ်ထုတ်မည်
-    if (data && data.status === "refunded") {
-        alert("✅ ငွေပြန်လွှဲပြီးပါပြီ။ ကျေးဇူးပြု၍ သင်၏ K-Pay Account ကို စစ်ဆေးပေးပါ။");
-        
-        // Local Storage ရှင်းလင်းပြီး ပွဲစဉ်မှ ထွက်ခွာခြင်း
-        localStorage.removeItem('currentMatchId');
-        window.location.href = '/dashboard'; // သို့မဟုတ် ပင်မစာမျက်နှာသို့ ပြန်ပို့ခြင်း
-    }
-});
-fetch('/api/notify', {
+}fetch('/api/notify', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({ type: 'registration', regId, data })
-});
-fetch('/api/notify', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ type: 'cancel_request', matchId, leaderName: "User Name" })
 });
