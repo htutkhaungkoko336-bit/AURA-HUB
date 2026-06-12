@@ -962,20 +962,34 @@ function startSpinWheel(winnerName, nameA, nameB, matchId) {
 }
 async function cancelMatch() {
     const regId = localStorage.getItem('userRegId');
-    if (!regId) return alert("ID မတွေ့ပါ။");
 
-    if (confirm("ပွဲဖျက်ပြီး ငွေပြန်အမ်းမှု တောင်းဆိုမှာလား?")) {
-        // ၁။ Firestore မှာ Status ပြောင်း
+    // ID မရှိရင် ရပ်လိုက်ပါ
+    if (!regId) {
+        alert("❌ မှတ်ပုံတင် ID ရှာမတွေ့ပါ။");
+        return;
+    }
+
+    if (!confirm("ပွဲဖျက်ပြီး ငွေပြန်အမ်းမှု တောင်းဆိုမှာလား?")) return;
+
+    try {
+        // Firestore မှာ status ပြောင်းခြင်း
         await db.collection("registrations").doc(regId).update({
             status: "cancellation_requested"
         });
 
-        // ၂။ Telegram ကို Notification ပို့ (Admin ဆီ)
-        await fetch('/api/notify', {
+        // API ဆီပို့ခြင်း
+        const response = await fetch('/api/notify', {
             method: 'POST',
-            body: JSON.stringify({ type: 'cancel_request', regId: regId })
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                type: 'cancel_request', 
+                regId: regId // ဒီနေရာမှာ regId ပို့တာပါ
+            })
         });
-        alert("တောင်းဆိုမှု ပို့ပြီးပါပြီ။");
+
+        if (response.ok) alert("✅ တောင်းဆိုမှု ပို့ပြီးပါပြီ။");
+    } catch (e) {
+        alert("အမှားအယွင်းရှိပါသည်။");
     }
 }
 db.collection("registrations").doc(localStorage.getItem('userRegId'))

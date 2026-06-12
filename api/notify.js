@@ -1,6 +1,5 @@
 import { Telegraf } from 'telegraf';
 
-// Vercel Environment variables ကို အသုံးပြုခြင်း
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
 
 export default async function handler(req, res) {
@@ -50,10 +49,12 @@ export default async function handler(req, res) {
       return res.status(200).json({ success: true });
     }
 
-    // ၂။ Cancellation Request Notification (Reg ID ကို အခြေခံသည်)
+    // ၂။ Cancellation Request Notification
     if (type === 'cancel_request') {
       const REFUND_GROUP_ID = process.env.REFUND_GROUP_ID || "-1003928964996";
       
+      if (!regId) return res.status(400).json({ message: "regId is missing" });
+
       const msg = `⚠️ ပွဲဖျက်ရန် တောင်းဆိုမှု (Reg ID): ${regId}\nTeam Leader: ${leaderName}`;
       
       await bot.telegram.sendMessage(REFUND_GROUP_ID, msg, {
