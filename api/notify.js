@@ -63,3 +63,31 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: error.message });
   }
 }
+async function sendRefundToAdmin(docId) {
+    // ၁။ Database မှ User အချက်အလက်များကို အရင်ဆွဲထုတ်ပါ
+    const doc = await db.collection("registrations").doc(docId).get();
+    const data = doc.data();
+
+    // ၂။ Refund GP အတွက် Message ပြင်ဆင်ပါ
+    const message = `🚨 <b>New Refund Request</b>\n\n` +
+                    `👤 <b>Name:</b> ${data.squadName || data.playerName}\n` +
+                    `💰 <b>Fee:</b> ${data.fee} Ks\n` +
+                    `💳 <b>K-Pay Phone:</b> <code>${data.kpayPhone}</code>\n` +
+                    `🆔 <b>Reg ID:</b> <code>${docId}</code>\n\n` +
+                    `<i>Admin, ကျေးဇူးပြု၍ စစ်ဆေးပြီး အောက်ပါခလုတ်များဖြင့် ဆုံးဖြတ်ပေးပါ။</i>`;
+
+    // ၃။ Refund GP သို့ ပို့ပါ (Inline Buttons များဖြင့်)
+    await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        chat_id: process.env.REFUND_GROUP_ID, // သီးသန့် Refund GP ID
+        text: message,
+        parse_mode: 'HTML',
+        reply_markup: {
+            inline_keyboard: [
+                [
+                    { text: '✅ Approve Refund', callback_data: `approveRefund_${docId}` },
+                    { text: '❌ Reject Refund', callback_data: `rejectRefund_${docId}` }
+                ]
+            ]
+        }
+    });
+}

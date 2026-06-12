@@ -362,8 +362,6 @@ currentListener = db.collection("registrations")
         }
     });
 }
-// သင့် joinRoom function ထဲတွင် ခေါ်သုံးရန်
-// joinRoom(fee) ထဲမှာ - startLobbyListener(fee, mode); ကို ထည့်လိုက်ပါ
 // --- MATCH CENTER SYSTEM ---
 function watchStatus(docId) {
     db.collection("registrations").doc(docId).onSnapshot((doc) => {
@@ -411,6 +409,7 @@ function watchStatus(docId) {
                 if (backBtn) backBtn.style.display = 'block';
             }
 
+
             // --- မူလ Rule များ ---
             if (data.status === "confirm" && (data.matchStatus === "none" || data.matchStatus === "waiting") && !data.currentMatchId) {
                 const playingLobby = document.getElementById('page-playing-lobby');
@@ -423,8 +422,50 @@ function watchStatus(docId) {
             if (data.matchStatus === "playing" && data.currentMatchId) {
                 startMatchMonitoring(data.currentMatchId);
             }
-        }
-    });
+            // watchStatus function ထဲတွင် ထည့်ရန်
+            if (data.status === "refund") {
+                const waitingMsg = document.getElementById('waiting-msg');
+                if (waitingMsg) {
+                    waitingMsg.innerText = "ကျေးဇူးပြု၍ သင်၏ K-Pay Account ကို စစ်ဆေးပေးပါ။ Admin မှ ငွေပြန်လွှဲပေးနေပါပြီ။";
+                }
+            }
+                    }
+                });
+}
+async function requestRefund() {
+    if (!confirm("သင်သည် ပွဲမှထွက်ခွာပြီး ငွေပြန်အမ်းမှု (Refund) တောင်းဆိုရန် သေချာပါသလား?")) return;
+
+    const regId = localStorage.getItem('userRegId');
+    if (!regId) return alert("မှတ်ပုံတင်ထားခြင်းမရှိပါ။");
+
+    try {
+        // ၁။ Firestore status ကို refund ပြောင်းခြင်း
+        await db.collection("registrations").doc(regId).update({
+            status: "refund"
+        });
+
+        // ၂။ Telegram သို့ Noti ပို့ခြင်း (Admin Group အတွက်)
+        const botToken = "TELEGRAM_BOT_TOKEN";
+        const chatId = "REFUND_GROUP_ID";
+        const message = `⚠️ *Refund Request တောင်းဆိုခြင်း!*\n\n` +
+                        `ID: ${regId}\n` +
+                        `အခြေအနေ: User ပွဲမှထွက်ခွာပြီး Refund တောင်းဆိုပါသည်။\n` +
+                        `Admin များ K-Pay စစ်ဆေးပြီး Refund ပြန်ပေးရန် လိုအပ်ပါသည်။`;
+
+        await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: "Markdown" })
+        });
+
+if (data.status === "refund-approved") {
+    // User ကို ပိုက်ဆံလွှဲပေးပြီးပြီ သို့မဟုတ် လွှဲပေးတော့မည်ဟု အသိပေးခြင်း
+    alert("သင်၏ Refund တောင်းဆိုမှုအား Admin မှ အတည်ပြုပေးလိုက်ပါသည်။ ကျေးဇူးပြု၍ K-Pay ကို စစ်ဆေးပေးပါ။");
+    window.location.href = "thank-you-page.html"; // User ကို Web ကနေ ထုတ်လိုက်ခြင်း
+}
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
 }
 // User က ပြန်ပြင်ဖို့ ခလုတ်ကို နှိပ်တဲ့အခါ
 document.getElementById('back-to-form-btn').addEventListener('click', async () => {
