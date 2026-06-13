@@ -15,28 +15,40 @@ export default async function handler(req, res) {
         const ADMIN_GROUP_ID = process.env.ADMIN_GROUP_ID;
 
         // --- ၁။ QUIT / REFUND ACTION (Refund GP သို့ ပို့ရန်) ---
-        if (action === 'quit') {
-            const quitMsg = `🚫 <b>PLAYER QUIT THE MATCH</b>\n\n` +
-                            `👤 <b>Team:</b> ${data.squadName || data.playerName || "Unknown"}\n` +
-                            `🆔 <b>Reg ID:</b> <code>${regId}</code>\n\n` +
-                            `<i>ကျေးဇူးပြု၍ Refund စစ်ဆေးပြီး အတည်ပြုပေးပါ။</i>`;
-            
-            const quitKeyboard = {
-                inline_keyboard: [[
-                    { text: '✅ Refund ပြုလုပ်ပြီးပြီ', callback_data: `confirmQuit_${regId}` }
-                ]]
-            };
+      // --- ၁။ QUIT / REFUND ACTION (Refund GP သို့ အသေးစိတ်ပို့ရန်) ---
+      if (action === 'quit') {
+          // Player Details ကို Registration message ကလိုမျိုးပဲ စုစည်းပေးမယ်
+          let playerDetails = data.mode === "5vs5" 
+              ? data.players.map((p, i) => `${i+1}. ${p.name}`).join('\n')
+              : `${data.playerName}`;
 
-            // Refund Group သို့ ပို့ခြင်း
-            await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                chat_id: REFUND_GROUP_ID, 
-                text: quitMsg,
-                parse_mode: 'HTML',
-                reply_markup: quitKeyboard
-            });
-            return res.status(200).json({ success: true, message: 'Refund group notified' });
-        }
+          const quitMsg = `🚫 <b>PLAYER QUIT & REQUEST REFUND</b>\n\n` +
+                          `🕒 <b>Time:</b> ${new Date().toLocaleString('en-US', { timeZone: 'Asia/Yangon' })}\n` +
+                          `🎮 <b>Mode:</b> ${data.mode}\n` +
+                          `💰 <b>Fee:</b> ${data.fee} Ks\n\n` +
+                          `👤 <b>Team:</b> ${data.squadName || 'Solo'}\n` +
+                          `👥 <b>Players:</b>\n${playerDetails}\n\n` +
+                          `💳 <b>Refund Info:</b>\n` +
+                          `Name: ${data.kpayName}\n` +
+                          `Ph: <code>${data.kpayPhone}</code>\n\n` +
+                          `🆔 <b>Reg ID:</b> <code>${regId}</code>\n\n` +
+                          `<i>ကျေးဇူးပြု၍ Refund စစ်ဆေးပြီး အတည်ပြုပေးပါ။</i>`;
+          
+          const quitKeyboard = {
+              inline_keyboard: [[
+                  { text: '✅ Refund ပြုလုပ်ပြီးပြီ', callback_data: `confirmQuit_${regId}` }
+              ]]
+          };
 
+          // Refund Group သို့ အသေးစိတ်ပို့ခြင်း
+          await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+              chat_id: REFUND_GROUP_ID, 
+              text: quitMsg,
+              parse_mode: 'HTML',
+              reply_markup: quitKeyboard
+          });
+          return res.status(200).json({ success: true, message: 'Refund group notified' });
+      }
         // --- ၂။ NEW REGISTRATION ACTION (Registration GP သို့ ပို့ရန်) ---
         const resubTag = data.isResubmission ? "⚠️ *[Re-submission]*\n" : "";
         const timestamp = new Date().toLocaleString('en-US', { 
