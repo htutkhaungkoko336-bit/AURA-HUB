@@ -621,9 +621,16 @@ else if (currentMatchTab === 'result') {
             });
     }
 }
-async function handleQuit(regId) {
-    if (!confirm("ပွဲမှထွက်၍ ငွေပြန်အမ်းရန် သေချာပါသလား?")) return;
-    
+async function handleQuit() {
+    // ဥပမာ - Global variable သို့မဟုတ် UI ထဲက value ယူခြင်း
+    const currentRegId = localStorage.getItem('userRegId'); 
+
+    if (!currentRegId) {
+        alert("❌ Registration ID မတွေ့ရှိပါ။");
+        return;
+    }
+
+    if (!confirm("ပွဲမှထွက်၍ ငွေပြန်အမ်းရန် သေချာပါသလား?")) return;    
     const res = await fetch('/api/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -362,15 +362,24 @@ bot.action(/view_reg_(.+)/, async (ctx) => {
     ctx.answerCbQuery();
 });
 
-// Refund အတည်ပြုခြင်း
 bot.action(/confirm_refund_(.+)/, async (ctx) => {
-    const docId = ctx.match[1];
+    const docId = ctx.match[1].trim(); // Trim ထည့်ပေးပါ (Space တွေပါလာနိုင်လို့)
+    
+    // registrations collection ထဲမှာပဲ အရင်ရှာပါ
+    const docRef = db.collection("registrations").doc(docId);
+    const doc = await docRef.get();
+    
+    if (!doc.exists) {
+        return ctx.answerCbQuery("❌ Error: ID မမှန်ပါ သို့မဟုတ် Data မရှိပါ။");
+    }
+    
     try {
-        await db.collection("registrations").doc(docId).update({ status: "refunded" });
+        await docRef.update({ status: "refunded" });
         await ctx.editMessageText(`✅ <b>Refund အောင်မြင်ပါသည်။</b>\n🆔 ID: <code>${docId}</code>`, { parse_mode: 'HTML' });
         ctx.answerCbQuery("Refund အောင်မြင်ပါသည်။");
     } catch (err) {
-        ctx.answerCbQuery("❌ Error!");
+        console.error("Refund Error:", err);
+        ctx.answerCbQuery("❌ Error ဖြစ်နေသည်။");
     }
 });
 // --- Export ---
