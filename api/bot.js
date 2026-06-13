@@ -328,44 +328,6 @@ bot.action(/confirm_(.+)/, async (ctx) => {
         ctx.answerCbQuery("❌ Error: အတည်ပြု၍ မရပါ။");
     }
 });
-// Admin က View Full Data နှိပ်ရင် Data ပြပေးမယ့်အပိုင်း
-bot.action(/view_reg_(.+)/, async (ctx) => {
-    const docId = ctx.match[1].trim(); // documentId ကို သုံးသည်
-    const doc = await db.collection("registrations").doc(docId).get();
-    
-    if (!doc.exists) return ctx.answerCbQuery("❌ Data မရှိပါ။");
-    
-    const d = doc.data();
-    const info = `📋 <b>CONFIRMED REGISTRATION DATA</b>\n\n` +
-                 `🆔 <b>Reg ID:</b> <code>${docId}</code>\n` +
-                 `👤 <b>Squad/Name:</b> ${d.squadName || 'Solo'}\n` +
-                 `📞 <b>K-Pay:</b> <code>${d.kpayPhone}</code>\n` +
-                 `💰 <b>Amount Paid:</b> ${d.fee} Ks\n\n` +
-                 `<i>ဒီ Data နဲ့ တိုက်ပြီး ငွေလွှဲပေးလိုက်ပါ။</i>`;
-                 
-    await ctx.reply(info, { parse_mode: 'HTML' });
-    ctx.answerCbQuery();
-});
-
-// Admin က ငွေလွှဲပြီးမှ Confirm Refund နှိပ်မယ့်အပိုင်း
-bot.action(/confirm_refund_(.+)/, async (ctx) => {
-    const docId = ctx.match[1].trim(); // documentId ကို သုံးသည်
-    
-    try {
-        const docRef = db.collection("registrations").doc(docId);
-        await docRef.update({ 
-            status: "refunded"
-        });
-        
-        await ctx.editMessageText(`✅ <b>Refund အောင်မြင်ပါသည်။</b>\n\n🆔 Reg ID: <code>${docId}</code> အတွက် ငွေပြန်အမ်းမှု ပြီးဆုံးပါပြီ။`, { 
-            parse_mode: 'HTML' 
-        });
-        
-        ctx.answerCbQuery("Refund အောင်မြင်ပါသည်။");
-    } catch (err) {
-        ctx.answerCbQuery("❌ Error: Data ရှာမတွေ့ပါ။");
-    }
-});
 // --- Export ---
 module.exports = async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(200).end();

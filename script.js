@@ -300,12 +300,12 @@ async function submitProof() {
         
         // Admin ဆီ Notify ပို့ခြင်း
         await fetch('/api/notify', {
-method: 'POST',
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'register', // action ကို သေချာထည့်ပါ
-                regId: docRefId,
-                data: registrationData            })
+            body: JSON.stringify({ 
+                regId: docRefId, 
+                data: registrationData 
+            })
         });
 
         document.getElementById('waiting-msg').innerText = "Payment ကို Admin မှ စစ်ဆေးနေပါသည်။ ခဏစောင့်ပေးပါ...";
@@ -619,46 +619,6 @@ else if (currentMatchTab === 'result') {
                     </div>`;
                 });
             });
-    }
-}
-async function handleQuit() {
-    // ၁။ HTML ခလုတ်ထဲကနေ documentId ကို အရင်ယူပါ
-    const btn = document.getElementById('quit-btn');
-    const documentId = btn ? btn.dataset.regid : null;
-    
-    if (!documentId) {
-        alert("❌ Registration ID မတွေ့ရှိပါ။ Admin သို့ ဆက်သွယ်ပါ။");
-        return;
-    }
-
-    // ၂။ User ကို အတည်ပြုချက်တောင်းပါ (API မခေါ်ခင်မှာ အရင်မေးတာ ပိုကောင်းပါတယ်)
-    const isConfirmed = confirm("ပွဲမှထွက်၍ ငွေပြန်အမ်းရန် သေချာပါသလား?");
-    if (!isConfirmed) return;
-    
-    try {
-        // ၃။ API ကို တစ်ခါပဲ ခေါ်ပါ
-        const response = await fetch('/api/notify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'refund_request',
-                documentId: documentId // ဒီနေရာမှာ documentId ကိုပဲ သုံးပါ
-            })
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-            alert("✅ Admin ထံသို့ Refund တောင်းဆိုချက် ပေးပို့ပြီးပါပြီ။");
-            // ပြီးရင် ခလုတ်ကို ပိတ်လိုက်ပါ
-            btn.disabled = true;
-            btn.innerText = "Requested Refund";
-        } else {
-            alert("❌ Error: Refund တောင်းဆို၍ မရပါ။");
-        }
-    } catch (error) {
-        console.error("Error:", error);
-        alert("❌ စနစ်အမှားအယွင်းရှိပါသည်။");
     }
 }
 async function showMatchDetail(matchId, teamAName, teamBName) {
