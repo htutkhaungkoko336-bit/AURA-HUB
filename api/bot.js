@@ -329,6 +329,7 @@ bot.action(/confirm_(.+)/, async (ctx) => {
     }
 });
 
+
 bot.action(/refundRequest_(.+)/, async (ctx) => {
     const regId = ctx.match[1];
     const docRef = db.collection("registrations").doc(regId);
@@ -354,7 +355,12 @@ bot.action(/refundRequest_(.+)/, async (ctx) => {
 
     ctx.reply("✅ သင်၏ Refund တောင်းဆိုမှုကို ပေးပို့လိုက်ပါပြီ။ Admin စစ်ဆေးပြီး ဆက်သွယ်ပေးပါလိမ့်မည်။");
 });
-
+// bot.js ထဲမှာ
+bot.action(/confirmRefund_(.+)/, async (ctx) => {
+    const regId = ctx.match[1];
+    await db.collection("registrations").doc(regId).update({ status: "refunded" });
+    await ctx.editMessageText("✅ Refund အောင်မြင်စွာ ပြုလုပ်ပြီးပါပြီ။");
+});
 
 
 // --- Export ---

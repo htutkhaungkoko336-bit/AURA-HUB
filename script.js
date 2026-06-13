@@ -332,28 +332,26 @@ async function submitProof() {
     }
 }
 
-// handleQuitAndRefund function ထဲမှာ
+// script.js ထဲမှာ
 async function handleQuitAndRefund() {
     const regId = localStorage.getItem('regId');
-    if (!regId) return;
+    if (!regId) return alert("မှတ်ပုံတင်ထားခြင်း မရှိပါ။");
 
-    const response = await fetch('/api/refund', {
+    // 1. Database status ကို ပြောင်းပေးပါ
+    await db.collection("registrations").doc(regId).update({ status: "refund_pending" });
+
+    // 2. Telegram Bot ဆီသို့ Admin Notification ပို့ဖို့ API ခေါ်ပါ
+    await fetch('/api/refund-notify', { // ဒီ API အသစ်ကို ဆောက်ရပါမယ်
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ regId: regId })
     });
 
-    if (response.ok) {
-        alert("Refund တောင်းဆိုမှု အောင်မြင်ပါသည်။");
-        
-        // ✅ Refund ပြီးသွားရင် ခလုတ်ကို ပြန်ဖျောက်ပေးပါ
-        localStorage.removeItem('regId');
-        document.getElementById('refundBtn').style.display = 'none';
-        
-    } else {
-        alert("Error ဖြစ်နေပါသည်။");
-    }
+    // 3. Auto ထွက်သွားစေရန်
+    localStorage.removeItem('regId');
+    window.location.reload(); // Page ပြန် refresh လုပ်လိုက်ရင် ခလုတ်ပျောက်သွားပြီး ပုံမှန်အတိုင်းဖြစ်သွားမယ်
 }
+
 
 function backToRegistration() {
     document.getElementById('page-payment-proof').style.display = 'none';
