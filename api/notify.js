@@ -1,65 +1,78 @@
 const axios = require('axios');
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method Not Allowed' });
-  }
-
-  try {
-    const { regId, data } = req.body;
-    const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-    const REGISTRATION_GROUP_ID = process.env.REGISTRATION_GROUP_ID;
-
-    // ၁။ Re-submission Tag (စစ်ဆေးခြင်း)
-    const resubTag = data.isResubmission ? "⚠️ *[Re-submission]*\n" : "";
-
-    const timestamp = new Date().toLocaleString('en-US', { 
-        timeZone: 'Asia/Yangon',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true 
-    });
-
-    // ၂။ Player Details
-    let playerDetails = "";
-    if (data.mode === "5vs5") {
-        playerDetails = data.players.map((p, i) => `${i+1}. ${p.name} (ID: ${p.id})`).join('\n');
-    } else {
-        playerDetails = `Player: ${data.playerName}\nID: ${data.mlbbId}`;
+    if (req.method !== 'POST') {
+        return res.status(405).json({ message: 'Method Not Allowed' });
     }
 
-    // ၃။ Squad Logo လင့်ခ်ရှိရင် ထည့်ရန်
-    const logoSection = data.squadLogo ? `\n🖼️ [View Squad Logo](${data.squadLogo})` : "";
+    try {
+        const { regId, data, action } = req.body;
+        const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+        const REG_GROUP_ID = process.env.REGISTRATION_GROUP_ID;
+        const ADMIN_GROUP_ID = process.env.ADMIN_GROUP_ID;
 
-    // ၄။ မက်ဆေ့ချ် ပုံစံ (resubTag ကို ထိပ်ဆုံးမှာ ထည့်သွင်းထားပါတယ်)
-    const message = `${resubTag}🔔 *New Registration Received!*\n\n` +
-                    `🕒 *Time:* ${timestamp}\n` +
-                    `🎮 *Mode:* ${data.mode}\n` +
-                    `💰 *Fee:* ${data.fee} Ks\n\n` +
-                    `👤 *Identity:*\n${data.squadName ? `Squad: ${data.squadName}\n${playerDetails}` : playerDetails}\n` +
-                    logoSection + `\n\n` + 
-                    `💳 *Payment Info:*\nName: ${data.kpayName}\nPhone: ${data.kpayPhone}\n\n` +
-                    `🖼️ [View Payment Proof](${data.paymentURL})\n` +
-                    `🆔 *Reg ID:* ${regId}`;
+        // --- ၁။ QUIT ACTION (Admin အကြောင်းကြားရန်) ---
+        if (action === 'quit') {
+            const quitMsg = `🚫 <b>PLAYER QUIT THE MATCH</b>\n\n` +
+                            `👤 <b>Team:</b> ${data.squadName || data.playerName || "Unknown"}\n` +
+                            `🆔 <b>Reg ID:</b> <code>${regId}</code>\n\n` +
+                            `<i>ကျေးဇူးပြု၍ စစ်ဆေးပြီး အတည်ပြုပေးပါ။</i>`;
+            
+            const quitKeyboard = {
+                inline_keyboard: [[
+                    { text: '✅ အခန်းပိတ်သိမ်းကြောင်း အတည်ပြုမည်', callback_data: `confirmQuit_${regId}` }
+                ]]
+            };
 
-    const inline_keyboard = [[
-        { text: '✅ Confirm', callback_data: `regConfirm_${regId}` },
-        { text: '❌ Reject', callback_data: `regReject_${regId}` }
-    ]];
+            await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                chat_id: ADMIN_GROUP_ID,
+                text: quitMsg,
+                parse_mode: 'HTML',
+                reply_markup: quitKeyboard
+            });
+            return res.status(200).json({ success: true, message: 'Quit notified' });
+        }
 
-    await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        chat_id: REGISTRATION_GROUP_ID,
-        text: message,
-        parse_mode: 'Markdown',
-        reply_markup: { inline_keyboard: inline_keyboard }
-    });
+        // --- ၂။ NEW REGISTRATION ACTION ---
+        const resubTag = data.isResubmission ? "⚠️ *[Re-submission]*\n" : "";
+        const timestamp = new Date().toLocaleString('en-US', { 
+            timeZone: 'Asia/Yangon',
+            year: 'numeric', month: 'short', day: 'numeric',
+            hour: '2-digit', minute: '2-digit', hour12: true 
+        });
 
-    return res.status(200).json({ success: true });
-  } catch (error) {
-    console.error("Error in notify API:", error);
-    return res.status(500).json({ error: error.message });
-  }
+        let playerDetails = data.mode === "5vs5" 
+            ? data.players.map((p, i) => `${i+1}. ${p.name} (ID: ${p.id})`).join('\n')
+            : `Player: ${data.playerName}\nID: ${data.mlbbId}`;
+
+        const logoSection = data.squadLogo ? `\n🖼️ [View Squad Logo](${data.squadLogo})` : "";
+
+        const regMessage = `${resubTag}🔔 *New Registration Received!*\n\n` +
+                          `🕒 *Time:* ${timestamp}\n` +
+                          `🎮 *Mode:* ${data.mode}\n` +
+                          `💰 *Fee:* ${data.fee} Ks\n\n` +
+                          `👤 *Identity:*\n${data.squadName ? `Squad: ${data.squadName}\n${playerDetails}` : playerDetails}\n` +
+                          logoSection + `\n\n` + 
+                          `💳 *Payment Info:*\nName: ${data.kpayName}\nPhone: ${data.kpayPhone}\n\n` +
+                          `🖼️ [View Payment Proof](${data.paymentURL})\n` +
+                          `🆔 *Reg ID:* ${regId}`;
+
+        const regKeyboard = [[
+            { text: '✅ Confirm', callback_data: `regConfirm_${regId}` },
+            { text: '❌ Reject', callback_data: `regReject_${regId}` }
+        ]];
+
+        await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            chat_id: REG_GROUP_ID,
+            text: regMessage,
+            parse_mode: 'Markdown',
+            reply_markup: { inline_keyboard: regKeyboard }
+        });
+
+        return res.status(200).json({ success: true });
+
+    } catch (error) {
+        console.error("Error in notify API:", error);
+        return res.status(500).json({ error: error.message });
+    }
 }

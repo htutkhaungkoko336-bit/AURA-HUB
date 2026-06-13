@@ -328,6 +328,23 @@ bot.action(/confirm_(.+)/, async (ctx) => {
         ctx.answerCbQuery("❌ Error: အတည်ပြု၍ မရပါ။");
     }
 });
+// bot.js ထဲတွင် ထည့်ရန်
+// Admin Group ထဲမှာ Quit message တက်လာရင် အောက်ပါအတိုင်း ပြင်ဆင်ပါ
+
+bot.action(/confirmQuit_(.+)/, async (ctx) => {
+    const docId = ctx.match[1];
+    try {
+        // အဲ့ဒီ Registration ကို ဖျက်လိုက်တာ သို့မဟုတ် status ပြောင်းတာ
+        await db.collection("registrations").doc(docId).delete();
+        
+        await ctx.editMessageText(`✅ <b>Reg ID: ${docId}</b> ကို အခန်းဖျက်သိမ်းပြီးကြောင်း အတည်ပြုပေးလိုက်ပါပြီ။`, {
+            parse_mode: 'HTML'
+        });
+        ctx.answerCbQuery("အောင်မြင်ပါသည်။");
+    } catch (err) {
+        ctx.answerCbQuery("Error ဖြစ်နေပါသည်။");
+    }
+});
 // --- Export ---
 module.exports = async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(200).end();

@@ -950,3 +950,34 @@ function startSpinWheel(winnerName, nameA, nameB, matchId) {
         }, 6500);
     }, 100);
 }
+
+async function quitMatch() {
+    if (!myTeamInfo || !myTeamInfo.id) {
+        alert("Registration အချက်အလက် မတွေ့ရှိပါ။");
+        return;
+    }
+
+    if (confirm("သင်သေချာပေါက် Quit လိုပါသလား? Quit လိုက်ပါက သင်၏ ပြိုင်ပွဲဝင်ခွင့် ပျက်ပြယ်သွားပါမည်။")) {
+        try {
+            // ၁။ API ကို Quit Notification ပို့ခြင်း
+            await fetch('/api/notify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    action: 'quit', 
+                    regId: myTeamInfo.id, 
+                    data: myTeamInfo 
+                })
+            });
+
+            // ၂။ Firebase ထဲမှ Registration ကို ဖျက်ခြင်း
+            await db.collection("registrations").doc(myTeamInfo.id).delete();
+
+            alert("အောင်မြင်စွာ Quit လုပ်ပြီးပါပြီ။");
+            window.location.reload(); 
+        } catch (error) {
+            console.error("Error quitting:", error);
+            alert("Quit လုပ်ရာတွင် အမှားအယွင်းရှိနေပါသည်။");
+        }
+    }
+}
