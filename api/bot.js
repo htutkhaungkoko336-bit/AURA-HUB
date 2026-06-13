@@ -328,6 +328,35 @@ bot.action(/confirm_(.+)/, async (ctx) => {
         ctx.answerCbQuery("❌ Error: အတည်ပြု၍ မရပါ။");
     }
 });
+
+bot.action(/refundRequest_(.+)/, async (ctx) => {
+    const regId = ctx.match[1];
+    const docRef = db.collection("registrations").doc(regId);
+    const doc = await docRef.get();
+
+    if (!doc.exists) return ctx.answerCbQuery("❌ မှတ်ပုံတင်ထားခြင်း မရှိပါ။");
+
+    // Status ကို 'refund' အဖြစ် ပြောင်းလဲခြင်း
+    await docRef.update({ status: "refund" });
+
+    const data = doc.data();
+    const msg = `🚨 <b>Refund Request</b>\n\n` +
+                `👤 User: ${data.squadName || 'Solo'}\n` +
+                `📞 K-Pay: ${data.kpayPhone}\n` +
+                `💰 Fee: ${data.fee}\n` +
+                `🆔 Reg ID: ${regId}\n\n` +
+                `ကျေးဇူးပြု၍ Refund စစ်ဆေးပြီး ငွေပြန်လွှဲပေးပါ။`;
+
+    // Refund Group ထဲသို့ Notification ပို့ခြင်း
+    await bot.telegram.sendMessage(process.env.REFUND_GROUP_ID, msg, {
+        parse_mode: 'HTML'
+    });
+
+    ctx.reply("✅ သင်၏ Refund တောင်းဆိုမှုကို ပေးပို့လိုက်ပါပြီ။ Admin စစ်ဆေးပြီး ဆက်သွယ်ပေးပါလိမ့်မည်။");
+});
+
+
+
 // --- Export ---
 module.exports = async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(200).end();

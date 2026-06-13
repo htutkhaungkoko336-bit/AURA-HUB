@@ -320,6 +320,29 @@ async function submitProof() {
         document.getElementById('waiting-msg').style.display = 'none';
     }
 }
+
+// Frontend (script.js) အတွက် နမူနာ
+async function handleQuitAndRefund() {
+    const regId = localStorage.getItem('regId'); // သင့်မှာ ရှိပြီးသား key
+    if (!regId) {
+        alert("မှတ်ပုံတင်ထားခြင်း မရှိသေးပါ။");
+        return;
+    }
+
+    const response = await fetch('/api/refund', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ regId: regId })
+    });
+
+    if (response.ok) {
+        alert("Refund တောင်းဆိုမှု အောင်မြင်ပါသည်။");
+    } else {
+        alert("Error ဖြစ်နေပါသည်။");
+    }
+}
+
+
 function backToRegistration() {
     document.getElementById('page-payment-proof').style.display = 'none';
     const mode = mapData[currentIndex].mode;
