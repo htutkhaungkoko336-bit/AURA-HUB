@@ -329,23 +329,16 @@ bot.action(/confirm_(.+)/, async (ctx) => {
     }
 });
 bot.action(/view_detail_(.+)/, async (ctx) => {
-    const regIdValue = ctx.match[1]; // Refund request ရဲ့ ID ဖြစ်ပါတယ်
+    // 1. .trim() ထည့်ပြီး whitespace တွေကို ဖယ်ရှားပါ
+    const regIdValue = ctx.match[1].trim(); 
     
     try {
-        // ၁။ Refund_requests collection ထဲမှာ အရင်ရှာပါ
+        console.log("Searching for ID:", regIdValue); // Debug လုပ်ရန် log ကြည့်ပါ
+
+        // 1. Refund_requests collection ထဲမှာ အရင်ရှာပါ
         const refundDoc = await db.collection("refund_requests").doc(regIdValue).get();
         
-        if (!refundDoc.exists) {
-            // Refund မဟုတ်ရင် မူလ registrations collection ထဲမှာပဲ ရှာပါ
-            const snapshot = await db.collection("registrations")
-                                     .where("regId", "==", regIdValue)
-                                     .limit(1)
-                                     .get();
-            if (snapshot.empty) return ctx.answerCbQuery("❌ Data ရှာမတွေ့ပါ။");
-            
-            const data = snapshot.docs[0].data();
-            await sendDetailMessage(ctx, data, regIdValue);
-        } else {
+        if (refundDoc.exists) {
             // Refund ဖြစ်နေရင် originalDocId ကိုယူပြီး registration ထဲက Data ဆွဲမယ်
             const originalDocId = refundDoc.data().originalDocId;
             const originalDoc = await db.collection("registrations").doc(originalDocId).get();
@@ -353,14 +346,30 @@ bot.action(/view_detail_(.+)/, async (ctx) => {
             if (!originalDoc.exists) return ctx.answerCbQuery("❌ မူလ Registration Data မရှိတော့ပါ။");
             
             await sendDetailMessage(ctx, originalDoc.data(), regIdValue);
+        } else {
+            // 2. Refund မဟုတ်ရင် registrations collection ထဲမှာရှာမယ်
+            // အကြံပြုချက်: အကယ်၍ Document ID က regId နဲ့ တူနေရင် .doc(regIdValue) ကိုသုံးပါ
+            const snapshot = await db.collection("registrations")
+                                     .where("regId", "==", regIdValue)
+                                     .limit(1)
+                                     .get();
+                                     
+            if (snapshot.empty) {
+                // အကယ်၍ Field နဲ့ရှာတာ မရရင် Document ID နဲ့ တိုက်ရိုက်ရှာကြည့်ပါ
+                const docById = await db.collection("registrations").doc(regIdValue).get();
+                if (!docById.exists) {
+                    return ctx.answerCbQuery("❌ Data ရှာမတွေ့ပါ။");
+                }
+                await sendDetailMessage(ctx, docById.data(), regIdValue);
+            } else {
+                await sendDetailMessage(ctx, snapshot.docs[0].data(), regIdValue);
+            }
         }
-
     } catch (error) {
         console.error("View Detail Error:", error);
-        ctx.answerCbQuery("❌ Error ဖြစ်ပေါ်နေပါသည်။");
+        ctx.answerCbQuery("❌ Error: Permission denied သို့မဟုတ် Data error.");
     }
 });
-
 // Code သန့်ရှင်းအောင် သီးသန့် function ထုတ်ရေးထားပါတယ်
 async function sendDetailMessage(ctx, data, regId) {
     let playerDetails = "";
