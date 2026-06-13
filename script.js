@@ -982,7 +982,6 @@ async function handleExitRequest() {
 
     const confirmExit = confirm("သင် ဝဘ်ဆိုက်မှ ထွက်ခွာရန် သေချာပါသလား?");
     if (confirmExit) {
-        // ၁။ ခလုတ်များကို lock လုပ်ခြင်း (Error မတက်အောင် if ထည့်စစ်ပါ)
         const newRoomBtn = document.getElementById('new-room-btn');
         const exitBtn = document.getElementById('exit-btn');
         
@@ -990,27 +989,37 @@ async function handleExitRequest() {
         if (exitBtn) exitBtn.disabled = true;
 
         try {
-            // ၂။ Firestore မှာ Document ID မှားနေနိုင်ပါတယ် (အောက်တွင်ကြည့်ပါ)
-            // သင့် Screenshot (image_fcf217) အရ document name က 
-            // "RU8CPJfMPDR..." ဖြစ်နေတာမို့ doc(currentRegId) က မှန်ကန်နိုင်ပါတယ်။
+            // ၁။ refund_requests collection အသစ်ထဲသို့ Data ထည့်ခြင်း
+            // originalDocId အနေနဲ့ လက်ရှိ currentRegId ကို သိမ်းထားမယ်
+            await db.collection("refund_requests").doc(currentRegId).set({
+                regId: currentRegId, // ID ကို field အနေနဲ့လည်း ထည့်ထားမယ်
+                originalDocId: currentRegId, 
+                status: "pending",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            // ၂။ registrations collection ထဲက status ကိုလည်း အပ်ဒိတ်လုပ်မယ်
             await db.collection("registrations").doc(currentRegId).update({
                 status: "refund"
             });
 
-            // ၃။ Admin ဆီ Telegram Notify ပို့ခြင်း
+            // ၃။ Admin ဆီသို့ Notify ပို့ခြင်း
             await fetch('/api/notify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     regId: currentRegId, 
-                    data: { isRefund: true }
+                    data: { isRefund: true } 
                 })
             });
 
-            alert("Request ပို့ပြီးပါပြီ။ Admin အတည်ပြုသည်အထိ ခဏစောင့်ပေးပါ။");
+            alert("Refund တောင်းဆိုမှု ပို့ပြီးပါပြီ။ Admin အတည်ပြုသည်အထိ ခဏစောင့်ပေးပါ။");
         } catch (error) {
-            console.error("Error updating Firestore:", error);
+            console.error("Error creating refund request:", error);
             alert("Error ဖြစ်သွားပါသည်။");
+            // အဆင်မပြေရင် ခလုတ်တွေကို ပြန်ဖွင့်ပေးနိုင်ပါတယ်
+            if (newRoomBtn) newRoomBtn.disabled = false;
+            if (exitBtn) exitBtn.disabled = false;
         }
     }
 }

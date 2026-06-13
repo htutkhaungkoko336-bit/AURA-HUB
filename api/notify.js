@@ -1,7 +1,6 @@
 const axios = require('axios');
 const admin = require('firebase-admin');
 
-// Firebase Admin ကို တစ်ကြိမ်ပဲ Initialize လုပ်ပါ
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
@@ -9,39 +8,34 @@ if (!admin.apps.length) {
 }
 
 export default async function handler(req, res) {
-  const { regId, data } = req.body;
-  if (!data) {
-    return res.status(400).json({ error: "Data is missing in request body" });
-  }
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
   try {
     const { regId, data } = req.body;
-    
-    if (!data) {
-        return res.status(400).json({ error: "Request body missing data" });
-    }
+    if (!data) return res.status(400).json({ error: "Request body missing data" });
 
     const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+    // Group ID နှစ်ခုကို Environment Variables မှာ သေချာထည့်ပေးပါ
     const REGISTRATION_GROUP_ID = process.env.REGISTRATION_GROUP_ID;
+    const REFUND_GROUP_ID = process.env.REFUND_GROUP_ID; 
 
-    // Refund Request လား၊ New Registration လား စစ်ဆေးခြင်း
     const isRefund = data.isRefund === true;
+    
+    // ဘယ် group ကို ပို့မလဲဆိုတာ သတ်မှတ်ခြင်း
+    const targetChatId = isRefund ? REFUND_GROUP_ID : REGISTRATION_GROUP_ID;
 
     let message = "";
     let inline_keyboard = [];
 
     if (isRefund) {
-        // Refund Request အတွက်
-        message = `⚠️ *Refund Request!*\n\nID: ${regId} သည် ငွေပြန်အမ်းရန် တောင်းဆိုထားပါသည်။`;
+        message = `⚠️ *Refund Request!*\n\nID: ${regId} သည် ငွေပြန်အမ်းရန် တောင်းဆိုထားပါသည်။\n\nအသေးစိတ်ကြည့်ရန် View Detail ကိုနှိပ်ပါ။`;
         inline_keyboard = [[
             { text: '🔍 View Detail', callback_data: `view_detail_${regId}` },
             { text: '✅ Confirm Refund', callback_data: `confirm_refund_${regId}` }
         ]];
     } else {
-        // New Registration အတွက်
         const resubTag = data.isResubmission ? "⚠️ *[Re-submission]*\n" : "";
         const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Yangon' });
         
@@ -66,7 +60,6 @@ export default async function handler(req, res) {
                   `🖼️ [View Payment Proof](${data.paymentURL || ''})\n` +
                   `🆔 *Reg ID:* ${regId}`;
 
-        // View Detail ခလုတ်ကို New Registration အတွက်ပါ ထည့်ပေးလိုက်ပါတယ်
         inline_keyboard = [[
             { text: '✅ Confirm', callback_data: `regConfirm_${regId}` },
             { text: '❌ Reject', callback_data: `regReject_${regId}` },
@@ -74,9 +67,9 @@ export default async function handler(req, res) {
         ]];
     }
 
-    // Telegram API ကို ပို့ဆောင်ခြင်း
+    // Target Group ထဲကို ပို့ဆောင်ခြင်း
     await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-        chat_id: REGISTRATION_GROUP_ID,
+        chat_id: targetChatId, 
         text: message,
         parse_mode: 'Markdown',
         reply_markup: { inline_keyboard: inline_keyboard }
