@@ -329,19 +329,26 @@ bot.action(/confirm_(.+)/, async (ctx) => {
     }
 });
 bot.action(/view_detail_(.+)/, async (ctx) => {
-    const regId = ctx.match[1];
+    const regIdValue = ctx.match[1]; // Telegram က ပါလာတဲ့ regId value
     
     try {
-        // Firestore မှ အဆိုပါ regId ဖြင့် Document ကို ရှာဖွေပါ
-        const doc = await db.collection("registrations").doc(regId).get();
+        // 
+        // 1. regId field နဲ့ တူညီတဲ့ document ကို ရှာပါ
+        const snapshot = await db.collection("registrations")
+                                 .where("regId", "==", regIdValue)
+                                 .limit(1)
+                                 .get();
         
-        if (!doc.exists) {
+        // 2. Data မရှိရင် စစ်ဆေးပါ
+        if (snapshot.empty) {
             return ctx.answerCbQuery("❌ Data ရှာမတွေ့ပါ။");
         }
 
+        // 3. snapshot ထဲက ပထမဆုံး doc ကို ရယူပါ
+        const doc = snapshot.docs[0];
         const data = doc.data();
         
-        // အချက်အလက်များကို New Registration ပုံစံအတိုင်း ပြန်လည်စီစဉ်ပါ
+        // 4. Data ပြသခြင်း (သင်ရေးထားတဲ့ logic အတိုင်း)
         let playerDetails = "";
         if (data.mode === "5vs5") {
             playerDetails = data.players ? data.players.map((p, i) => `${i+1}. ${p.name} (ID: ${p.id})`).join('\n') : "No player data";
@@ -358,9 +365,8 @@ bot.action(/view_detail_(.+)/, async (ctx) => {
                         logoSection + `\n\n` + 
                         `💳 *Payment Info:*\nName: ${data.kpayName || 'N/A'}\nPhone: ${data.kpayPhone || 'N/A'}\n\n` +
                         `🖼️ [View Payment Proof](${data.paymentURL || ''})\n` +
-                        `🆔 *Reg ID:* ${regId}`;
+                        `🆔 *Reg ID:* ${regIdValue}`;
 
-        // ပြန်လည်ပြသပေးခြင်း
         await ctx.reply(message, { parse_mode: 'Markdown' });
         ctx.answerCbQuery("✅ အချက်အလက်များ တင်ပြပြီးပါပြီ");
 
