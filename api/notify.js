@@ -45,24 +45,25 @@ export default async function handler(req, res) {
         }
 
         // ၂။ Refund/Quit တောင်းဆိုလာလျှင်
-        if (action === 'refund_request') {
-            const msg = `⚠️ <b>NEW QUIT REQUEST</b>\n\n🆔 <b>Reg ID:</b> <code>${documentId}</code>\n\n` +
-                        `<i>Admin: ငွေပြန်အမ်းရန်အတွက် Data ကို အောက်ပါခလုတ်ဖြင့် စစ်ဆေးပါ။</i>`;
-            
-            await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                chat_id: REG_GROUP_ID,
-                text: msg,
-                parse_mode: 'HTML',
-                reply_markup: {
-                    inline_keyboard: [[
-                        { text: '✅ Confirm Refund', callback_data: `confirm_refund_${documentId}` },
-                        { text: '🔍 View Full Data', callback_data: `view_reg_${documentId}` }
-                    ]]
-                }
-            });
-            return res.status(200).json({ success: true });
-        }
-
+      // notify API အတွင်းပိုင်း
+      if (action === 'refund_request') {
+          // Web က ပို့လာတဲ့ documentId ကို လက်ခံရရှိသည်
+          const msg = `⚠️ <b>NEW QUIT REQUEST</b>\n\n🆔 <b>Reg ID:</b> <code>${documentId}</code>\n\n` +
+                      `<i>Admin: Data စစ်ဆေးပြီး ငွေပြန်အမ်းရန်အတွက် အောက်ပါခလုတ်များကို အသုံးပြုပါ။</i>`;
+          
+          await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+              chat_id: REG_GROUP_ID,
+              text: msg,
+              parse_mode: 'HTML',
+              reply_markup: {
+                  inline_keyboard: [[
+                      { text: '✅ Confirm Refund', callback_data: `confirm_refund_${documentId}` },
+                      { text: '🔍 View Full Data', callback_data: `view_reg_${documentId}` }
+                  ]]
+              }
+          });
+          return res.status(200).json({ success: true });
+      }
         return res.status(400).json({ success: false, error: "Invalid action" });
     } catch (error) {
         console.error("Error in notify API:", error);

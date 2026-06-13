@@ -622,26 +622,43 @@ else if (currentMatchTab === 'result') {
     }
 }
 async function handleQuit() {
-    // ဥပမာ - Global variable သို့မဟုတ် UI ထဲက value ယူခြင်း
-    const currentRegId = localStorage.getItem('userRegId'); 
-
-    if (!currentRegId) {
-        alert("❌ Registration ID မတွေ့ရှိပါ။");
+    // ၁။ HTML ခလုတ်ထဲကနေ documentId ကို အရင်ယူပါ
+    const btn = document.getElementById('quit-btn');
+    const documentId = btn ? btn.dataset.regid : null;
+    
+    if (!documentId) {
+        alert("❌ Registration ID မတွေ့ရှိပါ။ Admin သို့ ဆက်သွယ်ပါ။");
         return;
     }
 
-    if (!confirm("ပွဲမှထွက်၍ ငွေပြန်အမ်းရန် သေချာပါသလား?")) return;    
-    const res = await fetch('/api/notify', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            action: 'refund_request',
-            documentId: regId
-        })
-    });
+    // ၂။ User ကို အတည်ပြုချက်တောင်းပါ (API မခေါ်ခင်မှာ အရင်မေးတာ ပိုကောင်းပါတယ်)
+    const isConfirmed = confirm("ပွဲမှထွက်၍ ငွေပြန်အမ်းရန် သေချာပါသလား?");
+    if (!isConfirmed) return;
     
-    if ((await res.json()).success) {
-        alert("✅ Admin ထံသို့ Refund တောင်းဆိုချက် ပေးပို့ပြီးပါပြီ။");
+    try {
+        // ၃။ API ကို တစ်ခါပဲ ခေါ်ပါ
+        const response = await fetch('/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'refund_request',
+                documentId: documentId // ဒီနေရာမှာ documentId ကိုပဲ သုံးပါ
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert("✅ Admin ထံသို့ Refund တောင်းဆိုချက် ပေးပို့ပြီးပါပြီ။");
+            // ပြီးရင် ခလုတ်ကို ပိတ်လိုက်ပါ
+            btn.disabled = true;
+            btn.innerText = "Requested Refund";
+        } else {
+            alert("❌ Error: Refund တောင်းဆို၍ မရပါ။");
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("❌ စနစ်အမှားအယွင်းရှိပါသည်။");
     }
 }
 async function showMatchDetail(matchId, teamAName, teamBName) {

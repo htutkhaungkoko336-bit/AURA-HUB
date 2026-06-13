@@ -328,15 +328,14 @@ bot.action(/confirm_(.+)/, async (ctx) => {
         ctx.answerCbQuery("❌ Error: အတည်ပြု၍ မရပါ။");
     }
 });
-// ၁။ Admin က View Full Data နှိပ်ရင် Data ပြပေးမယ့်အပိုင်း
+// Admin က View Full Data နှိပ်ရင် Data ပြပေးမယ့်အပိုင်း
 bot.action(/view_reg_(.+)/, async (ctx) => {
-    const docId = ctx.match[1];
+    const docId = ctx.match[1].trim(); // documentId ကို သုံးသည်
     const doc = await db.collection("registrations").doc(docId).get();
     
     if (!doc.exists) return ctx.answerCbQuery("❌ Data မရှိပါ။");
     
     const d = doc.data();
-    // Confirm ပေးထားပြီးသား Data အကုန် ဒီမှာ ပေါ်လာမယ်
     const info = `📋 <b>CONFIRMED REGISTRATION DATA</b>\n\n` +
                  `🆔 <b>Reg ID:</b> <code>${docId}</code>\n` +
                  `👤 <b>Squad/Name:</b> ${d.squadName || 'Solo'}\n` +
@@ -348,38 +347,23 @@ bot.action(/view_reg_(.+)/, async (ctx) => {
     ctx.answerCbQuery();
 });
 
-// Data ပြန်ဆွဲထုတ်ပြခြင်း
-bot.action(/view_reg_(.+)/, async (ctx) => {
-    const docId = ctx.match[1];
-    const doc = await db.collection("registrations").doc(docId).get();
-    
-    if (!doc.exists) return ctx.answerCbQuery("❌ ဤမှတ်တမ်းကို ရှာမတွေ့ပါ။");
-    
-    const d = doc.data();
-    const info = `📋 <b>CONFIRMED DATA</b>\n\n🆔 <b>Reg ID:</b> <code>${docId}</code>\n🏆 <b>Squad:</b> ${d.squadName || 'Solo'}\n📞 <b>K-Pay:</b> <code>${d.kpayPhone}</code>\n💰 <b>Fee:</b> ${d.fee} Ks\n\n<i>ငွေလွှဲပြီးမှသာ Refund Confirm လုပ်ပေးပါ။</i>`;
-    
-    await ctx.reply(info, { parse_mode: 'HTML' });
-    ctx.answerCbQuery();
-});
-
+// Admin က ငွေလွှဲပြီးမှ Confirm Refund နှိပ်မယ့်အပိုင်း
 bot.action(/confirm_refund_(.+)/, async (ctx) => {
-    const docId = ctx.match[1].trim(); // Trim ထည့်ပေးပါ (Space တွေပါလာနိုင်လို့)
-    
-    // registrations collection ထဲမှာပဲ အရင်ရှာပါ
-    const docRef = db.collection("registrations").doc(docId);
-    const doc = await docRef.get();
-    
-    if (!doc.exists) {
-        return ctx.answerCbQuery("❌ Error: ID မမှန်ပါ သို့မဟုတ် Data မရှိပါ။");
-    }
+    const docId = ctx.match[1].trim(); // documentId ကို သုံးသည်
     
     try {
-        await docRef.update({ status: "refunded" });
-        await ctx.editMessageText(`✅ <b>Refund အောင်မြင်ပါသည်။</b>\n🆔 ID: <code>${docId}</code>`, { parse_mode: 'HTML' });
+        const docRef = db.collection("registrations").doc(docId);
+        await docRef.update({ 
+            status: "refunded"
+        });
+        
+        await ctx.editMessageText(`✅ <b>Refund အောင်မြင်ပါသည်။</b>\n\n🆔 Reg ID: <code>${docId}</code> အတွက် ငွေပြန်အမ်းမှု ပြီးဆုံးပါပြီ။`, { 
+            parse_mode: 'HTML' 
+        });
+        
         ctx.answerCbQuery("Refund အောင်မြင်ပါသည်။");
     } catch (err) {
-        console.error("Refund Error:", err);
-        ctx.answerCbQuery("❌ Error ဖြစ်နေသည်။");
+        ctx.answerCbQuery("❌ Error: Data ရှာမတွေ့ပါ။");
     }
 });
 // --- Export ---
