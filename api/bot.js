@@ -328,6 +328,18 @@ bot.action(/confirm_(.+)/, async (ctx) => {
         ctx.answerCbQuery("❌ Error: အတည်ပြု၍ မရပါ။");
     }
 });
+bot.action(/confirm_refund_(.+)/, async (ctx) => {
+    const regId = ctx.match[1];
+    
+    // Database မှာ status ပြောင်းလိုက်မယ်
+    await db.collection("registrations").doc(regId).update({
+        status: "refunded",
+        refund: false
+    });
+
+    // Admin ကို အကြောင်းကြားမယ်
+    ctx.editMessageText(`✅ ID: ${regId} ကို ငွေပြန်အမ်းရန် အတည်ပြုလိုက်ပါပြီ။`);
+});
 // --- Export ---
 module.exports = async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(200).end();

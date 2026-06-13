@@ -63,3 +63,28 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: error.message });
   }
 }
+export default async function handler(req, res) {
+    const { regId, data } = req.body;
+
+    // ၁။ Registration ပုံမှန် Logic (Refund မဟုတ်ရင်)
+    if (!data.isRefund) {
+        // ... (သင်ရေးထားတဲ့ Registration Logic အတိုင်း ထည့်ပါ) ...
+    } 
+    // ၂။ Refund Logic (Refund ဖြစ်ရင်)
+    else {
+        const msg = `⚠️ *Refund Request!*\nID: ${regId} သည် ငွေပြန်အမ်းရန် တောင်းဆိုထားပါသည်။`;
+        await axios.post(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+            chat_id: process.env.REFUND_GROUP_ID,
+            text: msg,
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [[
+                    { text: '🔍 View Detail', callback_data: `view_detail_${regId}` },
+                    { text: '✅ Confirm', callback_data: `confirm_refund_${regId}` },
+                    { text: '❌ Reject', callback_data: `reject_refund_${regId}` }
+                ]]
+            }
+        });
+    }
+    return res.status(200).json({ success: true });
+}

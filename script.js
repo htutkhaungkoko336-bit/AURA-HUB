@@ -950,3 +950,65 @@ function startSpinWheel(winnerName, nameA, nameB, matchId) {
         }, 6500);
     }, 100);
 }
+// Quit ခလုတ်ကို ဖန်တီးပေးမည့် function
+function createQuitButton(containerId, regId) {
+    const container = document.getElementById(containerId);
+    
+    // Quit ခလုတ်အတွက် div တစ်ခုဆောက်မယ်
+    const quitDiv = document.createElement('div');
+    quitDiv.id = 'quit-section';
+    quitDiv.style.marginTop = '20px';
+
+    // Quit ခလုတ်ဆောက်မယ်
+    const quitBtn = document.createElement('button');
+    quitBtn.innerText = 'Quit';
+    quitBtn.className = 'quit-btn'; // CSS မှာ ဒီ class အတွက် design ရေးပေးနိုင်ပါတယ်
+    
+    quitBtn.onclick = async () => {
+        if(confirm("ပွဲစဉ်မှ ထွက်ခွာပြီး Refund တောင်းခံမည်လား?")) {
+            // ၁။ Firebase မှာ refund: true လုပ်မယ်
+            await db.collection("registrations").doc(regId).update({
+                refund: true,
+                status: "pending_refund"
+            });
+
+            // ၂။ Telegram Admin ဆီ Noti ပို့မယ်
+            await fetch('/api/notify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ regId, data: { isRefund: true } })
+            });
+            
+            quitBtn.disabled = true;
+            quitBtn.innerText = "Requested...";
+        }
+    };
+
+    quitDiv.appendChild(quitBtn);
+    container.appendChild(quitDiv);
+}
+useEffect(() => {
+    const unsub = db.collection("registrations").doc(regId)
+        .onSnapshot((doc) => {
+            if (doc.data().status === "refunded") {
+                alert("သင်၏ Refund အတည်ပြုပြီးပါပြီ။ Web မှ ထွက်ခွာပါမည်။");
+                window.location.href = "/login"; // Logout လုပ်ပြီး ပြန်ထွက်သွားမယ်
+            }
+        });
+    return () => unsub();
+}, [regId]);
+
+const handleQuit = async () => {
+    // ၁။ Firebase မှာ refund: true လုပ်မယ်
+    await db.collection("registrations").doc(regId).update({
+        refund: true,
+        status: "pending_refund"
+    });
+
+    // ၂။ Telegram Admin ဆီ Noti ပို့မယ့် API ကို ခေါ်မယ်
+    await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ regId, data: { isRefund: true } })
+    });
+};
