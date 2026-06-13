@@ -16,35 +16,29 @@ export default async function handler(req, res) {
         const { documentId, isRefund, data } = req.body;
         const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
         const REG_GROUP_ID = process.env.REGISTRATION_GROUP_ID;
-        const REFUND_GROUP_ID = "-1003928964996"; // သင့် Refund Group ID
+        const REFUND_GROUP_ID = "-1003928964996";
 
-        // --- ၁။ REFUND REQUEST (Quit လုပ်တဲ့အချိန်) ---
+        // --- Refund Flow ---
         if (isRefund) {
             const doc = await db.collection("registrations").doc(documentId).get();
-            if (!doc.exists) throw new Error("Registration not found");
+            if (!doc.exists) return res.status(404).json({ error: "Registration not found" });
             const d = doc.data();
 
-            const msg = `⚠️ <b>REFUND REQUEST</b>\n\n` +
-                        `🆔 <b>Doc ID:</b> <code>${documentId}</code>\n` +
-                        `👤 <b>Squad:</b> ${d.squadName || d.playerName || 'Solo'}\n` +
-                        `📞 <b>K-Pay:</b> ${d.kpayPhone}\n` +
-                        `💰 <b>Amount:</b> ${d.fee} Ks\n\n` +
-                        `<i>Admin ငွေလွှဲပြီးမှ Confirm ပေးပါ။</i>`;
+            const msg = `⚠️ <b>REFUND REQUEST</b>\n\n🆔 <b>Doc ID:</b> <code>${documentId}</code>\n👤 <b>Squad:</b> ${d.squadName || 'Solo'}\n📞 <b>K-Pay:</b> ${d.kpayPhone}\n💰 <b>Amount:</b> ${d.fee} Ks`;
 
             await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
                 chat_id: REFUND_GROUP_ID,
                 text: msg,
                 parse_mode: 'HTML',
                 reply_markup: {
-                    inline_keyboard: [
-                        [{ text: '✅ Confirm Refund', callback_data: `confirm_refund_${documentId}` }],
-                        [{ text: '🔍 View Detail', callback_data: `view_reg_${documentId}` }]
-                    ]
+                    inline_keyboard: [[
+                        { text: '✅ Confirm Refund', callback_data: `confirm_refund_${documentId}` },
+                        { text: '🔍 View Detail', callback_data: `view_reg_${documentId}` }
+                    ]]
                 }
             });
             return res.status(200).json({ success: true, type: 'refund' });
         }
-
         // --- ၂။ NORMAL REGISTRATION (ပုံမှန်စာရင်းသွင်းခြင်း) ---
         const resubTag = data.isResubmission ? "⚠️ *[Re-submission]*\n" : "";
         const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Yangon', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });

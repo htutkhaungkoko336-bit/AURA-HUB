@@ -633,6 +633,16 @@ function updateMatchCenterUI(doc) {
         quitBtn.style.display = 'none'; // မဟုတ်ရင် ခလုတ်ဖျောက်ထားမယ်
     }
 }
+async function handleQuit(docId) {
+    await fetch('/api/notify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            documentId: docId,
+            isRefund: true // ဤ flag က notify.js ကို Refund group ပို့ခိုင်းပါမယ်
+        })
+    });
+}
 async function showMatchDetail(matchId, teamAName, teamBName) {
     const modal = document.getElementById('match-detail-popup');
     const body = document.getElementById('match-detail-body');
