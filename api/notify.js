@@ -7,7 +7,6 @@ if (!admin.apps.length) {
     credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
   });
 }
-const db = admin.firestore();
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -16,30 +15,37 @@ export default async function handler(req, res) {
 
   try {
     const { regId, data } = req.body;
+    
+    if (!data) {
+        return res.status(400).json({ error: "Request body missing data" });
+    }
+
     const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
     const REGISTRATION_GROUP_ID = process.env.REGISTRATION_GROUP_ID;
 
     // Refund Request လား၊ New Registration လား စစ်ဆေးခြင်း
-    const isRefund = data && data.isRefund === true;
+    const isRefund = data.isRefund === true;
 
     let message = "";
     let inline_keyboard = [];
 
     if (isRefund) {
-        // Refund တောင်းထားရင် Telegram Message ပို့မယ်
+        // Refund Request အတွက်
         message = `⚠️ *Refund Request!*\n\nID: ${regId} သည် ငွေပြန်အမ်းရန် တောင်းဆိုထားပါသည်။`;
         inline_keyboard = [[
             { text: '🔍 View Detail', callback_data: `view_detail_${regId}` },
             { text: '✅ Confirm Refund', callback_data: `confirm_refund_${regId}` }
         ]];
     } else {
-        // New Registration အတွက် (Data ပြည့်စုံအောင် ဆွဲထုတ်ခြင်း)
+        // New Registration အတွက်
         const resubTag = data.isResubmission ? "⚠️ *[Re-submission]*\n" : "";
         const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Yangon' });
         
         let playerDetails = "";
         if (data.mode === "5vs5") {
-            playerDetails = data.players ? data.players.map((p, i) => `${i+1}. ${p.name} (ID: ${p.id})`).join('\n') : "No data";
+            playerDetails = data.players && data.players.length > 0 
+                ? data.players.map((p, i) => `${i+1}. ${p.name} (ID: ${p.id})`).join('\n') 
+                : "No player data";
         } else {
             playerDetails = `Player: ${data.playerName || 'N/A'}\nID: ${data.mlbbId || 'N/A'}`;
         }
@@ -56,13 +62,15 @@ export default async function handler(req, res) {
                   `🖼️ [View Payment Proof](${data.paymentURL || ''})\n` +
                   `🆔 *Reg ID:* ${regId}`;
 
+        // View Detail ခလုတ်ကို New Registration အတွက်ပါ ထည့်ပေးလိုက်ပါတယ်
         inline_keyboard = [[
             { text: '✅ Confirm', callback_data: `regConfirm_${regId}` },
-            { text: '❌ Reject', callback_data: `regReject_${regId}` }
+            { text: '❌ Reject', callback_data: `regReject_${regId}` },
+            { text: '🔍 View Detail', callback_data: `view_detail_${regId}` }
         ]];
     }
 
-    // Telegram ကို ပို့ဆောင်ခြင်း
+    // Telegram API ကို ပို့ဆောင်ခြင်း
     await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         chat_id: REGISTRATION_GROUP_ID,
         text: message,

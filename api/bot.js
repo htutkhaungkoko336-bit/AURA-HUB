@@ -328,49 +328,47 @@ bot.action(/confirm_(.+)/, async (ctx) => {
         ctx.answerCbQuery("❌ Error: အတည်ပြု၍ မရပါ။");
     }
 });
-// Admin Group ထဲမှာ Refund တောင်းဆိုထားတာတွေ့ရင် Confirm လုပ်မယ့် Action
-bot.action(/confirm_refund_(.+)/, async (ctx) => {
+bot.action(/view_detail_(.+)/, async (ctx) => {
     const regId = ctx.match[1];
     
     try {
-        // Firestore ကနေ data အကုန်ပြန်ယူပါ
+        // Firestore မှ အဆိုပါ regId ဖြင့် Document ကို ရှာဖွေပါ
         const doc = await db.collection("registrations").doc(regId).get();
         
         if (!doc.exists) {
-            return ctx.answerCbQuery("Data မရှိပါ။");
+            return ctx.answerCbQuery("❌ Data ရှာမတွေ့ပါ။");
         }
 
         const data = doc.data();
         
-        // အချက်အလက်တွေကို ပြန်ပြပေးမယ်
-        const details = `📋 *User Details*\n` +
-                        `Name: ${data.squadName || data.playerName}\n` +
-                        `Fee: ${data.fee} Ks\n` +
-                        `KPay: ${data.kpayName} (${data.kpayPhone})\n` +
-                        `Status: ${data.status}`;
+        // အချက်အလက်များကို New Registration ပုံစံအတိုင်း ပြန်လည်စီစဉ်ပါ
+        let playerDetails = "";
+        if (data.mode === "5vs5") {
+            playerDetails = data.players ? data.players.map((p, i) => `${i+1}. ${p.name} (ID: ${p.id})`).join('\n') : "No player data";
+        } else {
+            playerDetails = `Player: ${data.playerName || 'N/A'}\nID: ${data.mlbbId || 'N/A'}`;
+        }
 
-        // status ကို ပြောင်းမယ်
-        await db.collection("registrations").doc(regId).update({ status: "refunded" });
-        
-        await ctx.editMessageText(`✅ ${details}\n\nငွေလွှဲပြီးကြောင်း အတည်ပြုလိုက်ပါပြီ။`);
-        ctx.answerCbQuery("Confirmed!");
-        
+        const logoSection = data.squadLogo ? `\n🖼️ [View Squad Logo](${data.squadLogo})` : "";
+
+        const message = `📋 *Registration Detail*\n\n` +
+                        `🎮 *Mode:* ${data.mode || 'N/A'}\n` +
+                        `💰 *Fee:* ${data.fee || 0} Ks\n\n` +
+                        `👤 *Identity:*\n${data.squadName ? `Squad: ${data.squadName}\n${playerDetails}` : playerDetails}\n` +
+                        logoSection + `\n\n` + 
+                        `💳 *Payment Info:*\nName: ${data.kpayName || 'N/A'}\nPhone: ${data.kpayPhone || 'N/A'}\n\n` +
+                        `🖼️ [View Payment Proof](${data.paymentURL || ''})\n` +
+                        `🆔 *Reg ID:* ${regId}`;
+
+        // ပြန်လည်ပြသပေးခြင်း
+        await ctx.reply(message, { parse_mode: 'Markdown' });
+        ctx.answerCbQuery("✅ အချက်အလက်များ တင်ပြပြီးပါပြီ");
+
     } catch (error) {
-        ctx.answerCbQuery("Error ဖြစ်နေပါသည်။");
+        console.error("View Detail Error:", error);
+        ctx.answerCbQuery("❌ Error ဖြစ်ပေါ်နေပါသည်။");
     }
 });
-
-bot.action(/view_detail_(.+)/, async (ctx) => {
-    const regId = ctx.match[1];
-    const doc = await db.collection("registrations").doc(regId).get();
-    
-    if (doc.exists) {
-        const data = doc.data();
-        const msg = `👤 *Full Details*\nSquad: ${data.squadName}\nKPay: ${data.kpayName}\nPhone: ${data.kpayPhone}\nMode: ${data.mode}`;
-        ctx.reply(msg, { parse_mode: 'Markdown' });
-    }
-});
-
 // --- Export ---
 module.exports = async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(200).end();
