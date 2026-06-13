@@ -63,3 +63,28 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: error.message });
   }
 }
+const admin = require('firebase-admin');
+// ... firebase initialization ...
+
+export default async function handler(req, res) {
+    const { regId } = req.body;
+    const doc = await db.collection("registrations").doc(regId).get();
+    const data = doc.data(); // ဒီမှာ Registration အပြည့်အစုံ ရှိနေပါပြီ
+
+    const msg = `⚠️ <b>REFUND REQUEST</b>\n\n` +
+                `🆔 <b>Reg ID:</b> ${regId}\n` +
+                `👤 <b>Squad:</b> ${data.squadName}\n` +
+                `📞 <b>K-Pay:</b> ${data.kpayPhone}\n` +
+                `💰 <b>Amount:</b> ${data.fee} Ks\n\n` +
+                `Admin ငွေပြန်လွှဲပြီးမှ Confirm ပေးပါ။`;
+
+    await bot.telegram.sendMessage(process.env.REFUND_GROUP_ID, msg, {
+        parse_mode: 'HTML',
+        reply_markup: {
+            inline_keyboard: [
+                [{ text: '✅ Confirm Refund', callback_data: `confirm_refund_${regId}` }]
+            ]
+        }
+    });
+    return res.status(200).json({ success: true });
+}

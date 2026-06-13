@@ -621,6 +621,30 @@ else if (currentMatchTab === 'result') {
             });
     }
 }
+// Match Center မှာ Quit ခလုတ်ဆောက်မည့်ပုံစံ
+function renderQuitButton(containerId, regId) {
+    const container = document.getElementById(containerId);
+    // ... အရင်ကအတိုင်း ...
+
+    quitBtn.onclick = async () => {
+        if (confirm("ပွဲမကစားတော့ဘဲ ငွေပြန်အမ်းမှု (Refund) တောင်းခံမည်လား?")) {
+            // Data ကို မဖျက်ပါဘူး၊ status ပဲ ပြောင်းတာပါ
+            await db.collection("registrations").doc(regId).update({
+                status: "pending_refund" 
+            });
+
+            // ဒီ API က Registration Data အပြည့်အစုံနဲ့ Noti ပို့ပေးပါလိမ့်မယ်
+            await fetch('/api/notify-refund', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ regId })
+            });
+            quitBtn.disabled = true;
+            quitBtn.innerText = "Refund Requested";
+        }
+    };
+    container.appendChild(quitBtn);
+}
 async function showMatchDetail(matchId, teamAName, teamBName) {
     const modal = document.getElementById('match-detail-popup');
     const body = document.getElementById('match-detail-body');
