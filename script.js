@@ -253,23 +253,24 @@ async function submitProof() {
     document.getElementById('waiting-msg').style.display = 'block';
     document.getElementById('waiting-msg').innerText = "Processing...";
 
-        try {
-            const paymentURL = await uploadToImgBB(ssFile);
-            let squadLogoURL = sqLogoFile ? await uploadToImgBB(sqLogoFile) : "https://i.ibb.co/4pGm0Zf/default-logo.png";
+    try {
+        const paymentURL = await uploadToImgBB(ssFile);
+        let squadLogoURL = sqLogoFile ? await uploadToImgBB(sqLogoFile) : "https://i.ibb.co/4pGm0Zf/default-logo.png";
 
-            const mode = mapData[currentIndex].mode;
-            let registrationData = {
-                mode: mode,
-                fee: selectedFee,
-                paymentURL: paymentURL,
-                squadLogo: squadLogoURL,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                status: "pending",
-                matchStatus: "none",
-                isResubmission: window.isResubmission,
-                regId: "" // ၁။ ဒီမှာ regId ကို အလွတ် (သို့မဟုတ် null) အနေနဲ့ ထည့်ထားလိုက်ပါ
-            };
-            // Player Data များ
+        const mode = mapData[currentIndex].mode;
+        let registrationData = {
+            mode: mode,
+            fee: selectedFee,
+            paymentURL: paymentURL,
+            squadLogo: squadLogoURL,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            status: "pending",
+            matchStatus: "none",
+            isResubmission: window.isResubmission,
+            regId: "" // ၁။ ဒီမှာ regId ကို အလွတ် (သို့မဟုတ် null) အနေနဲ့ ထည့်ထားလိုက်ပါ
+        };
+
+        // Player Data များ
         if (mode === "5vs5") {
             registrationData.squadName = document.getElementById('squad-name').value;
             registrationData.players = Array.from(document.querySelectorAll('#page-5vs5 .player-row')).map(row => ({
@@ -285,42 +286,31 @@ async function submitProof() {
             registrationData.kpayName = document.getElementById('kpay-name-solo').value;
             registrationData.kpayPhone = document.getElementById('kpay-no-solo').value;
         }
+        let docRefId;
 
-    let docRefId;
-
-        if (window.isResubmission && currentRegId) {
-            await db.collection("registrations").doc(currentRegId).update(registrationData);
-            docRefId = currentRegId;
-        } else {
-            // ၂။ Firestore သို့ အရင် Add လုပ်ပါ
-            const docRef = await db.collection("registrations").add(registrationData);
-            
-            // ၃။ ထွက်လာတဲ့ ID ကို regId field ထဲ ပြန်ထည့်ပါ (Update)
-            await docRef.update({ regId: docRef.id });
-            
-        docRefId = docRef.id;
+            if (window.isResubmission && currentRegId) {
+                await db.collection("registrations").doc(currentRegId).update(registrationData);
+                docRefId = currentRegId;
+            } else {
+                // ၂။ Firestore သို့ အရင် Add လုပ်ပါ
+                const docRef = await db.collection("registrations").add(registrationData);
+                
+                // ၃။ ထွက်လာတဲ့ ID ကို regId field ထဲ ပြန်ထည့်ပါ (Update)
+                await docRef.update({ regId: docRef.id });
+                
+                docRefId = docRef.id;
                 currentRegId = docRefId; 
-            } 
-
-            // ✅ ဤနေရာတွင် localStorage ထဲသို့ သိမ်းပါ
-            localStorage.setItem('regId', docRefId);
-            
-            // ✅ ဤနေရာတွင် Quit & Refund ခလုတ်ကို ပေါ်လာအောင် လုပ်ပါ
-            const refundBtn = document.getElementById('refundBtn');
-            if (refundBtn) {
-                refundBtn.style.display = 'block';
             }
-            // ----------------------------------------
-            
-            // Admin ဆီ Notify ပို့ခြင်း
-            await fetch('/api/notify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    regId: docRefId, 
-                    data: registrationData 
-                })
-            });
+
+        // Admin ဆီ Notify ပို့ခြင်း
+        await fetch('/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                regId: docRefId, 
+                data: registrationData 
+            })
+        });
 
         document.getElementById('waiting-msg').innerText = "Payment ကို Admin မှ စစ်ဆေးနေပါသည်။ ခဏစောင့်ပေးပါ...";
         watchStatus(docRefId);
@@ -331,28 +321,6 @@ async function submitProof() {
         document.getElementById('waiting-msg').style.display = 'none';
     }
 }
-
-// script.js ထဲမှာ
-async function handleQuitAndRefund() {
-    const regId = localStorage.getItem('regId');
-    if (!regId) return alert("မှတ်ပုံတင်ထားခြင်း မရှိပါ။");
-
-    // 1. Database status ကို ပြောင်းပေးပါ
-    await db.collection("registrations").doc(regId).update({ status: "refund_pending" });
-
-    // 2. Telegram Bot ဆီသို့ Admin Notification ပို့ဖို့ API ခေါ်ပါ
-    await fetch('/api/refund-notify', { // ဒီ API အသစ်ကို ဆောက်ရပါမယ်
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ regId: regId })
-    });
-
-    // 3. Auto ထွက်သွားစေရန်
-    localStorage.removeItem('regId');
-    window.location.reload(); // Page ပြန် refresh လုပ်လိုက်ရင် ခလုတ်ပျောက်သွားပြီး ပုံမှန်အတိုင်းဖြစ်သွားမယ်
-}
-
-
 function backToRegistration() {
     document.getElementById('page-payment-proof').style.display = 'none';
     const mode = mapData[currentIndex].mode;
@@ -363,18 +331,8 @@ function backToRegistration() {
     }
 }
 
-window.onload = function() {
-    updateDisplay(); // သင်ရှိပြီးသား function
-    
-    // ခလုတ်ကို ပြန်ပေါ်လာစေရန်
-    const savedRegId = localStorage.getItem('regId');
-    if (savedRegId) {
-        const refundBtn = document.getElementById('refundBtn');
-        if (refundBtn) {
-            refundBtn.style.display = 'block';
-        }
-    }
-};
+window.onload = updateDisplay;
+
 // Live Lobby Preview Function
 function startLobbyListener(fee, mode) {
     const listContainer = document.getElementById(`lobby-list-${mode}`);

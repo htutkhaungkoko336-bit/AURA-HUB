@@ -63,31 +63,3 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: error.message });
   }
 }
-// api/refund-notify.js
-const { Telegraf } = require('telegraf');
-const admin = require('firebase-admin');
-const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN);
-const db = admin.firestore();
-
-export default async function handler(req, res) {
-    const { regId } = req.body;
-    const doc = await db.collection("registrations").doc(regId).get();
-    const data = doc.data();
-
-    const msg = `🚨 <b>REFUND REQUEST</b>\n\n` +
-                `👤 Name: ${data.squadName || data.playerName}\n` +
-                `📞 K-Pay: ${data.kpayPhone}\n` +
-                `💰 Fee: ${data.fee}\n` +
-                `🆔 Reg ID: ${regId}`;
-
-    await bot.telegram.sendMessage(process.env.REFUND_GROUP_ID, msg, {
-        parse_mode: 'HTML',
-        reply_markup: {
-            inline_keyboard: [[
-                { text: '✅ Confirm Refund', callback_data: `confirmRefund_${regId}` },
-                { text: '❌ Reject', callback_data: `rejectRefund_${regId}` }
-            ]]
-        }
-    });
-    res.status(200).send('OK');
-}
