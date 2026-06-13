@@ -178,6 +178,22 @@ function previewLogo(event) {
         reader.readAsDataURL(file);
     }
 }
+// 1vs1 အတွက် Logo Preview Function
+function previewLogo1vs1(event) {
+    const file = event.target.files[0];
+    const output = document.getElementById('logoPreview1vs1');
+    const label = document.getElementById('logoLabel1vs1');
+    
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            output.src = e.target.result;
+            output.style.display = 'block';
+            if (label) label.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    }
+}
 
 // Event Delegator (ပုံကို ပြန်နှိပ်ရင် File Input ပြန်ပွင့်အောင်လုပ်ခြင်း)
 document.body.addEventListener('click', function(e) {

@@ -137,30 +137,44 @@
     </div>
 
     <!-- 5. 1VS1 REGISTRATION PAGE -->
-    <div id="page-1vs1" class="sub-page" style="display: none;">
-        <div class="header-box">
-            <h1>1VS1 SOLO ROOM</h1>
-            <p id="fee-1vs1">Entry Fee: 0 Ks</p>
+<div id="page-1vs1" class="sub-page" style="display: none;">
+    <div class="header-box">
+        <h1>1VS1 SOLO ROOM</h1>
+        <p id="fee-1vs1">Entry Fee: 0 Ks</p>
+    </div>
+    
+    <div class="registration-area">
+        <div class="sq-header" style="justify-content: center; margin-bottom: 20px;">
+            <div class="logo-box">
+                <input type="file" id="sqLogo1vs1" hidden accept="image/*" onchange="previewLogo1vs1(event)">
+                <label for="sqLogo1vs1" id="logoLabel1vs1" style="cursor: pointer;">➕<br>Logo</label>
+                <img id="logoPreview1vs1" src="#" style="display:none; width:100%; height:100%; object-fit:cover; border-radius:50%;">
+            </div>
         </div>
-        <div class="registration-area">
-            <div class="player-row"><input type="text" placeholder="Solo Player Name"><input type="number" placeholder="MLBB ID"></div>
-            <div class="kpay-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                <div class="input-box"><label>K-PAY NAME</label><input type="text" id="kpay-name-solo" placeholder="Name"></div>
-                <div class="input-box"><label>K-PAY PHONE</label><input type="number" id="kpay-no-solo" placeholder="09xxx"></div>
-            </div>
 
-            <!-- RE-ADDED: LOBBY PREVIEW -->
-            <div class="mini-lobby" id="lobby-preview-1vs1">
-                <div class="lobby-header">
-                    <h3 class="lobby-title">LIVE LOBBY</h3>
-                    <span class="lobby-status">● WAITING</span>
-                </div>
-                <div id="lobby-list-1vs1" class="lobby-scroll-container"></div>
+        <div class="player-row">
+            <input type="text" placeholder="Solo Player Name">
+            <input type="number" placeholder="MLBB ID">
+        </div>
+        
+        <div class="kpay-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+            <div class="input-box"><label>K-PAY NAME</label><input type="text" id="kpay-name-solo" placeholder="Name"></div>
+            <div class="input-box"><label>K-PAY PHONE</label><input type="number" id="kpay-no-solo" placeholder="09xxx"></div>
+        </div>
+
+        <button class="rule-btn gold-btn" style="margin-top: 20px; width: 100%;" onclick="goToPayment()">Confirm & Pay</button>
+        
+        <button class="rule-btn" onclick="leaveRoom()" style="margin-top: 10px; width: 100%;">Back to Selection</button> 
+        
+        <div class="mini-lobby" id="lobby-preview-1vs1" style="margin-top: 20px;">
+            <div class="lobby-header">
+                <h3 class="lobby-title">LIVE LOBBY</h3>
+                <span class="lobby-status">● WAITING</span>
             </div>
-            <button class="rule-btn" onclick="leaveRoom()" style="margin-top: 10px;">Back to Selection</button> 
+            <div id="lobby-list-1vs1" class="lobby-scroll-container"></div>
         </div>
     </div>
-
+</div>
 <!-- 6. FINAL PAYMENT PROOF PAGE (Medium Size & Side-by-Side) -->
 <div id="page-payment-proof" class="sub-page" style="display: none; flex-direction: column; align-items: center;">
     <div class="header-box" style="margin-bottom: 15px;">
