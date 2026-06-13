@@ -264,10 +264,9 @@ async function submitProof() {
             paymentURL: paymentURL,
             squadLogo: squadLogoURL,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            status: "pending",
+            status: "pending", // Resubmit လုပ်ရင်လည်း status ကို pending ပြန်လုပ်မယ်
             matchStatus: "none",
-            isResubmission: window.isResubmission,
-            regId: "" // ၁။ ဒီမှာ regId ကို အလွတ် (သို့မဟုတ် null) အနေနဲ့ ထည့်ထားလိုက်ပါ
+            isResubmission: window.isResubmission
         };
 
         // Player Data များ
@@ -286,22 +285,19 @@ async function submitProof() {
             registrationData.kpayName = document.getElementById('kpay-name-solo').value;
             registrationData.kpayPhone = document.getElementById('kpay-no-solo').value;
         }
+
         let docRefId;
 
-            if (window.isResubmission && currentRegId) {
-                await db.collection("registrations").doc(currentRegId).update(registrationData);
-                docRefId = currentRegId;
-            } else {
-                // ၂။ Firestore သို့ အရင် Add လုပ်ပါ
-                const docRef = await db.collection("registrations").add(registrationData);
-                
-                // ၃။ ထွက်လာတဲ့ ID ကို regId field ထဲ ပြန်ထည့်ပါ (Update)
-                await docRef.update({ regId: docRef.id });
-                
-                docRefId = docRef.id;
-                currentRegId = docRefId; 
-            }
-
+        // Logic: Resubmit ဆိုရင် update, အသစ်ဆိုရင် add
+        if (window.isResubmission && currentRegId) {
+            await db.collection("registrations").doc(currentRegId).update(registrationData);
+            docRefId = currentRegId;
+        } else {
+            const docRef = await db.collection("registrations").add(registrationData);
+            docRefId = docRef.id;
+            currentRegId = docRefId; // နောက်တစ်ခါအတွက် ID ကို မှတ်ထားမယ်
+        }
+        
         // Admin ဆီ Notify ပို့ခြင်း
         await fetch('/api/notify', {
             method: 'POST',
@@ -320,26 +316,6 @@ async function submitProof() {
         document.getElementById('submit-btn').style.display = 'block';
         document.getElementById('waiting-msg').style.display = 'none';
     }
-}
-
-// --- Status စောင့်ကြည့်ခြင်း (watchStatus function ထဲတွင်ထည့်ရန်) ---
-function watchStatus(docId) {
-    db.collection("registrations").doc(docId).onSnapshot((doc) => {
-        if (!doc.exists) return;
-        const data = doc.data();
-
-        // Admin က Refund ကို Confirm လုပ်လိုက်ရင်
-        if (data.status === "refunded") {
-            alert("သင့်ငွေသားကို Admin မှ လွှဲပြီးပါပြီ။");
-            window.close(); // Browser ပိတ်ခြင်း
-            window.location.href = "about:blank"; // ပိတ်မရရင် အခြား page တစ်ခုကို ခေါ်ထုတ်ခြင်း
-        }
-        
-        // ... (သင်ရေးထားတဲ့ confirm/reject logic များ ဒီအောက်မှာ ဆက်ရှိပါမယ်)
-        if (data.status === "confirm") {
-             // ... existing confirm logic
-        }
-    });
 }
 function backToRegistration() {
     document.getElementById('page-payment-proof').style.display = 'none';
@@ -973,53 +949,4 @@ function startSpinWheel(winnerName, nameA, nameB, matchId) {
             }, 2000);
         }, 6500);
     }, 100);
-}
-async function handleExitRequest() {
-    if (!currentRegId) {
-        alert("Registration ID မရှိပါ။");
-        return;
-    }
-
-    const confirmExit = confirm("သင် ဝဘ်ဆိုက်မှ ထွက်ခွာရန် သေချာပါသလား?");
-    if (confirmExit) {
-        const newRoomBtn = document.getElementById('new-room-btn');
-        const exitBtn = document.getElementById('exit-btn');
-        
-        if (newRoomBtn) newRoomBtn.disabled = true;
-        if (exitBtn) exitBtn.disabled = true;
-
-        try {
-            // ၁။ refund_requests collection အသစ်ထဲသို့ Data ထည့်ခြင်း
-            // originalDocId အနေနဲ့ လက်ရှိ currentRegId ကို သိမ်းထားမယ်
-            await db.collection("refund_requests").doc(currentRegId).set({
-                regId: currentRegId, // ID ကို field အနေနဲ့လည်း ထည့်ထားမယ်
-                originalDocId: currentRegId, 
-                status: "pending",
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            // ၂။ registrations collection ထဲက status ကိုလည်း အပ်ဒိတ်လုပ်မယ်
-            await db.collection("registrations").doc(currentRegId).update({
-                status: "refund"
-            });
-
-            // ၃။ Admin ဆီသို့ Notify ပို့ခြင်း
-            await fetch('/api/notify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    regId: currentRegId, 
-                    data: { isRefund: true } 
-                })
-            });
-
-            alert("Refund တောင်းဆိုမှု ပို့ပြီးပါပြီ။ Admin အတည်ပြုသည်အထိ ခဏစောင့်ပေးပါ။");
-        } catch (error) {
-            console.error("Error creating refund request:", error);
-            alert("Error ဖြစ်သွားပါသည်။");
-            // အဆင်မပြေရင် ခလုတ်တွေကို ပြန်ဖွင့်ပေးနိုင်ပါတယ်
-            if (newRoomBtn) newRoomBtn.disabled = false;
-            if (exitBtn) exitBtn.disabled = false;
-        }
-    }
 }
