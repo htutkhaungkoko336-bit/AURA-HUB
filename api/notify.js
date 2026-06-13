@@ -1,43 +1,45 @@
 const axios = require('axios');
+const admin = require('firebase-admin');
+
+// Firebase Admin ကို တစ်ကြိမ်ပဲ Initialize လုပ်ပါ
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
+  });
+}
+const db = admin.firestore();
 
 export default async function handler(req, res) {
-  // POST method မဟုတ်ရင် ပိတ်ထားပါမယ်
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
 
   try {
     const { regId, data } = req.body;
-    
-    // Data မပါလာရင် Error ပြပါမယ်
-    if (!data) {
-        return res.status(400).json({ error: "Request body missing data" });
-    }
-
     const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
     const REGISTRATION_GROUP_ID = process.env.REGISTRATION_GROUP_ID;
 
-    // Refund Request လား၊ New Registration လား ခွဲခြားခြင်း
-    const isRefund = data.isRefund === true;
+    // Refund Request လား၊ New Registration လား စစ်ဆေးခြင်း
+    const isRefund = data && data.isRefund === true;
 
     let message = "";
     let inline_keyboard = [];
 
     if (isRefund) {
-        // Refund Request အတွက် (Admin ကို အသိပေးခြင်း)
+        // Refund တောင်းထားရင် Telegram Message ပို့မယ်
         message = `⚠️ *Refund Request!*\n\nID: ${regId} သည် ငွေပြန်အမ်းရန် တောင်းဆိုထားပါသည်။`;
-        inline_keyboard = [[{ text: '✅ Confirm Refund', callback_data: `confirm_refund_${regId}` }]];
+        inline_keyboard = [[
+            { text: '🔍 View Detail', callback_data: `view_detail_${regId}` },
+            { text: '✅ Confirm Refund', callback_data: `confirm_refund_${regId}` }
+        ]];
     } else {
-        // New Registration အတွက်
+        // New Registration အတွက် (Data ပြည့်စုံအောင် ဆွဲထုတ်ခြင်း)
         const resubTag = data.isResubmission ? "⚠️ *[Re-submission]*\n" : "";
         const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Yangon' });
         
         let playerDetails = "";
         if (data.mode === "5vs5") {
-            // Players array ထဲက အချက်အလက်များ
-            playerDetails = data.players && data.players.length > 0 
-                ? data.players.map((p, i) => `${i+1}. ${p.name} (ID: ${p.id})`).join('\n') 
-                : "No player data";
+            playerDetails = data.players ? data.players.map((p, i) => `${i+1}. ${p.name} (ID: ${p.id})`).join('\n') : "No data";
         } else {
             playerDetails = `Player: ${data.playerName || 'N/A'}\nID: ${data.mlbbId || 'N/A'}`;
         }
@@ -60,7 +62,7 @@ export default async function handler(req, res) {
         ]];
     }
 
-    // Telegram API ကို ပို့ဆောင်ခြင်း
+    // Telegram ကို ပို့ဆောင်ခြင်း
     await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         chat_id: REGISTRATION_GROUP_ID,
         text: message,

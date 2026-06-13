@@ -332,17 +332,45 @@ bot.action(/confirm_(.+)/, async (ctx) => {
 bot.action(/confirm_refund_(.+)/, async (ctx) => {
     const regId = ctx.match[1];
     
-    // Status ကို refunded လို့ ပြောင်းလိုက်ရင် User ဘက်က watchStatus က alert တက်လာမယ်
-    await db.collection("registrations").doc(regId).update({ 
-        status: "refunded" 
-    });
-    
-    await ctx.editMessageText("✅ User ကို ငွေလွှဲပြီးကြောင်း အတည်ပြုလိုက်ပါပြီ။");
-    ctx.answerCbQuery("Confirmed!");
+    try {
+        // Firestore ကနေ data အကုန်ပြန်ယူပါ
+        const doc = await db.collection("registrations").doc(regId).get();
+        
+        if (!doc.exists) {
+            return ctx.answerCbQuery("Data မရှိပါ။");
+        }
+
+        const data = doc.data();
+        
+        // အချက်အလက်တွေကို ပြန်ပြပေးမယ်
+        const details = `📋 *User Details*\n` +
+                        `Name: ${data.squadName || data.playerName}\n` +
+                        `Fee: ${data.fee} Ks\n` +
+                        `KPay: ${data.kpayName} (${data.kpayPhone})\n` +
+                        `Status: ${data.status}`;
+
+        // status ကို ပြောင်းမယ်
+        await db.collection("registrations").doc(regId).update({ status: "refunded" });
+        
+        await ctx.editMessageText(`✅ ${details}\n\nငွေလွှဲပြီးကြောင်း အတည်ပြုလိုက်ပါပြီ။`);
+        ctx.answerCbQuery("Confirmed!");
+        
+    } catch (error) {
+        ctx.answerCbQuery("Error ဖြစ်နေပါသည်။");
+    }
 });
 
-// notify.js ကပို့တဲ့ msg ထဲမှာ Refund ဖြစ်ရင် ဒီခလုတ်လေးပါအောင် ပြင်ပေးပါ
-// bot.action(/regConfirm_(.+)/, ... ) နေရာမှာ logic ခွဲရေးပေးပါ
+bot.action(/view_detail_(.+)/, async (ctx) => {
+    const regId = ctx.match[1];
+    const doc = await db.collection("registrations").doc(regId).get();
+    
+    if (doc.exists) {
+        const data = doc.data();
+        const msg = `👤 *Full Details*\nSquad: ${data.squadName}\nKPay: ${data.kpayName}\nPhone: ${data.kpayPhone}\nMode: ${data.mode}`;
+        ctx.reply(msg, { parse_mode: 'Markdown' });
+    }
+});
+
 // --- Export ---
 module.exports = async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(200).end();
