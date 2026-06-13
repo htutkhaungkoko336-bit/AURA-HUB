@@ -621,6 +621,18 @@ else if (currentMatchTab === 'result') {
             });
     }
 }
+// သင့်မှာရှိပြီးသား Match Center ပြတဲ့ function ထဲမှာ
+function updateMatchCenterUI(doc) {
+    const data = doc.data();
+    const quitBtn = document.getElementById('quit-btn');
+
+    if (data.status === 'confirm') {
+        document.getElementById('page-match-center').style.display = 'flex';
+        quitBtn.style.display = 'block'; // Confirm ဖြစ်ရင် ခလုတ်ပြမယ်
+    } else {
+        quitBtn.style.display = 'none'; // မဟုတ်ရင် ခလုတ်ဖျောက်ထားမယ်
+    }
+}
 async function showMatchDetail(matchId, teamAName, teamBName) {
     const modal = document.getElementById('match-detail-popup');
     const body = document.getElementById('match-detail-body');
