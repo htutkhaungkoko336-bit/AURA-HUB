@@ -329,31 +329,27 @@ bot.action(/confirm_(.+)/, async (ctx) => {
     }
 });
 bot.action(/view_detail_(.+)/, async (ctx) => {
-    const rawId = ctx.match[1].trim(); 
-    console.log("Searching for ID:", rawId); 
-
+    const regId = ctx.match[1].trim(); // ဒီနေရာမှာ လက်ခံရရှိတဲ့ ID (ဥပမာ- REG_001)
+    
     try {
-        let targetId = rawId;
+        console.log("Searching for registration with regId:", regId);
 
-        // ၁။ Refund_requests ထဲမှာ အရင်ရှာပါ
-        const refundDoc = await db.collection("refund_requests").doc(rawId).get();
+        // Document ID မဟုတ်တော့တဲ့အတွက် where clause ကိုသုံးပါမယ်
+        const snapshot = await db.collection("registrations")
+                                 .where("regId", "==", regId)
+                                 .limit(1)
+                                 .get();
         
-        if (refundDoc.exists) {
-            // အကယ်၍ Refund ဖြစ်နေရင် သူကိုးကားထားတဲ့ originalDocId ကို ယူမယ်
-            targetId = refundDoc.data().originalDocId;
-            console.log("Found in refund_requests, originalDocId is:", targetId);
+        if (snapshot.empty) {
+            console.log("No registration found with regId:", regId);
+            return ctx.answerCbQuery("❌ Data မရှိပါ။");
         }
 
-        // ၂။ Registrations ထဲမှာ အဲဒီ ID နဲ့ ရှာပါ
-        const regDoc = await db.collection("registrations").doc(targetId).get();
+        // Snapshot ထဲက ပထမဆုံး document ကို ယူမယ်
+        const doc = snapshot.docs[0];
         
-        if (!regDoc.exists) {
-            console.log("ID မရှိပါ:", targetId);
-            return ctx.answerCbQuery("❌ Data မရှိပါ။ (ID မှားယွင်းနေသည်)");
-        }
-
-        // ၃။ Data တွေ့ရင် Detail ပြမယ်
-        await sendDetailMessage(ctx, regDoc.data(), targetId);
+        // Data တွေ့ရင် Detail Message ပို့မယ်
+        await sendDetailMessage(ctx, doc.data(), regId);
 
     } catch (error) {
         console.error("View Detail Error:", error);
