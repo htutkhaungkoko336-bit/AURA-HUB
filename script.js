@@ -300,12 +300,12 @@ async function submitProof() {
         
         // Admin ဆီ Notify ပို့ခြင်း
         await fetch('/api/notify', {
-            method: 'POST',
+method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                regId: docRefId, 
-                data: registrationData 
-            })
+            body: JSON.stringify({
+                action: 'register', // action ကို သေချာထည့်ပါ
+                regId: docRefId,
+                data: registrationData            })
         });
 
         document.getElementById('waiting-msg').innerText = "Payment ကို Admin မှ စစ်ဆေးနေပါသည်။ ခဏစောင့်ပေးပါ...";
