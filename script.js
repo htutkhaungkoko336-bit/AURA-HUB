@@ -952,14 +952,19 @@ function startSpinWheel(winnerName, nameA, nameB, matchId) {
 }
 
 async function quitMatch() {
-    if (!myTeamInfo || !myTeamInfo.id) {
-        alert("Registration အချက်အလက် မတွေ့ရှိပါ။");
-        return;
-    }
-
-    if (confirm("သင်သေချာပေါက် Quit လိုပါသလား? Quit လိုက်ပါက သင်၏ ပြိုင်ပွဲဝင်ခွင့် ပျက်ပြယ်သွားပါမည်။")) {
+    if (confirm("သင်သေချာပေါက် Quit လိုပါသလား?")) {
         try {
-            // ၁။ API ကို Quit Notification ပို့ခြင်း
+            // ၁။ အချက်အလက်အစုံကို Quitted Collection ဆီ အသစ်ထည့်မယ် (Move to archive)
+            await db.collection("quitted_users").doc(myTeamInfo.id).set({
+                ...myTeamInfo,
+                quitTimestamp: new Date(), // Quit လုပ်တဲ့အချိန် မှတ်ထားမယ်
+                originalRegId: myTeamInfo.id
+            });
+
+            // ၂။ မူလ Registration ထဲကနေ ဖျက်မယ်
+            await db.collection("registrations").doc(myTeamInfo.id).delete();
+
+            // ၃။ API notification ပို့မယ်
             await fetch('/api/notify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -970,14 +975,10 @@ async function quitMatch() {
                 })
             });
 
-            // ၂။ Firebase ထဲမှ Registration ကို ဖျက်ခြင်း
-            await db.collection("registrations").doc(myTeamInfo.id).delete();
-
             alert("အောင်မြင်စွာ Quit လုပ်ပြီးပါပြီ။");
-            window.location.reload(); 
+            window.location.reload();
         } catch (error) {
-            console.error("Error quitting:", error);
-            alert("Quit လုပ်ရာတွင် အမှားအယွင်းရှိနေပါသည်။");
+            console.error("Error moving data:", error);
         }
     }
 }
