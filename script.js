@@ -642,26 +642,29 @@ function showQuitButton(regId) {
     quitBtn.style.borderRadius = '5px';
     quitBtn.style.cursor = 'pointer';
 
+// Quit ခလုတ် နှိပ်လိုက်သောအခါ
     quitBtn.onclick = async () => {
         if (confirm("ပွဲစဉ်မှ ထွက်ခွာပြီး Refund တောင်းခံမည်လား?")) {
-            // ၁။ Database မှာ pending_refund လို့ အမှတ်အသားပြုမယ်
-            await db.collection("registrations").doc(regId).update({
+            const docId = myTeamInfo.id; // Firebase Document ID
+
+            // ၁။ Status ပြောင်းမယ်
+            await db.collection("registrations").doc(docId).update({
                 status: "pending_refund"
             });
 
-            // ၂။ Admin ဆီ Notify ပို့မယ် (Registration Data အကုန်ပါပြီးသားမို့ regId ပဲ ပို့ရင်ရပြီ)
+            // ၂။ API သို့ documentId ကိုပို့မယ်
             await fetch('/api/notify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ regId, isRefund: true })
+                body: JSON.stringify({ 
+                    documentId: docId, 
+                    isRefund: true 
+                })
             });
-
-            alert("Refund တောင်းဆိုမှု ပို့ပြီးပါပြီ။ Admin ငွေလွှဲပေးသည်အထိ စောင့်ပါ။");
-            quitBtn.disabled = true;
-            quitBtn.innerText = "Request Sent";
+            
+            alert("Refund တောင်းဆိုမှု ပို့ပြီးပါပြီ။");
         }
-    };
-    
+    };    
     container.appendChild(quitBtn);
 }
 

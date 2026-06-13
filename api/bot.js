@@ -329,16 +329,16 @@ bot.action(/confirm_(.+)/, async (ctx) => {
     }
 });
 bot.action(/confirm_refund_(.+)/, async (ctx) => {
-    const regId = ctx.match[1];
+    const docId = ctx.match[1]; // Telegram ကနေ ပြန်ရလာတဲ့ Document ID
     
-    // Status ကို refunded ပြောင်းလိုက်ရင် Frontend က onSnapshot နဲ့ သိပြီး logout ဖြစ်သွားမယ်
-    await db.collection("registrations").doc(regId).update({
+    // Document ID ကို သုံးပြီး update လုပ်မယ်
+    await db.collection("registrations").doc(docId).update({
         status: "refunded"
     });
 
-    ctx.editMessageText(`✅ ID: ${regId} အတွက် Refund အတည်ပြုပြီးပါပြီ။`);
+    ctx.editMessageText(`✅ ID: ${docId} အတွက် Refund အတည်ပြုပြီးပါပြီ။`);
 });
-// --- Export ---
+
 module.exports = async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(200).end();
 
