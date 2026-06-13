@@ -10,46 +10,47 @@ export default async function handler(req, res) {
     const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
     const REGISTRATION_GROUP_ID = process.env.REGISTRATION_GROUP_ID;
 
-    // ၁။ Re-submission Tag (စစ်ဆေးခြင်း)
-    const resubTag = data.isResubmission ? "⚠️ *[Re-submission]*\n" : "";
+    // Refund Request လား၊ New Registration လား ခွဲခြားခြင်း
+    const isRefund = data.isRefund === true;
 
-    const timestamp = new Date().toLocaleString('en-US', { 
-        timeZone: 'Asia/Yangon',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true 
-    });
+    let message = "";
+    let inline_keyboard = [];
 
-    // ၂။ Player Details
-    let playerDetails = "";
-    if (data.mode === "5vs5") {
-        playerDetails = data.players.map((p, i) => `${i+1}. ${p.name} (ID: ${p.id})`).join('\n');
+    if (isRefund) {
+        // Refund Request အတွက်
+        message = `⚠️ *Refund Request!*\n\nID: ${regId} သည် ငွေပြန်အမ်းရန် တောင်းဆိုထားပါသည်။`;
+        inline_keyboard = [[{ text: '✅ Confirm Refund', callback_data: `confirm_refund_${regId}` }]];
     } else {
-        playerDetails = `Player: ${data.playerName}\nID: ${data.mlbbId}`;
+        // New Registration အတွက် (သင်ရေးထားတဲ့ မူလ Logic)
+        const resubTag = data.isResubmission ? "⚠️ *[Re-submission]*\n" : "";
+        const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Yangon' });
+        
+        let playerDetails = "";
+        if (data.mode === "5vs5") {
+            playerDetails = data.players.map((p, i) => `${i+1}. ${p.name} (ID: ${p.id})`).join('\n');
+        } else {
+            playerDetails = `Player: ${data.playerName}\nID: ${data.mlbbId}`;
+        }
+
+        const logoSection = data.squadLogo ? `\n🖼️ [View Squad Logo](${data.squadLogo})` : "";
+
+        message = `${resubTag}🔔 *New Registration Received!*\n\n` +
+                  `🕒 *Time:* ${timestamp}\n` +
+                  `🎮 *Mode:* ${data.mode}\n` +
+                  `💰 *Fee:* ${data.fee} Ks\n\n` +
+                  `👤 *Identity:*\n${data.squadName ? `Squad: ${data.squadName}\n${playerDetails}` : playerDetails}\n` +
+                  logoSection + `\n\n` + 
+                  `💳 *Payment Info:*\nName: ${data.kpayName}\nPhone: ${data.kpayPhone}\n\n` +
+                  `🖼️ [View Payment Proof](${data.paymentURL})\n` +
+                  `🆔 *Reg ID:* ${regId}`;
+
+        inline_keyboard = [[
+            { text: '✅ Confirm', callback_data: `regConfirm_${regId}` },
+            { text: '❌ Reject', callback_data: `regReject_${regId}` }
+        ]];
     }
 
-    // ၃။ Squad Logo လင့်ခ်ရှိရင် ထည့်ရန်
-    const logoSection = data.squadLogo ? `\n🖼️ [View Squad Logo](${data.squadLogo})` : "";
-
-    // ၄။ မက်ဆေ့ချ် ပုံစံ (resubTag ကို ထိပ်ဆုံးမှာ ထည့်သွင်းထားပါတယ်)
-    const message = `${resubTag}🔔 *New Registration Received!*\n\n` +
-                    `🕒 *Time:* ${timestamp}\n` +
-                    `🎮 *Mode:* ${data.mode}\n` +
-                    `💰 *Fee:* ${data.fee} Ks\n\n` +
-                    `👤 *Identity:*\n${data.squadName ? `Squad: ${data.squadName}\n${playerDetails}` : playerDetails}\n` +
-                    logoSection + `\n\n` + 
-                    `💳 *Payment Info:*\nName: ${data.kpayName}\nPhone: ${data.kpayPhone}\n\n` +
-                    `🖼️ [View Payment Proof](${data.paymentURL})\n` +
-                    `🆔 *Reg ID:* ${regId}`;
-
-    const inline_keyboard = [[
-        { text: '✅ Confirm', callback_data: `regConfirm_${regId}` },
-        { text: '❌ Reject', callback_data: `regReject_${regId}` }
-    ]];
-
+    // Telegram ကို ပို့ဆောင်ခြင်း
     await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         chat_id: REGISTRATION_GROUP_ID,
         text: message,
@@ -58,17 +59,9 @@ export default async function handler(req, res) {
     });
 
     return res.status(200).json({ success: true });
+
   } catch (error) {
     console.error("Error in notify API:", error);
     return res.status(500).json({ error: error.message });
   }
 }
-// ... existing code
-const message = data.isRefund ? 
-    `⚠️ *Refund Request!*\n\nID: ${regId} သည် ငွေပြန်အမ်းရန် တောင်းဆိုထားပါသည်။` :
-    `🔔 *New Registration Received!* ...`; // မူလ message
-
-const inline_keyboard = data.isRefund ? 
-    [[{ text: '✅ Confirm Refund', callback_data: `confirm_refund_${regId}` }]] :
-    [[{ text: '✅ Confirm', callback_data: `regConfirm_${regId}` }, { text: '❌ Reject', callback_data: `regReject_${regId}` }]];
-// ...
