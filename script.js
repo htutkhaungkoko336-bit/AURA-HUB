@@ -298,18 +298,29 @@ async function submitProof() {
             // ၃။ ထွက်လာတဲ့ ID ကို regId field ထဲ ပြန်ထည့်ပါ (Update)
             await docRef.update({ regId: docRef.id });
             
-            docRefId = docRef.id;
-            currentRegId = docRefId; 
-        }        
-        // Admin ဆီ Notify ပို့ခြင်း
-        await fetch('/api/notify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                regId: docRefId, 
-                data: registrationData 
-            })
-        });
+        docRefId = docRef.id;
+                currentRegId = docRefId; 
+            } 
+
+            // ✅ ဤနေရာတွင် localStorage ထဲသို့ သိမ်းပါ
+            localStorage.setItem('regId', docRefId);
+            
+            // ✅ ဤနေရာတွင် Quit & Refund ခလုတ်ကို ပေါ်လာအောင် လုပ်ပါ
+            const refundBtn = document.getElementById('refundBtn');
+            if (refundBtn) {
+                refundBtn.style.display = 'block';
+            }
+            // ----------------------------------------
+            
+            // Admin ဆီ Notify ပို့ခြင်း
+            await fetch('/api/notify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    regId: docRefId, 
+                    data: registrationData 
+                })
+            });
 
         document.getElementById('waiting-msg').innerText = "Payment ကို Admin မှ စစ်ဆေးနေပါသည်။ ခဏစောင့်ပေးပါ...";
         watchStatus(docRefId);
@@ -321,13 +332,10 @@ async function submitProof() {
     }
 }
 
-// Frontend (script.js) အတွက် နမူနာ
+// handleQuitAndRefund function ထဲမှာ
 async function handleQuitAndRefund() {
-    const regId = localStorage.getItem('regId'); // သင့်မှာ ရှိပြီးသား key
-    if (!regId) {
-        alert("မှတ်ပုံတင်ထားခြင်း မရှိသေးပါ။");
-        return;
-    }
+    const regId = localStorage.getItem('regId');
+    if (!regId) return;
 
     const response = await fetch('/api/refund', {
         method: 'POST',
@@ -337,11 +345,15 @@ async function handleQuitAndRefund() {
 
     if (response.ok) {
         alert("Refund တောင်းဆိုမှု အောင်မြင်ပါသည်။");
+        
+        // ✅ Refund ပြီးသွားရင် ခလုတ်ကို ပြန်ဖျောက်ပေးပါ
+        localStorage.removeItem('regId');
+        document.getElementById('refundBtn').style.display = 'none';
+        
     } else {
         alert("Error ဖြစ်နေပါသည်။");
     }
 }
-
 
 function backToRegistration() {
     document.getElementById('page-payment-proof').style.display = 'none';
@@ -353,8 +365,18 @@ function backToRegistration() {
     }
 }
 
-window.onload = updateDisplay;
-
+window.onload = function() {
+    updateDisplay(); // သင်ရှိပြီးသား function
+    
+    // ခလုတ်ကို ပြန်ပေါ်လာစေရန်
+    const savedRegId = localStorage.getItem('regId');
+    if (savedRegId) {
+        const refundBtn = document.getElementById('refundBtn');
+        if (refundBtn) {
+            refundBtn.style.display = 'block';
+        }
+    }
+};
 // Live Lobby Preview Function
 function startLobbyListener(fee, mode) {
     const listContainer = document.getElementById(`lobby-list-${mode}`);
