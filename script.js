@@ -476,28 +476,32 @@ function decreaseLimit() {
     }
 }
 function loadMatchRooms() {
-    const container = document.getElementById('match-content');
+const container = document.getElementById('match-content');
     const createRoomBtn = document.querySelector('.create-room-card');
+    const quitBtn = document.getElementById('quit-btn'); // Quit ခလုတ်ကို ရယူခြင်း
     
     if (!container) return;
     
-    // အရေးကြီးဆုံး: အရင်နားထောင်နေတဲ့ Listener ကို ပိတ်မှ နောက်တစ်ခုကို စလို့ရမယ်
+    // ၁။ Listener ပိတ်ရန်
     if (currentListener) {
         currentListener();
         currentListener = null;
     }
 
-    // Create Room ခလုတ် ဖျောက်ရန်/ပြရန်
+    // ၂။ ခလုတ်များ စီမံခြင်း (Create Room & Quit)
     if (createRoomBtn) {
+        // Playing သို့မဟုတ် Result tab ဖြစ်လျှင် ဖျောက်မည်
         if (currentMatchTab === 'playing' || currentMatchTab === 'result') {
             createRoomBtn.style.display = 'none';
+            if (quitBtn) quitBtn.style.display = 'none';
         } else {
+            // Waiting tab ဖြစ်လျှင် ပြမည်
             createRoomBtn.style.display = 'block';
+            if (quitBtn) quitBtn.style.display = 'block';
         }
     }
 
     container.innerHTML = '<p style="text-align:center; color:#444; font-size:0.8rem;">Loading...</p>';
-
     // --- PLAYING TAB ---
     if (currentMatchTab === 'playing') {
         currentListener = db.collection("matches")
