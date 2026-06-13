@@ -594,49 +594,54 @@ else if (currentMatchTab === 'result') {
         });
 }
 //  WAITING TAB ---
-    else {
-        if (!myTeamInfo || !myTeamInfo.fee) return;
-        
-        currentListener = db.collection("registrations")
-            .where("fee", "==", Number(myTeamInfo.fee))
-            .where("status", "==", "confirm")
-            .where("matchStatus", "==", "waiting")
-            .onSnapshot((querySnapshot) => {
-                container.innerHTML = "";
-                if (querySnapshot.empty) {
-                    container.innerHTML = `<p style="text-align:center; color:#333; margin-top:30px; font-size:0.8rem;">No entries in waiting room.</p>`;
-                    return;
-                }
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    const isMyTeam = doc.id === myTeamInfo.id;
-                    const name = data.mode === "5vs5" ? data.squadName : data.playerName;
-                    const actionUI = isMyTeam
-                        ? `<button class="cancel-room-btn" onclick="cancelMyRoom()" style="background:#cc0000; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:0.7rem; cursor:pointer; font-weight:bold;">CANCEL</button>`
-                        : `<button class="plus-join-btn" onclick="challengeTeam('${doc.id}')" style="background:#c9a66b; border:none; padding:5px 10px; border-radius:4px; font-weight:bold;">+</button>`;
-                    
-                    container.innerHTML += `
-                    <div class="match-card" style="${isMyTeam ? 'border: 1px solid #c9a66b; background: rgba(201,166,107,0.05);' : 'border: 1px solid #333;'} margin-bottom:10px;">
-                        <div class="match-header">
-                            <span>💰 ${data.fee}ks.</span>
-                            <span style="opacity:0.7; font-size: 10px;">${data.mode}</span>
+// --- WAITING TAB ---
+else {
+    // အရေးကြီးဆုံး: myTeamInfo ထဲမှာ mode ပါလာပြီလို့ ယူဆပါတယ်။ 
+    // မပါရင်လည်း မှန်ကန်တဲ့ mode ကို ထည့်ပေးထားပါ။
+    if (!myTeamInfo || !myTeamInfo.fee || !myTeamInfo.mode) return; 
+    
+    currentListener = db.collection("registrations")
+        .where("fee", "==", Number(myTeamInfo.fee))
+        .where("mode", "==", myTeamInfo.mode) // ဒီမှာ mode ကို check လုပ်ပေးလိုက်ပါ
+        .where("status", "==", "confirm")
+        .where("matchStatus", "==", "waiting")
+        .onSnapshot((querySnapshot) => {
+            container.innerHTML = "";
+            if (querySnapshot.empty) {
+                container.innerHTML = `<p style="text-align:center; color:#333; margin-top:30px; font-size:0.8rem;">No entries in waiting room for this mode.</p>`;
+                return;
+            }
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                const isMyTeam = doc.id === myTeamInfo.id;
+                
+                // တူညီတဲ့ mode ဖြစ်မှသာ ပေါ်လာအောင် Logic အတည်ပြုခြင်း
+                const name = data.mode === "5vs5" ? data.squadName : data.playerName;
+                const actionUI = isMyTeam
+                    ? `<button class="cancel-room-btn" onclick="cancelMyRoom()" style="background:#cc0000; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:0.7rem; cursor:pointer; font-weight:bold;">CANCEL</button>`
+                    : `<button class="plus-join-btn" onclick="challengeTeam('${doc.id}')" style="background:#c9a66b; border:none; padding:5px 10px; border-radius:4px; font-weight:bold;">+</button>`;
+                
+                container.innerHTML += `
+                <div class="match-card" style="${isMyTeam ? 'border: 1px solid #c9a66b; background: rgba(201,166,107,0.05);' : 'border: 1px solid #333;'} margin-bottom:10px;">
+                    <div class="match-header">
+                        <span>💰 ${data.fee}ks.</span>
+                        <span style="opacity:0.7; font-size: 10px;">${data.mode}</span>
+                    </div>
+                    <div class="match-body">
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <img src="${data.squadLogo || 'https://i.ibb.co/4pGm0Zf/default-logo.png'}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
+                            <div style="color: #fff; font-size: 0.9rem;">${name}</div>
                         </div>
-                        <div class="match-body">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <img src="${data.squadLogo}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
-                                <div style="color: #fff; font-size: 0.9rem;">${name}</div>
-                            </div>
-                            <div style="color: #c9a66b; font-weight:bold; font-style:italic;">Vs</div>
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <div style="width:28px; height:28px; border-radius:50%; border:1px dashed #444; display:flex; align-items:center; justify-content:center; color:#444; font-size:0.7rem;">?</div>
-                                ${actionUI}
-                            </div>
+                        <div style="color: #c9a66b; font-weight:bold; font-style:italic;">Vs</div>
+                        <div style="display:flex; align-items:center; gap:10px;">
+                            <div style="width:28px; height:28px; border-radius:50%; border:1px dashed #444; display:flex; align-items:center; justify-content:center; color:#444; font-size:0.7rem;">?</div>
+                            ${actionUI}
                         </div>
-                    </div>`;
-                });
+                    </div>
+                </div>`;
             });
-    }
-}
+        });
+}}
 async function showMatchDetail(matchId, teamAName, teamBName) {
     const modal = document.getElementById('match-detail-popup');
     const body = document.getElementById('match-detail-body');
