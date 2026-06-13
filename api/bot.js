@@ -334,11 +334,11 @@ bot.action(/view_detail_(.+)/, async (ctx) => {
     try {
         // 
         // 1. regId field နဲ့ တူညီတဲ့ document ကို ရှာပါ
-        const snapshot = await db.collection("registrations")
-                                 .where("regId", "==", regIdValue)
-                                 .limit(1)
-                                 .get();
-        
+    const snapshot = await db.collection("registrations")
+                            .where("regId", "==", regId) // ဒီမှာ regId field ကို တိုက်စစ်မယ်
+                            .limit(1)
+                            .get();
+                            
         // 2. Data မရှိရင် စစ်ဆေးပါ
         if (snapshot.empty) {
             return ctx.answerCbQuery("❌ Data ရှာမတွေ့ပါ။");
