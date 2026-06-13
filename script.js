@@ -321,6 +321,58 @@ async function submitProof() {
         document.getElementById('waiting-msg').style.display = 'none';
     }
 }
+
+// --- Exit ခလုတ်အတွက် Logic ---
+async function handleExitRequest() {
+    if (!currentRegId) {
+        alert("Registration ID မရှိပါ။");
+        return;
+    }
+
+    const confirmExit = confirm("သင် ဝဘ်ဆိုက်မှ ထွက်ခွာရန် သေချာပါသလား?");
+    if (confirmExit) {
+        // ၁။ ခလုတ်များကို lock လုပ်ခြင်း
+        document.getElementById('new-room-btn').disabled = true;
+        document.getElementById('exit-btn').disabled = true;
+
+        // ၂။ Firestore status ကို refund ပြောင်းခြင်း
+        await db.collection("registrations").doc(currentRegId).update({
+            status: "refund"
+        });
+
+        // ၃။ Admin ဆီ Telegram Notify ပို့ခြင်း (api/notify ကို သုံးပြီး status ကိုပါ ပို့ပေးပါ)
+        await fetch('/api/notify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                regId: currentRegId, 
+                data: { isRefund: true } // Admin သိအောင် flag တစ်ခုပါပို့မယ်
+            })
+        });
+
+        alert("Request ပို့ပြီးပါပြီ။ Admin အတည်ပြုသည်အထိ ခဏစောင့်ပေးပါ။");
+    }
+}
+
+// --- Status စောင့်ကြည့်ခြင်း (watchStatus function ထဲတွင်ထည့်ရန်) ---
+function watchStatus(docId) {
+    db.collection("registrations").doc(docId).onSnapshot((doc) => {
+        if (!doc.exists) return;
+        const data = doc.data();
+
+        // Admin က Refund ကို Confirm လုပ်လိုက်ရင်
+        if (data.status === "refunded") {
+            alert("သင့်ငွေသားကို Admin မှ လွှဲပြီးပါပြီ။");
+            window.close(); // Browser ပိတ်ခြင်း
+            window.location.href = "about:blank"; // ပိတ်မရရင် အခြား page တစ်ခုကို ခေါ်ထုတ်ခြင်း
+        }
+        
+        // ... (သင်ရေးထားတဲ့ confirm/reject logic များ ဒီအောက်မှာ ဆက်ရှိပါမယ်)
+        if (data.status === "confirm") {
+             // ... existing confirm logic
+        }
+    });
+}
 function backToRegistration() {
     document.getElementById('page-payment-proof').style.display = 'none';
     const mode = mapData[currentIndex].mode;

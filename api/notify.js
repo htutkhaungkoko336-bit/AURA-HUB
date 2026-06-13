@@ -63,3 +63,12 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: error.message });
   }
 }
+// ... existing code
+const message = data.isRefund ? 
+    `⚠️ *Refund Request!*\n\nID: ${regId} သည် ငွေပြန်အမ်းရန် တောင်းဆိုထားပါသည်။` :
+    `🔔 *New Registration Received!* ...`; // မူလ message
+
+const inline_keyboard = data.isRefund ? 
+    [[{ text: '✅ Confirm Refund', callback_data: `confirm_refund_${regId}` }]] :
+    [[{ text: '✅ Confirm', callback_data: `regConfirm_${regId}` }, { text: '❌ Reject', callback_data: `regReject_${regId}` }]];
+// ...

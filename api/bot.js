@@ -328,6 +328,21 @@ bot.action(/confirm_(.+)/, async (ctx) => {
         ctx.answerCbQuery("❌ Error: အတည်ပြု၍ မရပါ။");
     }
 });
+// Admin Group ထဲမှာ Refund တောင်းဆိုထားတာတွေ့ရင် Confirm လုပ်မယ့် Action
+bot.action(/confirm_refund_(.+)/, async (ctx) => {
+    const regId = ctx.match[1];
+    
+    // Status ကို refunded လို့ ပြောင်းလိုက်ရင် User ဘက်က watchStatus က alert တက်လာမယ်
+    await db.collection("registrations").doc(regId).update({ 
+        status: "refunded" 
+    });
+    
+    await ctx.editMessageText("✅ User ကို ငွေလွှဲပြီးကြောင်း အတည်ပြုလိုက်ပါပြီ။");
+    ctx.answerCbQuery("Confirmed!");
+});
+
+// notify.js ကပို့တဲ့ msg ထဲမှာ Refund ဖြစ်ရင် ဒီခလုတ်လေးပါအောင် ပြင်ပေးပါ
+// bot.action(/regConfirm_(.+)/, ... ) နေရာမှာ logic ခွဲရေးပေးပါ
 // --- Export ---
 module.exports = async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(200).end();
