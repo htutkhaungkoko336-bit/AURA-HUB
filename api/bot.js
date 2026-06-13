@@ -331,11 +331,18 @@ bot.action(/confirm_(.+)/, async (ctx) => {
 // --- Refund Confirm ---
 bot.action(/confirm_refund_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
-    await db.collection("registrations").doc(docId).update({ status: "refunded" });
+    const docRef = db.collection("registrations").doc(docId);
+    
+    // Check if doc exists before updating
+    const doc = await docRef.get();
+    if (!doc.exists) {
+        return ctx.answerCbQuery("❌ Error: ဤမှတ်တမ်းကို ရှာမတွေ့ပါ (သို့မဟုတ် ဖျက်ပြီးသားဖြစ်နေသည်)။");
+    }
+
+    await docRef.update({ status: "refunded" });
     await ctx.editMessageText(`✅ Doc ID: <code>${docId}</code> အတွက် Refund အတည်ပြုပြီးပါပြီ။`, { parse_mode: 'HTML' });
     ctx.answerCbQuery("Refund အတည်ပြုပြီးပါပြီ");
 });
-
 // --- View Detail (Registration အတွက်ပါ) ---
 bot.action(/view_reg_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
@@ -355,6 +362,7 @@ bot.action(/view_reg_(.+)/, async (ctx) => {
     ctx.reply(info, { parse_mode: 'HTML' });
     ctx.answerCbQuery();
 });
+
 // --- Export ---
 module.exports = async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(200).end();
