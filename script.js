@@ -253,23 +253,23 @@ async function submitProof() {
     document.getElementById('waiting-msg').style.display = 'block';
     document.getElementById('waiting-msg').innerText = "Processing...";
 
-    try {
-        const paymentURL = await uploadToImgBB(ssFile);
-        let squadLogoURL = sqLogoFile ? await uploadToImgBB(sqLogoFile) : "https://i.ibb.co/4pGm0Zf/default-logo.png";
+        try {
+            const paymentURL = await uploadToImgBB(ssFile);
+            let squadLogoURL = sqLogoFile ? await uploadToImgBB(sqLogoFile) : "https://i.ibb.co/4pGm0Zf/default-logo.png";
 
-        const mode = mapData[currentIndex].mode;
-        let registrationData = {
-            mode: mode,
-            fee: selectedFee,
-            paymentURL: paymentURL,
-            squadLogo: squadLogoURL,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            status: "pending", // Resubmit လုပ်ရင်လည်း status ကို pending ပြန်လုပ်မယ်
-            matchStatus: "none",
-            isResubmission: window.isResubmission
-        };
-
-        // Player Data များ
+            const mode = mapData[currentIndex].mode;
+            let registrationData = {
+                mode: mode,
+                fee: selectedFee,
+                paymentURL: paymentURL,
+                squadLogo: squadLogoURL,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                status: "pending",
+                matchStatus: "none",
+                isResubmission: window.isResubmission,
+                regId: "" // ၁။ ဒီမှာ regId ကို အလွတ် (သို့မဟုတ် null) အနေနဲ့ ထည့်ထားလိုက်ပါ
+            };
+            // Player Data များ
         if (mode === "5vs5") {
             registrationData.squadName = document.getElementById('squad-name').value;
             registrationData.players = Array.from(document.querySelectorAll('#page-5vs5 .player-row')).map(row => ({
@@ -286,18 +286,21 @@ async function submitProof() {
             registrationData.kpayPhone = document.getElementById('kpay-no-solo').value;
         }
 
-        let docRefId;
+    let docRefId;
 
-        // Logic: Resubmit ဆိုရင် update, အသစ်ဆိုရင် add
         if (window.isResubmission && currentRegId) {
             await db.collection("registrations").doc(currentRegId).update(registrationData);
             docRefId = currentRegId;
         } else {
+            // ၂။ Firestore သို့ အရင် Add လုပ်ပါ
             const docRef = await db.collection("registrations").add(registrationData);
+            
+            // ၃။ ထွက်လာတဲ့ ID ကို regId field ထဲ ပြန်ထည့်ပါ (Update)
+            await docRef.update({ regId: docRef.id });
+            
             docRefId = docRef.id;
-            currentRegId = docRefId; // နောက်တစ်ခါအတွက် ID ကို မှတ်ထားမယ်
-        }
-        
+            currentRegId = docRefId; 
+        }        
         // Admin ဆီ Notify ပို့ခြင်း
         await fetch('/api/notify', {
             method: 'POST',
