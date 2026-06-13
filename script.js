@@ -952,7 +952,7 @@ function startSpinWheel(winnerName, nameA, nameB, matchId) {
 }
 
 async function quitMatch() {
-    if (confirm("သင်သေချာပေါက် Quit လိုပါသလား?")) {
+    if (confirm("Quit ကိုနှိပ်လျှင် web မှ ထွက်ခွာသွားမည်ဖြစ်သည်။ Fee% ချန်၍ ကျန်သည့်ငွေအား ပြန်လွှဲပေးပါမည်။ ကျေးဇူးတင်ပါသည်။")) {
         try {
             // ၁။ အချက်အလက်အစုံကို Quitted Collection ဆီ အသစ်ထည့်မယ် (Move to archive)
             await db.collection("quitted_users").doc(myTeamInfo.id).set({
