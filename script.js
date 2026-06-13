@@ -378,7 +378,6 @@ function watchStatus(docId) {
                 document.getElementById('page-payment-proof').style.display = 'none';
                 document.getElementById('page-match-center').style.display = 'flex';
                 if (typeof loadMatchRooms === 'function') loadMatchRooms();
-                showQuitButton(doc.id); 
             } 
             else if (data.status === "rejected") {
                 // Reject Reason များကို ပြသခြင်း
@@ -622,52 +621,6 @@ else if (currentMatchTab === 'result') {
             });
     }
 }
-// Quit ခလုတ်ကို အလိုအလျောက် ဆောက်ပေးမယ့် Function
-function showQuitButton(regId) {
-    const container = document.getElementById('page-match-center'); // Match Center ရဲ့ ID
-    
-    // ခလုတ်ရှိပြီးသားဆိုရင် ထပ်မဆောက်တော့ဘူး
-    if (document.getElementById('quit-btn')) return;
-
-    const quitBtn = document.createElement('button');
-    quitBtn.id = 'quit-btn';
-    quitBtn.innerText = 'Quit & Refund';
-    
-    // ခလုတ်အတွက် CSS (သင်ကြိုက်သလို ပြင်နိုင်ပါတယ်)
-    quitBtn.style.marginTop = '20px';
-    quitBtn.style.backgroundColor = '#ff4d4d';
-    quitBtn.style.color = '#fff';
-    quitBtn.style.padding = '10px';
-    quitBtn.style.border = 'none';
-    quitBtn.style.borderRadius = '5px';
-    quitBtn.style.cursor = 'pointer';
-
-// Quit ခလုတ် နှိပ်လိုက်သောအခါ
-    quitBtn.onclick = async () => {
-        if (confirm("ပွဲစဉ်မှ ထွက်ခွာပြီး Refund တောင်းခံမည်လား?")) {
-            const docId = myTeamInfo.id; // Firebase Document ID
-
-            // ၁။ Status ပြောင်းမယ်
-            await db.collection("registrations").doc(docId).update({
-                status: "pending_refund"
-            });
-
-            // ၂။ API သို့ documentId ကိုပို့မယ်
-            await fetch('/api/notify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    documentId: docId, 
-                    isRefund: true 
-                })
-            });
-            
-            alert("Refund တောင်းဆိုမှု ပို့ပြီးပါပြီ။");
-        }
-    };    
-    container.appendChild(quitBtn);
-}
-
 async function showMatchDetail(matchId, teamAName, teamBName) {
     const modal = document.getElementById('match-detail-popup');
     const body = document.getElementById('match-detail-body');

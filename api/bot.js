@@ -328,17 +328,7 @@ bot.action(/confirm_(.+)/, async (ctx) => {
         ctx.answerCbQuery("❌ Error: အတည်ပြု၍ မရပါ။");
     }
 });
-bot.action(/confirm_refund_(.+)/, async (ctx) => {
-    const docId = ctx.match[1]; // Telegram ကနေ ပြန်ရလာတဲ့ Document ID
-    
-    // Document ID ကို သုံးပြီး update လုပ်မယ်
-    await db.collection("registrations").doc(docId).update({
-        status: "refunded"
-    });
-
-    ctx.editMessageText(`✅ ID: ${docId} အတွက် Refund အတည်ပြုပြီးပါပြီ။`);
-});
-
+// --- Export ---
 module.exports = async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(200).end();
 
