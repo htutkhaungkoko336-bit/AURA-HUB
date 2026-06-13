@@ -322,46 +322,6 @@ async function submitProof() {
     }
 }
 
-async function handleExitRequest() {
-    if (!currentRegId) {
-        alert("Registration ID မရှိပါ။");
-        return;
-    }
-
-    const confirmExit = confirm("သင် ဝဘ်ဆိုက်မှ ထွက်ခွာရန် သေချာပါသလား?");
-    if (confirmExit) {
-        // ၁။ ခလုတ်များကို lock လုပ်ခြင်း (Error မတက်အောင် if ထည့်စစ်ပါ)
-        const newRoomBtn = document.getElementById('new-room-btn');
-        const exitBtn = document.getElementById('exit-btn');
-        
-        if (newRoomBtn) newRoomBtn.disabled = true;
-        if (exitBtn) exitBtn.disabled = true;
-
-        try {
-            // ၂။ Firestore မှာ Document ID မှားနေနိုင်ပါတယ် (အောက်တွင်ကြည့်ပါ)
-            // သင့် Screenshot (image_fcf217) အရ document name က 
-            // "RU8CPJfMPDR..." ဖြစ်နေတာမို့ doc(currentRegId) က မှန်ကန်နိုင်ပါတယ်။
-            await db.collection("registrations").doc(currentRegId).update({
-                status: "refund"
-            });
-
-            // ၃။ Admin ဆီ Telegram Notify ပို့ခြင်း
-            await fetch('/api/notify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    regId: currentRegId, 
-                    data: { isRefund: true }
-                })
-            });
-
-            alert("Request ပို့ပြီးပါပြီ။ Admin အတည်ပြုသည်အထိ ခဏစောင့်ပေးပါ။");
-        } catch (error) {
-            console.error("Error updating Firestore:", error);
-            alert("Error ဖြစ်သွားပါသည်။");
-        }
-    }
-}
 // --- Status စောင့်ကြည့်ခြင်း (watchStatus function ထဲတွင်ထည့်ရန်) ---
 function watchStatus(docId) {
     db.collection("registrations").doc(docId).onSnapshot((doc) => {
@@ -1013,4 +973,44 @@ function startSpinWheel(winnerName, nameA, nameB, matchId) {
             }, 2000);
         }, 6500);
     }, 100);
+}
+async function handleExitRequest() {
+    if (!currentRegId) {
+        alert("Registration ID မရှိပါ။");
+        return;
+    }
+
+    const confirmExit = confirm("သင် ဝဘ်ဆိုက်မှ ထွက်ခွာရန် သေချာပါသလား?");
+    if (confirmExit) {
+        // ၁။ ခလုတ်များကို lock လုပ်ခြင်း (Error မတက်အောင် if ထည့်စစ်ပါ)
+        const newRoomBtn = document.getElementById('new-room-btn');
+        const exitBtn = document.getElementById('exit-btn');
+        
+        if (newRoomBtn) newRoomBtn.disabled = true;
+        if (exitBtn) exitBtn.disabled = true;
+
+        try {
+            // ၂။ Firestore မှာ Document ID မှားနေနိုင်ပါတယ် (အောက်တွင်ကြည့်ပါ)
+            // သင့် Screenshot (image_fcf217) အရ document name က 
+            // "RU8CPJfMPDR..." ဖြစ်နေတာမို့ doc(currentRegId) က မှန်ကန်နိုင်ပါတယ်။
+            await db.collection("registrations").doc(currentRegId).update({
+                status: "refund"
+            });
+
+            // ၃။ Admin ဆီ Telegram Notify ပို့ခြင်း
+            await fetch('/api/notify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    regId: currentRegId, 
+                    data: { isRefund: true }
+                })
+            });
+
+            alert("Request ပို့ပြီးပါပြီ။ Admin အတည်ပြုသည်အထိ ခဏစောင့်ပေးပါ။");
+        } catch (error) {
+            console.error("Error updating Firestore:", error);
+            alert("Error ဖြစ်သွားပါသည်။");
+        }
+    }
 }
