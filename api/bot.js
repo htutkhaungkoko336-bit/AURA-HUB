@@ -334,14 +334,43 @@ bot.action(/confirm_(.+)/, async (ctx) => {
 bot.action(/confirmQuit_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
     try {
-        // အဲ့ဒီ Registration ကို ဖျက်လိုက်တာ သို့မဟုတ် status ပြောင်းတာ
-        await db.collection("registrations").doc(docId).delete();
+        // ၁။ အချက်အလက်ကို ပြန်ဖတ်ရန် အရင်ယူခြင်း
+        // (တကယ်လို့ Registration doc ကို delete လုပ်ပြီးသွားရင် အချက်အလက်မရတော့မှာစိုးလို့
+        // အရင်ဆုံး Data လိုအပ်ချက်ရှိရင် snapshot ကို အရင်ယူပါ)
+        const docRef = db.collection("registrations").doc(docId);
+        const doc = await docRef.get();
         
-        await ctx.editMessageText(`✅ <b>Reg ID: ${docId}</b> ကို အခန်းဖျက်သိမ်းပြီးကြောင်း အတည်ပြုပေးလိုက်ပါပြီ။`, {
+        let info = `⚠️ <b>Refund အတည်ပြုပြီးပါပြီ</b>\n\n`;
+        
+        if (doc.exists) {
+            const data = doc.data();
+            let playerDetails = data.mode === "5vs5" 
+                ? (data.players || []).map((p, i) => `${i+1}. ${p.name}`).join('\n')
+                : `${data.playerName}`;
+
+            info += `🆔 <b>Reg ID:</b> <code>${docId}</code>\n` +
+                    `🎮 <b>Mode:</b> ${data.mode}\n` +
+                    `💰 <b>Fee:</b> ${data.fee} Ks\n` +
+                    `👤 <b>Team:</b> ${data.squadName || 'Solo'}\n` +
+                    `👥 <b>Players:</b>\n${playerDetails}\n\n` +
+                    `💳 <b>Refund Info:</b>\n` +
+                    `Name: ${data.kpayName}\n` +
+                    `Ph: <code>${data.kpayPhone}</code>\n`;
+            
+            // ၂။ အချက်အလက်ရပြီးမှ delete လုပ်ပါ
+            await docRef.delete();
+        } else {
+            info += `🆔 <b>Reg ID:</b> <code>${docId}</code> (Data မရှိတော့ပါ)\n`;
+        }
+
+        // ၃။ Message ကို ပြင်ဆင်ခြင်း
+        await ctx.editMessageText(info + `\n✅ <i>အခန်းဖျက်သိမ်းပြီးကြောင်း အတည်ပြုပြီးပါပြီ။</i>`, {
             parse_mode: 'HTML'
         });
+        
         ctx.answerCbQuery("အောင်မြင်ပါသည်။");
     } catch (err) {
+        console.error(err);
         ctx.answerCbQuery("Error ဖြစ်နေပါသည်။");
     }
 });
