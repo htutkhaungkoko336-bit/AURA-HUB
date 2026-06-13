@@ -8,7 +8,7 @@ export default async function handler(req, res) {
     try {
         const { regId, data, action } = req.body;
         const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-        const REG_GROUP_ID = process.env.REGISTRATION_GROUP_ID;
+        const REG_GROUP_ID = process.env.REFUND_GROUP_ID;
         const ADMIN_GROUP_ID = process.env.ADMIN_GROUP_ID;
 
         // --- ၁။ QUIT ACTION (Admin အကြောင်းကြားရန်) ---
