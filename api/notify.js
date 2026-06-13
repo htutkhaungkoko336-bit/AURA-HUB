@@ -8,32 +8,36 @@ export default async function handler(req, res) {
     try {
         const { regId, data, action } = req.body;
         const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
-        const REG_GROUP_ID = process.env.REFUND_GROUP_ID;
+        
+        // Group IDs များ
+        const REG_GROUP_ID = process.env.REGISTRATION_GROUP_ID;
+        const REFUND_GROUP_ID = process.env.REFUND_GROUP_ID; // အသစ်ထည့်လိုက်ပါ
         const ADMIN_GROUP_ID = process.env.ADMIN_GROUP_ID;
 
-        // --- ၁။ QUIT ACTION (Admin အကြောင်းကြားရန်) ---
+        // --- ၁။ QUIT / REFUND ACTION (Refund GP သို့ ပို့ရန်) ---
         if (action === 'quit') {
             const quitMsg = `🚫 <b>PLAYER QUIT THE MATCH</b>\n\n` +
                             `👤 <b>Team:</b> ${data.squadName || data.playerName || "Unknown"}\n` +
                             `🆔 <b>Reg ID:</b> <code>${regId}</code>\n\n` +
-                            `<i>ကျေးဇူးပြု၍ စစ်ဆေးပြီး အတည်ပြုပေးပါ။</i>`;
+                            `<i>ကျေးဇူးပြု၍ Refund စစ်ဆေးပြီး အတည်ပြုပေးပါ။</i>`;
             
             const quitKeyboard = {
                 inline_keyboard: [[
-                    { text: '✅ အခန်းပိတ်သိမ်းကြောင်း အတည်ပြုမည်', callback_data: `confirmQuit_${regId}` }
+                    { text: '✅ Refund ပြုလုပ်ပြီးပြီ', callback_data: `confirmQuit_${regId}` }
                 ]]
             };
 
+            // Refund Group သို့ ပို့ခြင်း
             await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                chat_id: ADMIN_GROUP_ID,
+                chat_id: REFUND_GROUP_ID, 
                 text: quitMsg,
                 parse_mode: 'HTML',
                 reply_markup: quitKeyboard
             });
-            return res.status(200).json({ success: true, message: 'Quit notified' });
+            return res.status(200).json({ success: true, message: 'Refund group notified' });
         }
 
-        // --- ၂။ NEW REGISTRATION ACTION ---
+        // --- ၂။ NEW REGISTRATION ACTION (Registration GP သို့ ပို့ရန်) ---
         const resubTag = data.isResubmission ? "⚠️ *[Re-submission]*\n" : "";
         const timestamp = new Date().toLocaleString('en-US', { 
             timeZone: 'Asia/Yangon',
@@ -62,6 +66,7 @@ export default async function handler(req, res) {
             { text: '❌ Reject', callback_data: `regReject_${regId}` }
         ]];
 
+        // Registration Group သို့ ပို့ခြင်း
         await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
             chat_id: REG_GROUP_ID,
             text: regMessage,
