@@ -378,6 +378,7 @@ function watchStatus(docId) {
                 document.getElementById('page-payment-proof').style.display = 'none';
                 document.getElementById('page-match-center').style.display = 'flex';
                 if (typeof loadMatchRooms === 'function') loadMatchRooms();
+                showQuitButton(doc.id); 
             } 
             else if (data.status === "rejected") {
                 // Reject Reason များကို ပြသခြင်း
@@ -621,30 +622,49 @@ else if (currentMatchTab === 'result') {
             });
     }
 }
-// Match Center မှာ Quit ခလုတ်ဆောက်မည့်ပုံစံ
-function renderQuitButton(containerId, regId) {
-    const container = document.getElementById(containerId);
-    // ... အရင်ကအတိုင်း ...
+// Quit ခလုတ်ကို အလိုအလျောက် ဆောက်ပေးမယ့် Function
+function showQuitButton(regId) {
+    const container = document.getElementById('page-match-center'); // Match Center ရဲ့ ID
+    
+    // ခလုတ်ရှိပြီးသားဆိုရင် ထပ်မဆောက်တော့ဘူး
+    if (document.getElementById('quit-btn')) return;
+
+    const quitBtn = document.createElement('button');
+    quitBtn.id = 'quit-btn';
+    quitBtn.innerText = 'Quit & Refund';
+    
+    // ခလုတ်အတွက် CSS (သင်ကြိုက်သလို ပြင်နိုင်ပါတယ်)
+    quitBtn.style.marginTop = '20px';
+    quitBtn.style.backgroundColor = '#ff4d4d';
+    quitBtn.style.color = '#fff';
+    quitBtn.style.padding = '10px';
+    quitBtn.style.border = 'none';
+    quitBtn.style.borderRadius = '5px';
+    quitBtn.style.cursor = 'pointer';
 
     quitBtn.onclick = async () => {
-        if (confirm("ပွဲမကစားတော့ဘဲ ငွေပြန်အမ်းမှု (Refund) တောင်းခံမည်လား?")) {
-            // Data ကို မဖျက်ပါဘူး၊ status ပဲ ပြောင်းတာပါ
+        if (confirm("ပွဲစဉ်မှ ထွက်ခွာပြီး Refund တောင်းခံမည်လား?")) {
+            // ၁။ Database မှာ pending_refund လို့ အမှတ်အသားပြုမယ်
             await db.collection("registrations").doc(regId).update({
-                status: "pending_refund" 
+                status: "pending_refund"
             });
 
-            // ဒီ API က Registration Data အပြည့်အစုံနဲ့ Noti ပို့ပေးပါလိမ့်မယ်
-            await fetch('/api/notify-refund', {
+            // ၂။ Admin ဆီ Notify ပို့မယ် (Registration Data အကုန်ပါပြီးသားမို့ regId ပဲ ပို့ရင်ရပြီ)
+            await fetch('/api/notify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ regId })
+                body: JSON.stringify({ regId, isRefund: true })
             });
+
+            alert("Refund တောင်းဆိုမှု ပို့ပြီးပါပြီ။ Admin ငွေလွှဲပေးသည်အထိ စောင့်ပါ။");
             quitBtn.disabled = true;
-            quitBtn.innerText = "Refund Requested";
+            quitBtn.innerText = "Request Sent";
         }
     };
+    
     container.appendChild(quitBtn);
 }
+
 async function showMatchDetail(matchId, teamAName, teamBName) {
     const modal = document.getElementById('match-detail-popup');
     const body = document.getElementById('match-detail-body');
