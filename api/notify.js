@@ -9,6 +9,10 @@ if (!admin.apps.length) {
 }
 
 export default async function handler(req, res) {
+  const { regId, data } = req.body;
+  if (!data) {
+    return res.status(400).json({ error: "Data is missing in request body" });
+  }
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method Not Allowed' });
   }
