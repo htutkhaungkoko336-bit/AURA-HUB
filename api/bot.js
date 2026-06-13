@@ -329,45 +329,35 @@ bot.action(/confirm_(.+)/, async (ctx) => {
     }
 });
 bot.action(/view_detail_(.+)/, async (ctx) => {
-    // 1. .trim() ထည့်ပြီး whitespace တွေကို ဖယ်ရှားပါ
     const regIdValue = ctx.match[1].trim(); 
     
     try {
-        console.log("Searching for ID:", regIdValue); // Debug လုပ်ရန် log ကြည့်ပါ
+        console.log("Searching ID:", regIdValue);
 
-        // 1. Refund_requests collection ထဲမှာ အရင်ရှာပါ
+        // ၁။ refund_requests ထဲမှာရှာမယ်
         const refundDoc = await db.collection("refund_requests").doc(regIdValue).get();
         
+        let targetId = regIdValue;
+
         if (refundDoc.exists) {
-            // Refund ဖြစ်နေရင် originalDocId ကိုယူပြီး registration ထဲက Data ဆွဲမယ်
-            const originalDocId = refundDoc.data().originalDocId;
-            const originalDoc = await db.collection("registrations").doc(originalDocId).get();
-            
-            if (!originalDoc.exists) return ctx.answerCbQuery("❌ မူလ Registration Data မရှိတော့ပါ။");
-            
-            await sendDetailMessage(ctx, originalDoc.data(), regIdValue);
-        } else {
-            // 2. Refund မဟုတ်ရင် registrations collection ထဲမှာရှာမယ်
-            // အကြံပြုချက်: အကယ်၍ Document ID က regId နဲ့ တူနေရင် .doc(regIdValue) ကိုသုံးပါ
-            const snapshot = await db.collection("registrations")
-                                     .where("regId", "==", regIdValue)
-                                     .limit(1)
-                                     .get();
-                                     
-            if (snapshot.empty) {
-                // အကယ်၍ Field နဲ့ရှာတာ မရရင် Document ID နဲ့ တိုက်ရိုက်ရှာကြည့်ပါ
-                const docById = await db.collection("registrations").doc(regIdValue).get();
-                if (!docById.exists) {
-                    return ctx.answerCbQuery("❌ Data ရှာမတွေ့ပါ။");
-                }
-                await sendDetailMessage(ctx, docById.data(), regIdValue);
-            } else {
-                await sendDetailMessage(ctx, snapshot.docs[0].data(), regIdValue);
-            }
+            targetId = refundDoc.data().originalDocId;
+            console.log("Found in refund, target ID is:", targetId);
         }
+
+        // ၂။ registrations ထဲမှာ ID နဲ့ ရှာမယ်
+        const regDoc = await db.collection("registrations").doc(targetId).get();
+        
+        if (!regDoc.exists) {
+            console.log("Error: No document found in registrations for ID:", targetId);
+            return ctx.answerCbQuery("❌ Data မရှိပါ။ (ID မှားယွင်းနေသည်)");
+        }
+
+        // ၃။ Data တွေ့ရင် detail ပို့မယ်
+        await sendDetailMessage(ctx, regDoc.data(), regIdValue);
+
     } catch (error) {
         console.error("View Detail Error:", error);
-        ctx.answerCbQuery("❌ Error: Permission denied သို့မဟုတ် Data error.");
+        ctx.answerCbQuery("❌ Error: " + error.message);
     }
 });
 // Code သန့်ရှင်းအောင် သီးသန့် function ထုတ်ရေးထားပါတယ်
