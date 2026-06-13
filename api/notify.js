@@ -3,9 +3,8 @@ const admin = require('firebase-admin');
 
 // Firebase Initialization
 if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.cert(JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT))
-    });
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
 }
 const db = admin.firestore();
 
@@ -13,64 +12,58 @@ export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ message: 'Method Not Allowed' });
 
     try {
-        const { documentId, isRefund, data } = req.body;
+        const { action, regId, documentId, data } = req.body;
         const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
         const REG_GROUP_ID = process.env.REGISTRATION_GROUP_ID;
-        const REFUND_GROUP_ID = "-1003928964996";
 
-        // --- Refund Flow ---
-        if (isRefund) {
-            const doc = await db.collection("registrations").doc(documentId).get();
-            if (!doc.exists) return res.status(404).json({ error: "Registration not found" });
-            const d = doc.data();
-
-            const msg = `⚠️ <b>REFUND REQUEST</b>\n\n🆔 <b>Doc ID:</b> <code>${documentId}</code>\n👤 <b>Squad:</b> ${d.squadName || 'Solo'}\n📞 <b>K-Pay:</b> ${d.kpayPhone}\n💰 <b>Amount:</b> ${d.fee} Ks`;
+        // ၁။ Registration အသစ်ဝင်လာလျှင်
+        if (action === 'register') {
+            const playerDetails = data.mode === "5vs5" 
+                ? data.players.map((p, i) => `${i+1}. ${p.name} (ID: ${p.id})`).join('\n')
+                : `Player: ${data.playerName}\nID: ${data.mlbbId}`;
+            
+            const message = `🔔 <b>New Registration Received!</b>\n\n` +
+                            `🆔 <b>Reg ID:</b> <code>${regId}</code>\n` +
+                            `🎮 <b>Mode:</b> ${data.mode}\n` +
+                            `💰 <b>Fee:</b> ${data.fee} Ks\n\n` +
+                            `👤 <b>Identity:</b>\n${data.squadName ? `Squad: ${data.squadName}\n` : ""}${playerDetails}\n\n` +
+                            `💳 <b>Payment:</b> ${data.kpayName} (${data.kpayPhone})\n` +
+                            `🖼️ <a href="${data.paymentURL}">View Payment Proof</a>`;
 
             await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-                chat_id: REFUND_GROUP_ID,
+                chat_id: REG_GROUP_ID,
+                text: message,
+                parse_mode: 'HTML',
+                reply_markup: {
+                    inline_keyboard: [[
+                        { text: '✅ Confirm', callback_data: `regConfirm_${regId}` },
+                        { text: '❌ Reject', callback_data: `regReject_${regId}` }
+                    ]]
+                }
+            });
+            return res.status(200).json({ success: true });
+        }
+
+        // ၂။ Refund/Quit တောင်းဆိုလာလျှင်
+        if (action === 'refund_request') {
+            const msg = `⚠️ <b>NEW QUIT REQUEST</b>\n\n🆔 <b>Reg ID:</b> <code>${documentId}</code>\n\n` +
+                        `<i>Admin: ငွေပြန်အမ်းရန်အတွက် Data ကို အောက်ပါခလုတ်ဖြင့် စစ်ဆေးပါ။</i>`;
+            
+            await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+                chat_id: REG_GROUP_ID,
                 text: msg,
                 parse_mode: 'HTML',
                 reply_markup: {
                     inline_keyboard: [[
                         { text: '✅ Confirm Refund', callback_data: `confirm_refund_${documentId}` },
-                        { text: '🔍 View Detail', callback_data: `view_reg_${documentId}` }
+                        { text: '🔍 View Full Data', callback_data: `view_reg_${documentId}` }
                     ]]
                 }
             });
-            return res.status(200).json({ success: true, type: 'refund' });
+            return res.status(200).json({ success: true });
         }
-        // --- ၂။ NORMAL REGISTRATION (ပုံမှန်စာရင်းသွင်းခြင်း) ---
-        const resubTag = data.isResubmission ? "⚠️ *[Re-submission]*\n" : "";
-        const timestamp = new Date().toLocaleString('en-US', { timeZone: 'Asia/Yangon', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
 
-        let playerDetails = data.mode === "5vs5" 
-            ? data.players.map((p, i) => `${i+1}. ${p.name} (ID: ${p.id})`).join('\n')
-            : `Player: ${data.playerName}\nID: ${data.mlbbId}`;
-
-        const logoSection = data.squadLogo ? `\n🖼️ [View Squad Logo](${data.squadLogo})` : "";
-        const message = `${resubTag}🔔 *New Registration Received!*\n\n` +
-                        `🕒 *Time:* ${timestamp}\n` +
-                        `🎮 *Mode:* ${data.mode}\n` +
-                        `💰 *Fee:* ${data.fee} Ks\n\n` +
-                        `👤 *Identity:*\n${data.squadName ? `Squad: ${data.squadName}\n${playerDetails}` : playerDetails}\n` +
-                        logoSection + `\n\n` + 
-                        `💳 *Payment Info:*\nName: ${data.kpayName}\nPhone: ${data.kpayPhone}\n\n` +
-                        `🖼️ [View Payment Proof](${data.paymentURL})\n` +
-                        `🆔 *Doc ID:* ${documentId}`;
-
-        await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            chat_id: REG_GROUP_ID,
-            text: message,
-            parse_mode: 'Markdown',
-            reply_markup: {
-                inline_keyboard: [[
-                    { text: '✅ Confirm', callback_data: `regConfirm_${documentId}` },
-                    { text: '❌ Reject', callback_data: `regReject_${documentId}` }
-                ]]
-            }
-        });
-
-        return res.status(200).json({ success: true, type: 'registration' });
+        return res.status(400).json({ success: false, error: "Invalid action" });
     } catch (error) {
         console.error("Error in notify API:", error);
         return res.status(500).json({ error: error.message });

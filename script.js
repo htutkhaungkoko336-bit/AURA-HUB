@@ -621,27 +621,21 @@ else if (currentMatchTab === 'result') {
             });
     }
 }
-// သင့်မှာရှိပြီးသား Match Center ပြတဲ့ function ထဲမှာ
-function updateMatchCenterUI(doc) {
-    const data = doc.data();
-    const quitBtn = document.getElementById('quit-btn');
-
-    if (data.status === 'confirm') {
-        document.getElementById('page-match-center').style.display = 'flex';
-        quitBtn.style.display = 'block'; // Confirm ဖြစ်ရင် ခလုတ်ပြမယ်
-    } else {
-        quitBtn.style.display = 'none'; // မဟုတ်ရင် ခလုတ်ဖျောက်ထားမယ်
-    }
-}
-async function handleQuit(docId) {
-    await fetch('/api/notify', {
+async function handleQuit(regId) {
+    if (!confirm("ပွဲမှထွက်၍ ငွေပြန်အမ်းရန် သေချာပါသလား?")) return;
+    
+    const res = await fetch('/api/notify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            documentId: docId,
-            isRefund: true // ဤ flag က notify.js ကို Refund group ပို့ခိုင်းပါမယ်
+            action: 'refund_request',
+            documentId: regId
         })
     });
+    
+    if ((await res.json()).success) {
+        alert("✅ Admin ထံသို့ Refund တောင်းဆိုချက် ပေးပို့ပြီးပါပြီ။");
+    }
 }
 async function showMatchDetail(matchId, teamAName, teamBName) {
     const modal = document.getElementById('match-detail-popup');

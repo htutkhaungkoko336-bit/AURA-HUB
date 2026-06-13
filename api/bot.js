@@ -328,103 +328,68 @@ bot.action(/confirm_(.+)/, async (ctx) => {
         ctx.answerCbQuery("❌ Error: အတည်ပြု၍ မရပါ။");
     }
 });
-// --- Refund Confirm ---
-bot.action(/confirm_refund_(.+)/, async (ctx) => {
-    const docId = ctx.match[1];
-    const docRef = db.collection("registrations").doc(docId);
-    
-    // Check if doc exists before updating
-    const doc = await docRef.get();
-    if (!doc.exists) {
-        return ctx.answerCbQuery("❌ Error: ဤမှတ်တမ်းကို ရှာမတွေ့ပါ (သို့မဟုတ် ဖျက်ပြီးသားဖြစ်နေသည်)။");
-    }
-
-    await docRef.update({ status: "refunded" });
-    await ctx.editMessageText(`✅ Doc ID: <code>${docId}</code> အတွက် Refund အတည်ပြုပြီးပါပြီ။`, { parse_mode: 'HTML' });
-    ctx.answerCbQuery("Refund အတည်ပြုပြီးပါပြီ");
-});
-// --- View Detail (Registration အတွက်ပါ) ---
+// ၁။ Admin က View Full Data နှိပ်ရင် Data ပြပေးမယ့်အပိုင်း
 bot.action(/view_reg_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
     const doc = await db.collection("registrations").doc(docId).get();
+    
     if (!doc.exists) return ctx.answerCbQuery("❌ Data မရှိပါ။");
     
     const d = doc.data();
-    const players = d.players ? d.players.map(p => `👤 ${p.name} (ID: ${p.id})`).join('\n') : "N/A";
-    
-    const info = `<b>📋 REGISTRATION DETAIL</b>\n\n` +
-                 `🏆 Squad: ${d.squadName || 'Solo'}\n` +
-                 `🎮 Mode: ${d.mode}\n` +
-                 `💰 Fee: ${d.fee} Ks\n` +
-                 `📞 K-Pay: ${d.kpayPhone}\n` +
-                 `👤 Players:\n${players}`;
-    
-    ctx.reply(info, { parse_mode: 'HTML' });
+    // Confirm ပေးထားပြီးသား Data အကုန် ဒီမှာ ပေါ်လာမယ်
+    const info = `📋 <b>CONFIRMED REGISTRATION DATA</b>\n\n` +
+                 `🆔 <b>Reg ID:</b> <code>${docId}</code>\n` +
+                 `👤 <b>Squad/Name:</b> ${d.squadName || 'Solo'}\n` +
+                 `📞 <b>K-Pay:</b> <code>${d.kpayPhone}</code>\n` +
+                 `💰 <b>Amount Paid:</b> ${d.fee} Ks\n\n` +
+                 `<i>ဒီ Data နဲ့ တိုက်ပြီး ငွေလွှဲပေးလိုက်ပါ။</i>`;
+                 
+    await ctx.reply(info, { parse_mode: 'HTML' });
     ctx.answerCbQuery();
 });
 
+// Data ပြန်ဆွဲထုတ်ပြခြင်း
+bot.action(/view_reg_(.+)/, async (ctx) => {
+    const docId = ctx.match[1];
+    const doc = await db.collection("registrations").doc(docId).get();
+    
+    if (!doc.exists) return ctx.answerCbQuery("❌ ဤမှတ်တမ်းကို ရှာမတွေ့ပါ။");
+    
+    const d = doc.data();
+    const info = `📋 <b>CONFIRMED DATA</b>\n\n🆔 <b>Reg ID:</b> <code>${docId}</code>\n🏆 <b>Squad:</b> ${d.squadName || 'Solo'}\n📞 <b>K-Pay:</b> <code>${d.kpayPhone}</code>\n💰 <b>Fee:</b> ${d.fee} Ks\n\n<i>ငွေလွှဲပြီးမှသာ Refund Confirm လုပ်ပေးပါ။</i>`;
+    
+    await ctx.reply(info, { parse_mode: 'HTML' });
+    ctx.answerCbQuery();
+});
+
+// Refund အတည်ပြုခြင်း
+bot.action(/confirm_refund_(.+)/, async (ctx) => {
+    const docId = ctx.match[1];
+    try {
+        await db.collection("registrations").doc(docId).update({ status: "refunded" });
+        await ctx.editMessageText(`✅ <b>Refund အောင်မြင်ပါသည်။</b>\n🆔 ID: <code>${docId}</code>`, { parse_mode: 'HTML' });
+        ctx.answerCbQuery("Refund အောင်မြင်ပါသည်။");
+    } catch (err) {
+        ctx.answerCbQuery("❌ Error!");
+    }
+});
 // --- Export ---
 module.exports = async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(200).end();
 
-    // /api/notify endpoint ကို handle လုပ်ခြင်း
-    if (req.url.includes('/api/notify')) {
+    if (req.url === '/api/notify' || (req.path && req.path === '/api/notify')) {
         try {
-            const { regId, isRefund, documentId, data } = req.body;
-            
-            // ၁။ Refund Request ဆိုလျှင်
-            if (isRefund) {
-                const doc = await db.collection("registrations").doc(documentId).get();
-                if (!doc.exists) return res.status(404).json({ success: false, error: "Reg not found" });
-                const d = doc.data();
-
-                const msg = `⚠️ <b>REFUND REQUEST</b>\n\n🆔 <b>Doc ID:</b> <code>${documentId}</code>\n👤 <b>Squad:</b> ${d.squadName || d.playerName || 'Solo'}\n📞 <b>K-Pay:</b> ${d.kpayPhone}\n💰 <b>Amount:</b> ${d.fee} Ks`;
-                
-                await bot.telegram.sendMessage("-1003928964996", msg, {
-                    parse_mode: 'HTML',
-                    reply_markup: {
-                        inline_keyboard: [[
-                            { text: '✅ Confirm Refund', callback_data: `confirm_refund_${documentId}` },
-                            { text: '🔍 View Detail', callback_data: `view_reg_${documentId}` }
-                        ]]
-                    }
-                });
-                return res.status(200).json({ success: true, type: 'refund' });
-            }
-
-            // ၂။ ပုံမှန် Registration Request ဆိုလျှင်
-            if (regId && data) {
-                let playersList = data.mode === "5vs5" && data.players 
-                    ? data.players.map(p => `👤 ${p.name}`).join('\n') 
-                    : `👤 ${data.playerName || 'Solo'}`;
-                    
-                const msg = `🚨 <b>New Registration Request</b>\n\n🎮 Mode: ${data.mode}\n🏆 Squad: ${data.squadName || 'Solo'}\n📞 K-Pay: ${data.kpayPhone}\n💰 Fee: ${data.fee}\n👥 Players:\n${playersList}`;
-                
-                await bot.telegram.sendMessage(REG_GROUP_ID, msg, {
-                    parse_mode: 'HTML',
-                    reply_markup: { 
-                        inline_keyboard: [[
-                            { text: '✅ Confirm', callback_data: `regConfirm_${regId}` }, 
-                            { text: '❌ Reject', callback_data: `regReject_${regId}` }
-                        ]] 
-                    }
-                });
-                return res.status(200).json({ success: true, type: 'registration' });
-            }
-
-            return res.status(400).json({ success: false, error: "Invalid payload" });
-        } catch (err) { 
-            console.error("Notify API Error:", err);
-            return res.status(500).json({ success: false, error: err.message }); 
-        }
+            const { regId, data } = req.body;
+            let playersList = data.mode === "5vs5" && data.players ? data.players.map(p => `👤 ${p.name}`).join('\n') : `👤 ${data.playerName || 'Solo'}`;
+            const msg = `🚨 <b>New Registration Request</b>\n\n🎮 Mode: ${data.mode}\n🏆 Squad: ${data.squadName || 'Solo'}\n📞 K-Pay: ${data.kpayPhone}\n💰 Fee: ${data.fee}\n👥 Players:\n${playersList}`;
+            await bot.telegram.sendMessage(REG_GROUP_ID, msg, {
+                parse_mode: 'HTML',
+                reply_markup: { inline_keyboard: [[{ text: '✅ Confirm', callback_data: `regConfirm_${regId}` }, { text: '❌ Reject', callback_data: `regReject_${regId}` }]] }
+            });
+            return res.status(200).json({ success: true });
+        } catch (err) { return res.status(500).json({ success: false, error: err.message }); }
     }
 
-    // Bot Updates များကို Handle လုပ်ခြင်း
-    try { 
-        await bot.handleUpdate(req.body); 
-        return res.status(200).send('OK'); 
-    } catch (err) { 
-        console.error("Bot Handle Error:", err);
-        return res.status(500).send('Error'); 
-    }
+    try { await bot.handleUpdate(req.body); return res.status(200).send('OK'); } 
+    catch (err) { return res.status(500).send('Error'); }
 };
