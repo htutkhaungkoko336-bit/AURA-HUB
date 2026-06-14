@@ -1008,11 +1008,9 @@ async function quitMatch() {
     }
 }
 // Firebase App Check ကို စတင်အသုံးပြုခြင်း
+// App Check ကို စတင်အသုံးပြုခြင်း (v8 format)
 const appCheck = firebase.appCheck();
-
 appCheck.activate(
   '6LdF9B4tAAAAKfx9TTjuhz1ypf3Tl7UtCnPvGB3', // မင်းရဲ့ Site Key
-  true // isTokenAutoRefreshEnabled ကို true ထားပေးပါ
+  true
 );
-
-console.log("App Check initialized successfully!");
