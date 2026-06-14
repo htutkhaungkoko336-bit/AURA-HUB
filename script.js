@@ -265,10 +265,12 @@ async function submitProof() {
         return;
     }
 
+    const backBtn = document.getElementById('back-to-form-btn');
+    if (backBtn) backBtn.style.display = 'none';
+
     document.getElementById('submit-btn').style.display = 'none';
     document.getElementById('waiting-msg').style.display = 'block';
     document.getElementById('waiting-msg').innerText = "Processing...";
-
     try {
         const paymentURL = await uploadToImgBB(ssFile);
         let squadLogoURL = sqLogoFile ? await uploadToImgBB(sqLogoFile) : "https://i.ibb.co/4pGm0Zf/default-logo.png";
@@ -335,6 +337,11 @@ async function submitProof() {
 }
 function backToRegistration() {
     document.getElementById('page-payment-proof').style.display = 'none';
+    
+    // Form ကိုပြန်သွားတဲ့အတွက် Back to Form ခလုတ်ကို ဖျောက်ထားလိုက်ပါ
+    const backBtn = document.getElementById('back-to-form-btn');
+    if (backBtn) backBtn.style.display = 'none';
+
     const mode = mapData[currentIndex].mode;
     if (mode === "5vs5") {
         document.getElementById('page-5vs5').style.display = 'flex';
@@ -342,7 +349,6 @@ function backToRegistration() {
         document.getElementById('page-1vs1').style.display = 'flex';
     }
 }
-
 window.onload = updateDisplay;
 
 // Live Lobby Preview Function
@@ -396,6 +402,15 @@ function watchStatus(docId) {
                 if (typeof loadMatchRooms === 'function') loadMatchRooms();
             } 
             else if (data.status === "rejected") {
+                const backBtn = document.getElementById('back-to-form-btn');
+                if (backBtn) backBtn.style.display = 'block';
+                
+                // Submit Button ပြန်ပေါ်လာအောင် လုပ်ခြင်း
+                const submitBtn = document.getElementById('submit-btn');
+                if (submitBtn) {
+                    submitBtn.style.display = 'block';
+                    submitBtn.innerText = "Resubmit";
+                }
                 // Reject Reason များကို ပြသခြင်း
                 const reasons = {
                     'fee': 'Fee ကြေး မလုံလောက်ပါ',
