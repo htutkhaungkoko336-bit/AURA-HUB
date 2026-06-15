@@ -164,7 +164,7 @@ bot.start(async (ctx) => {
     const userId = ctx.from.id.toString();
     if (isAdmin(userId)) return ctx.reply("👋 Admin Panel သို့ ကြိုဆိုပါသည်။ /admin ဟု ရိုက်၍ Menu ခေါ်ပါ။");
     const matchId = ctx.startPayload;
-    if (!matchId) return ctx.reply("🔥 AURA HUB Matchmaking Bot သို့ ကြိုဆိုပါသည်။");
+    if (!matchId) return ctx.reply("🔥 AURA HUB Matchmaking Bot မှ ကြိုဆိုပါသည်။");
     await db.collection("sessions").doc(userId).set({ currentMatchId: matchId }, { merge: true });
     
     try {
@@ -191,7 +191,7 @@ bot.start(async (ctx) => {
         const dataB = leaderBDoc.data() || { players: [], kpayPhone: "မရှိပါ" };
         const renderPlayers = (players) => players.map(p => `👤 ${p.name}`).join('\n');
         
-        const msg = `<b>🔍 MATCH DETAILS</b>\n\n🕒 <b>Time:</b> ${matchTime}\n💰 <b>Fee:</b> ${matchData.fee || 0}\n━━━━━━━━━━━━━━\n<b>🏆 TEAM A: ${matchData.teamA}</b>\n📞 Ph: ${dataA.kpayPhone}\n${renderPlayers(dataA.players)}\n\n<b>🏆 TEAM B: ${matchData.teamB}</b>\n📞 Ph: ${dataB.kpayPhone}\n${renderPlayers(dataB.players)}\n━━━━━━━━━━━━━━\n🎲 <b>First Pick:</b> ${matchData.firstPickWinner || 'N/A'}\n\n💡 *အနိုင်ရရှိသည့် အသင်းက Result Screenshot ကို ပို့ပေးပါ၊ ကျေးဇူးတင်ပါသည်။*`;
+        const msg = `<b>🔍 MATCH DETAILS</b>\n\n🕒 <b>Time:</b> ${matchTime}\n💰 <b>Fee:</b> ${matchData.fee || 0}\n━━━━━━━━━━━━━━\n<b>🏆 TEAM A: ${matchData.teamA}</b>\n📞 Ph: ${dataA.kpayPhone}\n${renderPlayers(dataA.players)}\n\n<b>🏆 TEAM B: ${matchData.teamB}</b>\n📞 Ph: ${dataB.kpayPhone}\n${renderPlayers(dataB.players)}\n━━━━━━━━━━━━━━\n🎲 <b>First Pick:</b> ${matchData.firstPickWinner || 'N/A'}\n\n💡 * အနိုင်ရရှိသည့် အသင်းက Result Screenshot ကို ပို့ပေးပါ၊ အနိုင်ရရှိသည့်တိုင် screenshot မပို့ပေးနိုင်လျှင် ငွေလွှဲပေးမည်မဟုတ်ပါ။ ကျေးဇူးတင်ပါသည်။*`;
         ctx.reply(msg, { parse_mode: 'HTML' });
     } catch (e) { ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။"); }
 });
@@ -321,7 +321,7 @@ bot.action(/confirm_(.+)/, async (ctx) => {
             matchId: data.matchId 
         });
         
-        await ctx.telegram.sendMessage(data.userId, "🎉 ဂုဏ်ယူပါသည်။ အနိုင်ရရှိကြောင်း အတည်ပြုပြီးပါပြီ။ ငွေလွှဲပြေစာ (SS) ပို့ပေးပါ။");
+        await ctx.telegram.sendMessage(data.userId, "🎉 ဂုဏ်ယူပါသည်။ အနိုင်ရရှိကြောင်း အတည်ပြုပြီးပါပြီ။ Admin မှ ငွေလွှဲပြေစာ SS ကို ပေးပို့ပေးပါမည်။ ခနစောင့်ပါ။");
         ctx.answerCbQuery("အောင်မြင်ပါသည်။");
     } catch (err) {
         console.error("Batch Commit Error:", err);
