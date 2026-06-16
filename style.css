@@ -437,3 +437,37 @@ body {
     background: #444;
     border-radius: 2px;
 }
+
+.room-card {
+    display: flex;
+    justify-content: space-between; /* ခလုတ်နဲ့ စာသားကို နေရာခွဲမယ် */
+    align-items: center;
+    padding: 12px 20px;
+    margin-bottom: 10px;
+    background-color: #1a1a1a;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.room-price { 
+    flex: 1; 
+    text-align: left; 
+}
+
+.room-type { 
+    flex: 1; 
+    text-align: center; 
+    font-weight: bold; 
+    color: #c9a66b; 
+}
+
+/* Join ခလုတ်အတွက် သီးသန့်ပြင်မယ် */
+.room-status { 
+    flex: 0 0 auto; /* ခလုတ်ကို သူအရွယ်အစားအတိုင်းပဲ ထားမယ် */
+    text-align: right;
+    background: #c9a66b; /* ခလုတ်အရောင် (သင့်ပုံစံအတိုင်း) */
+    color: #000;
+    padding: 5px 15px;
+    border-radius: 4px;
+    margin-left: 10px; /* စာသားနဲ့ ခလုတ်ကြား အကွာအဝေး */
+}
