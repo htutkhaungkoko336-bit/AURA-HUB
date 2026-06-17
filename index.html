@@ -14,15 +14,19 @@
             <p style="color: #aaa; margin: 0;">Login to start your tournament</p>
         </div>
 
+        <div id="recaptcha-container"></div>
+
         <div class="login-registration-area">
             <div class="login-input-wrapper" id="phone-input-div">
                 <label style="color:#c9a66b; font-size: 0.8rem;">ENTER YOUR PHONE NUMBER</label>
                 <input type="tel" class="login-input" id="phone-no" placeholder="09xxxxxxxxx">
             </div>
+            
             <div class="login-input-wrapper" id="otp-input-div" style="display: none;">
                 <label style="color:#c9a66b; font-size: 0.8rem;">ENTER OTP</label>
                 <input type="number" class="login-input" id="otp-code" placeholder="xxxxxx">
             </div>
+            
             <button id="send-otp-btn" class="login-gold-btn" onclick="sendOTP()">Send OTP</button>
             <button id="verify-otp-btn" class="login-gold-btn" style="display: none;" onclick="verifyOTP()">Verify Code</button>
         </div>
@@ -339,6 +343,7 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app-check.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 
 <script>
   // Firebase Configuration

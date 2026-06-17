@@ -1,3 +1,58 @@
+// Firebase v8 မှာတော့ initialize လုပ်ပြီးသားမို့လို့ auth ကို တိုက်ရိုက်ခေါ်သုံးရပါတယ်
+const auth = firebase.auth();
+
+// Recaptcha တည်ဆောက်ခြင်း (v8 ပုံစံ)
+window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+    'size': 'invisible'
+});
+
+// 1. Send OTP Function
+function sendOTP() {
+    let phoneNumber = document.getElementById("phone-no").value;
+    
+    // မြန်မာဖုန်းနံပါတ် format +95 ပြောင်းခြင်း
+    if (phoneNumber.startsWith("09")) {
+        phoneNumber = "+95" + phoneNumber.substring(1);
+    }
+    
+    const appVerifier = window.recaptchaVerifier;
+    
+    auth.signInWithPhoneNumber(phoneNumber, appVerifier)
+        .then((confirmationResult) => {
+            // confirmationResult ကို window မှာ သိမ်းထားမှ verify လုပ်တဲ့အခါ ရမှာပါ
+            window.confirmationResult = confirmationResult;
+            alert("OTP ပို့လိုက်ပါပြီ။");
+            
+            // UI ပြောင်းလဲခြင်း
+            document.getElementById("phone-input-div").style.display = "none";
+            document.getElementById("send-otp-btn").style.display = "none";
+            document.getElementById("otp-input-div").style.display = "block";
+            document.getElementById("verify-otp-btn").style.display = "block";
+        }).catch((error) => {
+            console.error("Error:", error);
+            alert("OTP ပို့၍မရပါ။ ဖုန်းနံပါတ်စစ်ဆေးပါ။");
+        });
+}
+
+// 2. Verify OTP Function
+function verifyOTP() {
+    const otp = document.getElementById("otp-code").value;
+    
+    if (window.confirmationResult) {
+        window.confirmationResult.confirm(otp).then((result) => {
+            const user = result.user;
+            alert("Login အောင်မြင်ပါပြီ!");
+            
+            localStorage.setItem("userLoggedIn", "true");
+            // Dashboard ကို ပြန် refresh လုပ်လိုက်ပါမယ်
+            location.reload(); 
+        }).catch((error) => {
+            alert("OTP နံပါတ် မှားယွင်းနေပါသည်။");
+        });
+    } else {
+        alert("OTP တောင်းထားခြင်း မရှိသေးပါ။");
+    }
+}
 // App Check ကို စတင်အသုံးပြုခြင်း (v8 format)
 const appCheck = firebase.appCheck();
 appCheck.activate(
