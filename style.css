@@ -471,3 +471,68 @@ body {
     border-radius: 4px;
     margin-left: 10px; /* စာသားနဲ့ ခလုတ်ကြား အကွာအဝေး */
 }
+/* ၁။ Global Layout (Padding မပါဝင်စေရ) */
+.sub-page, .app-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    display: none; 
+    flex-direction: column;
+    background-color: #000;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+/* Login Page အတွက် သီးသန့် Layout */
+#page-login {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background-color: #000;
+}
+
+.login-header-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.login-registration-area {
+    width: 100%;
+    max-width: 380px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.login-input-wrapper {
+    width: 100%;
+}
+
+.login-input {
+    width: 100%;
+    padding: 15px;
+    font-size: 1rem;
+    border: 1px solid #c9a66b;
+    border-radius: 10px;
+    background: #111;
+    color: #fff;
+    box-sizing: border-box; /* Padding ကြောင့် ဘောင်မကျော်အောင် */
+}
+
+.login-gold-btn {
+    width: 100%;
+    padding: 15px;
+    font-size: 1rem;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #c9a66b, #f1e4b9);
+    border: none;
+    font-weight: bold;
+    color: #000;
+    cursor: pointer;
+}

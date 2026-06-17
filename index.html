@@ -7,24 +7,26 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <div id="page-login" class="sub-page" style="display: flex;">
+        <div class="login-header-box">
+            <img src="RED EYE.jpg" alt="Logo" style="width: 120px; height: 120px; object-fit: contain;">
+            <h1 style="color:#c9a66b; font-size: 1.5rem; margin: 10px 0 0 0;">AURA HUB</h1>
+            <p style="color: #aaa; margin: 0;">Login to start your tournament</p>
+        </div>
 
-    <!-- 1. WELCOME NOTIFICATION POPUP -->
-    <div id="welcome-popup" class="modal" style="display: flex;">
-        <div class="modal-content">
-            <h2 style="color:#c9a66b">WELCOME TO AURA HUB</h2>
-            <div class="rules-text" style="font-size: 0.8rem; text-align: left; margin: 15px 0;">
-                <p>• ပြိုင်ပွဲမစတင်မှီ စည်းကမ်းချက်များကို ဖတ်ပေးပါ။</p>
-                <p>• Register တင်မည့် ကစားသမားတွင် K Pay နှင့် Telegram Acc ရှိရမည်။ Register တင်ရာတွင် Vpn မဖြစ်မနေခံပေးပါ။</p>
-                <p>• ဆဲဆိုခြင်းမပြုရပါ။ စိတ်ကြိုက်လေတိုက်ခွင့်ရှိသည်။ Recall စိတ်ကြိုက်ပြခွင့်ရှိသည်။</p>
+        <div class="login-registration-area">
+            <div class="login-input-wrapper" id="phone-input-div">
+                <label style="color:#c9a66b; font-size: 0.8rem;">ENTER YOUR PHONE NUMBER</label>
+                <input type="tel" class="login-input" id="phone-no" placeholder="09xxxxxxxxx">
             </div>
-            <div style="display: flex; align-items: center; justify-content: center; gap: 10px;">
-                <input type="checkbox" id="read-check" style="width: 20px; height: 20px; cursor: pointer;">
-                <label for="read-check" style="color:#fff; font-size: 0.9rem;">I have read all rules</label>
+            <div class="login-input-wrapper" id="otp-input-div" style="display: none;">
+                <label style="color:#c9a66b; font-size: 0.8rem;">ENTER OTP</label>
+                <input type="number" class="login-input" id="otp-code" placeholder="xxxxxx">
             </div>
-            <button class="rule-btn gold-btn" onclick="closeWelcome()" style="margin-top: 15px; width: 100%;">Continue to Hub</button>
+            <button id="send-otp-btn" class="login-gold-btn" onclick="sendOTP()">Send OTP</button>
+            <button id="verify-otp-btn" class="login-gold-btn" style="display: none;" onclick="verifyOTP()">Verify Code</button>
         </div>
     </div>
-
     <!-- 2. DASHBOARD PAGE -->
     <div class="app-container" id="main-dashboard" style="opacity: 0.5; pointer-events: none;">
         <div class="header-box">
