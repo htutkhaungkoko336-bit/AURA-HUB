@@ -4,37 +4,43 @@ appCheck.activate(
   '6LdF9B4tAAAAKfx9TTjuhz1ypf3Tl7UtCnPvGB3', // မင်းရဲ့ Site Key
   true
 );
-// ခလုတ်ကို နှိပ်တဲ့အခါ အလုပ်လုပ်မည့် Function
-document.getElementById("login-btn").addEventListener("click", async () => {
+// script.js
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+function startAnonymousLogin() {
     const phoneNo = document.getElementById("phone-no").value;
 
-    // ၁။ ဖုန်းနံပါတ် စစ်ဆေးခြင်း (အရေးကြီးဆုံးအဆင့်)
-    // ဖုန်းနံပါတ် အလွတ်ဖြစ်နေရင် (သို့) ၉ လုံးအောက်နည်းရင် Login မဝင်နိုင်ပါ
     if (phoneNo === "" || phoneNo.length < 9) {
         alert("ကျေးဇူးပြု၍ ဖုန်းနံပါတ်ကို မှန်ကန်စွာ ထည့်သွင်းပေးပါ။");
-        return; // ဒီနေရာမှာပဲ ရပ်သွားမယ်၊ နောက်တစ်ဆင့်ကို မသွားပါဘူး
+        return;
     }
 
-    try {
-        // ၂။ ဖုန်းနံပါတ် မှန်ကန်မှသာ Anonymous Login ကို စတင်မယ်
-        const userCredential = await signInAnonymously(auth);
-        
-        // ၃။ Database ထဲမှာ ဖုန်းနံပါတ်ကို သိမ်းမယ်
-        await setDoc(doc(db, "registrations", userCredential.user.uid), {
-            phone: phoneNo,
-            createdAt: new Date()
+    // Anonymous Login (v8 format)
+    auth.signInAnonymously()
+        .then((userCredential) => {
+            const uid = userCredential.user.uid;
+            
+            // Firestore မှာ သိမ်းခြင်း
+            db.collection("registrations").doc(uid).set({
+                phone: phoneNo,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then(() => {
+                alert("Login အောင်မြင်ပါပြီ!");
+                // Dashboard ကို ပြမယ်
+                document.getElementById("page-login").style.display = "none";
+                document.getElementById("main-dashboard").style.display = "flex";
+                document.getElementById("main-dashboard").style.opacity = "1";
+                document.getElementById("main-dashboard").style.pointerEvents = "auto";
+            });
+        })
+        .catch((error) => {
+            console.error("Login Error: ", error.code, error.message);
+            alert("Login လုပ်ရာတွင် အမှားအယွင်းရှိနေပါသည်။: " + error.message);
         });
-
-        // ၄။ အောင်မြင်ရင် Dashboard ကို ပြမယ်
-        document.getElementById("page-login").style.display = "none";
-        document.getElementById("main-dashboard").style.display = "flex";
-        document.getElementById("main-dashboard").style.opacity = "1";
-        document.getElementById("main-dashboard").style.pointerEvents = "auto";
-
-    } catch (error) {
-        alert("Login လုပ်ရာတွင် အမှားအယွင်းရှိနေပါသည်။");
-    }
-});// --- DATA & STATE ---
+}
+// --- DATA & STATE ---
 let currentListener = null;
 let currentMatchTab = 'waiting'; // ဒါကိုထည့်လိုက်ရင် "currentMatchTab is not defined" error ပျောက်သွားပါမယ်။
 const mapData = [
