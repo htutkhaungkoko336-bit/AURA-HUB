@@ -6,6 +6,47 @@ appCheck.activate(
 );
 let isLoggedIn = false;
 
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js";
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js";
+
+const auth = getAuth();
+const db = getFirestore();
+let isLoggedIn = false;
+
+async function startAnonymousLogin() {
+    const phoneNo = document.getElementById("phone-no").value;
+
+    // ဖုန်းနံပါတ် စစ်ဆေးခြင်း
+    if (phoneNo === "" || phoneNo.length < 9) {
+        alert("ကျေးဇူးပြု၍ ဖုန်းနံပါတ်ကို မှန်ကန်စွာ ထည့်သွင်းပေးပါ။");
+        return;
+    }
+
+    try {
+        // Firebase Anonymous Login စတင်ခြင်း
+        const userCredential = await signInAnonymously(auth);
+        const user = userCredential.user;
+
+        // ဖုန်းနံပါတ်ကို Firestore ထဲမှာ သိမ်းခြင်း
+        await setDoc(doc(db, "registrations", user.uid), {
+            phone: phoneNo,
+            createdAt: new Date()
+        });
+
+        isLoggedIn = true;
+        alert("Login အောင်မြင်ပါပြီ!");
+
+        // Dashboard သို့ ပြောင်းခြင်း
+        document.getElementById("page-login").style.display = "none";
+        document.getElementById("main-dashboard").style.display = "flex";
+        document.getElementById("main-dashboard").style.opacity = "1";
+        document.getElementById("main-dashboard").style.pointerEvents = "auto";
+
+    } catch (error) {
+        console.error("Login Error: ", error);
+        alert("Login လုပ်ရာတွင် အမှားအယွင်းရှိနေပါသည်။");
+    }
+}
 // --- DATA & STATE ---
 let currentListener = null;
 let currentMatchTab = 'waiting'; // ဒါကိုထည့်လိုက်ရင် "currentMatchTab is not defined" error ပျောက်သွားပါမယ်။

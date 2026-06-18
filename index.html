@@ -7,7 +7,27 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- 2. DASHBOARD PAGE -->
+<div id="page-login" class="sub-page" style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
+    <div class="login-header-box" style="text-align: center;">
+        <img src="RED EYE.jpg" alt="Logo" style="width: 100px; height: 100px; border-radius: 50%; box-shadow: 0 0 15px #c9a66b;">
+        <h1 style="color:#c9a66b; font-size: 2rem; margin: 15px 0 0 0; letter-spacing: 2px;">AURA HUB</h1>
+        <p style="color: #aaa; margin: 0;">Login to start your tournament</p>
+    </div>
+
+    <div class="login-registration-area" style="width: 100%; max-width: 300px;">
+        <div class="login-input-wrapper" id="phone-input-div">
+            <label style="color:#c9a66b; font-size: 0.7rem; display: block; margin-bottom: 5px;">PHONE NUMBER</label>
+            <input type="tel" class="login-input" id="phone-no" placeholder="09xxxxxxxxx" 
+                   style="width: 100%; padding: 12px; border: 1px solid #c9a66b; background: #1a1a1a; color: white; border-radius: 5px; box-sizing: border-box;">
+        </div>
+        
+        <button id="login-btn" class="login-gold-btn" onclick="startAnonymousLogin()" 
+                style="width: 100%; padding: 12px; margin-top: 15px; background: #c9a66b; border: none; cursor: pointer; font-weight: bold; border-radius: 5px;">
+            Continue
+        </button>
+    </div>
+</div>
+        <!-- 2. DASHBOARD PAGE -->
     <div class="app-container" id="main-dashboard" style="opacity: 0.5; pointer-events: none;">
         <div class="header-box">
             <h1>AURA HUB</h1>

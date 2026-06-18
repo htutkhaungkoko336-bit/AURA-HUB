@@ -484,3 +484,47 @@ body {
     box-sizing: border-box;
     overflow-y: auto;
 }
+
+/* Login Page Layout */
+#page-login {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #000;
+    padding: 20px;
+}
+
+.login-registration-area {
+    width: 100%;
+    max-width: 350px;
+    margin-top: 20px;
+}
+
+.login-input {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 20px;
+    border: 1px solid #c9a66b;
+    border-radius: 10px;
+    background: #111;
+    color: #fff;
+    box-sizing: border-box;
+}
+
+.login-gold-btn {
+    width: 100%;
+    padding: 15px;
+    border-radius: 10px;
+    background: linear-gradient(90deg, #c9a66b, #f1e4b9);
+    border: none;
+    font-weight: bold;
+    color: #000;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.login-gold-btn:hover {
+    transform: scale(1.02);
+}
