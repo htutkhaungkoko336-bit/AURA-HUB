@@ -1,43 +1,43 @@
-// App Check ကို စတင်အသုံးပြုခြင်း (v8 format)
-const appCheck = firebase.appCheck();
-appCheck.activate(
-  '6LdF9B4tAAAAKfx9TTjuhz1ypf3Tl7UtCnPvGB3', // မင်းရဲ့ Site Key
-  true
-);
-// script.js
+// Variable တွေကို တစ်ခါပဲ ကြေညာပါ
 const auth = firebase.auth();
 const db = firebase.firestore();
 
+// function ကို ဒီမှာ တစ်ခါတည်း ရေးပါ
 function startAnonymousLogin() {
     const phoneNo = document.getElementById("phone-no").value;
 
-    if (phoneNo === "" || phoneNo.length < 9) {
+    if (!phoneNo || phoneNo.length < 9) {
         alert("ကျေးဇူးပြု၍ ဖုန်းနံပါတ်ကို မှန်ကန်စွာ ထည့်သွင်းပေးပါ။");
         return;
     }
 
-    // Anonymous Login (v8 format)
     auth.signInAnonymously()
         .then((userCredential) => {
             const uid = userCredential.user.uid;
             
-            // Firestore မှာ သိမ်းခြင်း
             db.collection("registrations").doc(uid).set({
                 phone: phoneNo,
                 createdAt: firebase.firestore.FieldValue.serverTimestamp()
             })
-            .then(() => {
-                alert("Login အောင်မြင်ပါပြီ!");
-                // Dashboard ကို ပြမယ်
-                document.getElementById("page-login").style.display = "none";
-                document.getElementById("main-dashboard").style.display = "flex";
-                document.getElementById("main-dashboard").style.opacity = "1";
-                document.getElementById("main-dashboard").style.pointerEvents = "auto";
-            });
+// Login အောင်မြင်တဲ့ အပိုင်းမှာ ဒီလိုလေး ပြင်ပေးပါ
+        .then(() => {
+            alert("Login အောင်မြင်ပါပြီ!");
+            
+            // 1. Login Page ကို ဝှက်မယ်
+            document.getElementById("page-login").style.display = "none";
+            
+            // 2. Dashboard ကို ပြမယ်
+            const dashboard = document.getElementById("main-dashboard");
+            dashboard.style.display = "flex"; // (သို့မဟုတ်) block
+            
+            // အရေးကြီးဆုံးအချက် - ဒီမှာ Style တွေကို ပြန်ဖွင့်ပေးရပါမယ်
+            dashboard.style.opacity = "1"; 
+            dashboard.style.pointerEvents = "auto"; // ဒါလေးကမှ နှိပ်လို့ရမှာပါ
+        })
         })
         .catch((error) => {
-            console.error("Login Error: ", error.code, error.message);
-            alert("Login လုပ်ရာတွင် အမှားအယွင်းရှိနေပါသည်။: " + error.message);
+            console.error("Login Error: ", error.message);
+            alert("Login Error: " + error.message);
         });
 }
 // --- DATA & STATE ---

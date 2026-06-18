@@ -9,8 +9,8 @@
 <body>
 <div id="page-login" class="sub-page" style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
     <div class="login-header-box" style="text-align: center;">
-        <img src="RED EYE.jpg" alt="Logo" style="width: 100px; height: 100px; border-radius: 50%; box-shadow: 0 0 15px #c9a66b;">
-        <h1 style="color:#c9a66b; font-size: 2rem; margin: 15px 0 0 0; letter-spacing: 2px;">AURA HUB</h1>
+    <img src="AuraHubLogo.jpg" alt="Logo" style="width: 100px; height: 100px; border-radius: 5px;">     
+   <h1 style="color:#c9a66b; font-size: 2rem; margin: 15px 0 0 0; letter-spacing: 2px;">AURA HUB</h1>
         <p style="color: #aaa; margin: 0;">Login to start your tournament</p>
     </div>
 
@@ -332,14 +332,12 @@
         <button onclick="document.getElementById('match-detail-popup').style.display='none'" style="width: 100%; padding: 10px; background: #c9a66b; border: none; border-radius: 5px; font-weight: bold;">Close</button>
     </div>
 </div>
-<!-- Firebase SDK v8 ကိုပဲ သုံးပါမယ် -->
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app-check.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
 
 <script>
-  // Firebase Configuration
   const firebaseConfig = {
     apiKey: "AIzaSyCqIFh8-OzlDPQAqboKHaq8-Jx_4jlVd4M",
     authDomain: "mlbb-matchmaking.firebaseapp.com",
@@ -349,14 +347,12 @@
     appId: "1:539846137130:web:ca37efdb188d14e664ba53"
   };
 
-  // Initialize Firebase (Version 8 format)
-  if (!firebase.apps.length) {
-    firebase.initializeApp(firebaseConfig);
-  }
-  const db = firebase.firestore();
+  firebase.initializeApp(firebaseConfig);
+  
+  // App Check ကို v8 နဲ့ သုံးရင် ဒီလိုရေးရပါမယ်
+  firebase.appCheck().activate('6LdF9B4tAAAAKfx9TTjuhz1ypf3Tl7UtCnPvGB3', true);
 </script>
 
-<!-- script.js ကို config ရဲ့ အောက်မှာ ထားပါ -->
 <script src="script.js"></script>
 </body>
 </html>
