@@ -6,62 +6,6 @@ appCheck.activate(
 );
 let isLoggedIn = false;
 
-// Page အားလုံးကို ထိန်းချုပ်မည့် Function
-function showPage(pageId) {
-    // Login မဝင်ရသေးရင် Dashboard ကို ခွင့်မပြုပါ
-    if (pageId !== 'page-login' && !isLoggedIn) {
-        alert("ကျေးဇူးပြု၍ Login အရင်ဝင်ပေးပါ။");
-        return;
-    }
-
-    // အားလုံးကို ဝှက်မယ်
-    document.querySelectorAll('.sub-page, .app-container').forEach(p => p.style.display = 'none');
-    
-    // လိုချင်တဲ့ page ကို ပြမယ်
-    document.getElementById(pageId).style.display = 'flex';
-}
-
-function sendOTP() {
-    // PH NO အကွက်ထဲက တန်ဖိုးကို ယူမယ်
-    const phoneNo = document.getElementById("phone-no").value;
-
-    // အလွတ်ဖြစ်နေရင် Alert တက်မယ်
-    if (phoneNo === "" || phoneNo.length < 9) {
-        alert("ကျေးဇူးပြု၍ ဖုန်းနံပါတ်ကို မှန်ကန်စွာ ထည့်သွင်းပေးပါ။");
-        return; // ဒီနေရာမှာပဲ ရပ်သွားမယ်၊ OTP မပို့ပေးဘူး
-    }
-
-    // PH NO ရှိရင်ပဲ အောက်က Code တွေ အလုပ်လုပ်မယ်
-    alert("OTP ပို့လိုက်ပါပြီ!");
-    document.getElementById("phone-input-div").style.display = "none";
-    document.getElementById("send-otp-btn").style.display = "none";
-    
-    document.getElementById("otp-input-div").style.display = "block";
-    document.getElementById("verify-otp-btn").style.display = "block";
-}
-function verifyOTP() {
-    const otp = document.getElementById("otp-code").value;
-    
-    if (otp === "123456") { 
-        isLoggedIn = true;
-        alert("Login အောင်မြင်ပါပြီ!");
-        
-        // 1. Login Page ကို ပိတ်မယ်
-        document.getElementById("page-login").style.display = "none";
-        
-        // 2. Dashboard ကို ပြမယ်
-        const dashboard = document.getElementById("main-dashboard");
-        dashboard.style.display = "flex"; // Block အစား flex သုံးရင် ပိုကောင်းပါတယ်
-        
-        // 3. မဲနေတဲ့ဟာတွေကို ပြန်ဖျောက်မယ်
-        dashboard.style.opacity = "1"; 
-        dashboard.style.pointerEvents = "auto"; // ဒါက Click ပြန်ရအောင်လုပ်တာ
-        
-    } else {
-        alert("OTP မှားယွင်းနေပါသည်။");
-    }
-}
-
 // --- DATA & STATE ---
 let currentListener = null;
 let currentMatchTab = 'waiting'; // ဒါကိုထည့်လိုက်ရင် "currentMatchTab is not defined" error ပျောက်သွားပါမယ်။
