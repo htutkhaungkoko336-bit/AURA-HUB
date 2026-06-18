@@ -4,50 +4,37 @@ appCheck.activate(
   '6LdF9B4tAAAAKfx9TTjuhz1ypf3Tl7UtCnPvGB3', // မင်းရဲ့ Site Key
   true
 );
-let isLoggedIn = false;
-
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-auth.js";
-import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore.js";
-
-const auth = getAuth();
-const db = getFirestore();
-let isLoggedIn = false;
-
-async function startAnonymousLogin() {
+// ခလုတ်ကို နှိပ်တဲ့အခါ အလုပ်လုပ်မည့် Function
+document.getElementById("login-btn").addEventListener("click", async () => {
     const phoneNo = document.getElementById("phone-no").value;
 
-    // ဖုန်းနံပါတ် စစ်ဆေးခြင်း
+    // ၁။ ဖုန်းနံပါတ် စစ်ဆေးခြင်း (အရေးကြီးဆုံးအဆင့်)
+    // ဖုန်းနံပါတ် အလွတ်ဖြစ်နေရင် (သို့) ၉ လုံးအောက်နည်းရင် Login မဝင်နိုင်ပါ
     if (phoneNo === "" || phoneNo.length < 9) {
         alert("ကျေးဇူးပြု၍ ဖုန်းနံပါတ်ကို မှန်ကန်စွာ ထည့်သွင်းပေးပါ။");
-        return;
+        return; // ဒီနေရာမှာပဲ ရပ်သွားမယ်၊ နောက်တစ်ဆင့်ကို မသွားပါဘူး
     }
 
     try {
-        // Firebase Anonymous Login စတင်ခြင်း
+        // ၂။ ဖုန်းနံပါတ် မှန်ကန်မှသာ Anonymous Login ကို စတင်မယ်
         const userCredential = await signInAnonymously(auth);
-        const user = userCredential.user;
-
-        // ဖုန်းနံပါတ်ကို Firestore ထဲမှာ သိမ်းခြင်း
-        await setDoc(doc(db, "registrations", user.uid), {
+        
+        // ၃။ Database ထဲမှာ ဖုန်းနံပါတ်ကို သိမ်းမယ်
+        await setDoc(doc(db, "registrations", userCredential.user.uid), {
             phone: phoneNo,
             createdAt: new Date()
         });
 
-        isLoggedIn = true;
-        alert("Login အောင်မြင်ပါပြီ!");
-
-        // Dashboard သို့ ပြောင်းခြင်း
+        // ၄။ အောင်မြင်ရင် Dashboard ကို ပြမယ်
         document.getElementById("page-login").style.display = "none";
         document.getElementById("main-dashboard").style.display = "flex";
         document.getElementById("main-dashboard").style.opacity = "1";
         document.getElementById("main-dashboard").style.pointerEvents = "auto";
 
     } catch (error) {
-        console.error("Login Error: ", error);
         alert("Login လုပ်ရာတွင် အမှားအယွင်းရှိနေပါသည်။");
     }
-}
-// --- DATA & STATE ---
+});// --- DATA & STATE ---
 let currentListener = null;
 let currentMatchTab = 'waiting'; // ဒါကိုထည့်လိုက်ရင် "currentMatchTab is not defined" error ပျောက်သွားပါမယ်။
 const mapData = [
