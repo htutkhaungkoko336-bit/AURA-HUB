@@ -1,9 +1,9 @@
-// App Check ကို ဒီလို initialize လုပ်ပါ
-if (firebase.appCheck) {
+// အပေါ်က code နေရာမှာ ဒါကိုသုံးပါ
+if (firebase.appCheck && !window.appCheckInitialized) {
     const appCheck = firebase.appCheck();
     appCheck.activate('YOUR_RECAPTCHA_SITE_KEY_HERE', true);
+    window.appCheckInitialized = true; // တစ်ခါလုပ်ပြီးပြီလို့ မှတ်ထားလိုက်တာ
 }
-
 const auth = firebase.auth();
 const db = firebase.firestore();
 
