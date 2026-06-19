@@ -11,34 +11,22 @@ function registerOrLogin(phoneNo) {
     auth.signInAnonymously().then((userCredential) => {
         const uid = userCredential.user.uid;
         
-        // Data သိမ်းခြင်း
-        db.collection("users").doc(uid).set({
+        // ဖုန်းနံပါတ်ကို ID အဖြစ်သုံးလိုက်ပါမယ်
+        const userRef = db.collection("users").doc(phoneNo);
+
+        userRef.set({
             phone: phoneNo,
-            uid: uid,
+            uid: uid, // ဒီ UID က ပိုင်ရှင်အစစ်ရဲ့ UID ဖြစ်နေမယ်
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        })
+        }, { merge: true }) // merge: true ဆိုတာက ရှိပြီးသားဆိုရင် update ပဲလုပ်မယ်
         .then(() => {
             alert("Login အောင်မြင်ပါပြီ!");
-            
-            // --- DASHBOARD ပြသခြင်း (အရေးကြီးဆုံးအပိုင်း) ---
-            
-            // ၁။ Login page ကို ဖျောက်မည်
-            document.getElementById("page-login").style.display = "none";
-            
-            // ၂။ Dashboard ကို ပြမည်
-            const dashboard = document.getElementById("main-dashboard");
-            if (dashboard) {
-                dashboard.style.display = "flex"; // သို့မဟုတ် block
-                dashboard.style.opacity = "1";
-                dashboard.style.pointerEvents = "auto";
-            }
+            // Dashboard ကို ပြပါ
+            showDashboard();
         })
         .catch((error) => {
-            console.error("Error adding document: ", error);
             alert("Database Error: " + error.message);
         });
-    }).catch((error) => {
-        alert("Auth Error: " + error.message);
     });
 }
 // --- DATA & STATE ---
