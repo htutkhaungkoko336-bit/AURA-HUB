@@ -1,4 +1,8 @@
 // Variable တွေကို တစ်နေရာတည်းမှာပဲ ထားပါ
+// App Check ကို initialize လုပ်ခြင်း
+const appCheck = firebase.appCheck();
+appCheck.activate('YOUR_RECAPTCHA_SITE_KEY_HERE', true);
+
 const auth = firebase.auth();
 const db = firebase.firestore();
 
