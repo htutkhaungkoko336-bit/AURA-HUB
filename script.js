@@ -2,58 +2,29 @@
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// function ကို ဒီမှာ တစ်ခါတည်း ရေးပါ
-function startAnonymousLogin() {
-    const phoneNo = document.getElementById("phone-no").value;
-
+// Login Function တစ်ခုတည်းကိုပဲ အသုံးပြုပါ (နှစ်ခုကို ရောမသုံးပါနဲ့)
+function registerOrLogin(phoneNo) {
     if (!phoneNo || phoneNo.length < 9) {
-        alert("ကျေးဇူးပြု၍ ဖုန်းနံပါတ်ကို မှန်ကန်စွာ ထည့်သွင်းပေးပါ။");
+        alert("ဖုန်းနံပါတ် မှားယွင်းနေပါသည်။");
         return;
     }
 
-    auth.signInAnonymously()
-        .then((userCredential) => {
-            const uid = userCredential.user.uid;
-            
-            db.collection("registrations").doc(uid).set({
-                phone: phoneNo,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            })
-// Login အောင်မြင်တဲ့ အပိုင်းမှာ ဒီလိုလေး ပြင်ပေးပါ
-        .then(() => {
-            alert("Login အောင်မြင်ပါပြီ!");
-            
-            // 1. Login Page ကို ဝှက်မယ်
-            document.getElementById("page-login").style.display = "none";
-            
-            // 2. Dashboard ကို ပြမယ်
-            const dashboard = document.getElementById("main-dashboard");
-            dashboard.style.display = "flex"; // (သို့မဟုတ်) block
-            
-            // အရေးကြီးဆုံးအချက် - ဒီမှာ Style တွေကို ပြန်ဖွင့်ပေးရပါမယ်
-            dashboard.style.opacity = "1"; 
-            dashboard.style.pointerEvents = "auto"; // ဒါလေးကမှ နှိပ်လို့ရမှာပါ
-        })
-        })
-        .catch((error) => {
-            console.error("Login Error: ", error.message);
-            alert("Login Error: " + error.message);
-        });
-}
-function registerOrLogin(phoneNo) {
-    // registrations ကို လုံးဝ မထိပါဘူး၊ users အသစ်ကိုပဲ သုံးမှာပါ
     auth.signInAnonymously().then((userCredential) => {
         const uid = userCredential.user.uid;
         
-        // Collection အသစ် "users" ထဲကိုပဲ တိုက်ရိုက်ထည့်မယ်
+        // ဒီမှာ Collection နာမည်ကို "users" လို့ ပေးလိုက်ရင် 
+        // registrations ထဲကို ဘာမှ ရောက်မသွားတော့ပါဘူး။
         db.collection("users").doc(uid).set({
             phone: phoneNo,
+            uid: uid, // ဒီမှာ ID ကိုပါ ထည့်သိမ်းပေးလိုက်ပါ
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         })
         .then(() => {
-            console.log("User အချက်အလက်များကို users collection အသစ်ထဲသို့ ထည့်သွင်းပြီးပါပြီ။");
-            alert("မှတ်ပုံတင်ခြင်း အောင်မြင်ပါသည်။");
+            alert("အောင်မြင်ပါသည်။");
             showDashboard();
+        })
+        .catch((error) => {
+            console.error("Error adding document: ", error);
         });
     });
 }
