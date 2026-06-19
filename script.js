@@ -40,6 +40,22 @@ function startAnonymousLogin() {
             alert("Login Error: " + error.message);
         });
 }
+function registerOrLogin(phoneNo) {
+    // ၁။ Database ထဲမှာ ဒီဖုန်းနံပါတ် ရှိမရှိ အရင်စစ်
+    db.collection("phone_to_uid").doc(phoneNo).get().then((doc) => {
+        if (doc.exists) {
+            alert("အကောင့်ဟောင်း ဖြစ်ပါတယ်။ Login ဝင်ပါမည်။");
+            // ရှိပြီးသား UID ကို သုံးပြီး Login ဝင်တဲ့ Logic ဆက်ရေးပါ
+        } else {
+            // ၂။ အသစ်ဆိုရင် Anonymous Login ဝင်ပြီး အချက်အလက်သိမ်းပါ
+            auth.signInAnonymously().then((user) => {
+                db.collection("users").doc(user.user.uid).set({ phone: phoneNo });
+                db.collection("phone_to_uid").doc(phoneNo).set({ uid: user.user.uid });
+                alert("မှတ်ပုံတင်ခြင်း အောင်မြင်ပါသည်။");
+            });
+        }
+    });
+}
 // --- DATA & STATE ---
 let currentListener = null;
 let currentMatchTab = 'waiting'; // ဒါကိုထည့်လိုက်ရင် "currentMatchTab is not defined" error ပျောက်သွားပါမယ်။
