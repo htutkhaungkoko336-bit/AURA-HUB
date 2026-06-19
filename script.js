@@ -41,32 +41,20 @@ function startAnonymousLogin() {
         });
 }
 function registerOrLogin(phoneNo) {
-    const phoneRef = db.collection("phone_mapping").doc(phoneNo);
-
-    phoneRef.get().then((doc) => {
-        if (doc.exists) {
-            // အကောင့်ဟောင်းဆိုရင် UID ကိုယူပြီး Dashboard ပြမယ်
-            const uid = doc.data().uid;
-            console.log("Welcome back! UID: " + uid);
+    // registrations ကို လုံးဝ မထိပါဘူး၊ users အသစ်ကိုပဲ သုံးမှာပါ
+    auth.signInAnonymously().then((userCredential) => {
+        const uid = userCredential.user.uid;
+        
+        // Collection အသစ် "users" ထဲကိုပဲ တိုက်ရိုက်ထည့်မယ်
+        db.collection("users").doc(uid).set({
+            phone: phoneNo,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        })
+        .then(() => {
+            console.log("User အချက်အလက်များကို users collection အသစ်ထဲသို့ ထည့်သွင်းပြီးပါပြီ။");
+            alert("မှတ်ပုံတင်ခြင်း အောင်မြင်ပါသည်။");
             showDashboard();
-        } else {
-            // အကောင့်သစ်ဆိုရင် အသစ်ဆောက်မယ်
-            auth.signInAnonymously().then((userCredential) => {
-                const uid = userCredential.user.uid;
-
-                // 1. users collection အသစ်ထဲမှာ သိမ်းမယ်
-                db.collection("users").doc(uid).set({
-                    phone: phoneNo,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                // 2. phone_mapping ထဲမှာ UID နဲ့ တွဲမှတ်မယ်
-                phoneRef.set({ uid: uid });
-
-                alert("မှတ်ပုံတင်ခြင်း အောင်မြင်ပါသည်။");
-                showDashboard();
-            });
-        }
+        });
     });
 }
 // --- DATA & STATE ---
