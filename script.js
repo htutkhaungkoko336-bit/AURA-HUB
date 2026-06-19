@@ -41,17 +41,30 @@ function startAnonymousLogin() {
         });
 }
 function registerOrLogin(phoneNo) {
-    // ၁။ Database ထဲမှာ ဒီဖုန်းနံပါတ် ရှိမရှိ အရင်စစ်
-    db.collection("phone_to_uid").doc(phoneNo).get().then((doc) => {
+    const phoneRef = db.collection("phone_mapping").doc(phoneNo);
+
+    phoneRef.get().then((doc) => {
         if (doc.exists) {
-            alert("အကောင့်ဟောင်း ဖြစ်ပါတယ်။ Login ဝင်ပါမည်။");
-            // ရှိပြီးသား UID ကို သုံးပြီး Login ဝင်တဲ့ Logic ဆက်ရေးပါ
+            // အကောင့်ဟောင်းဆိုရင် UID ကိုယူပြီး Dashboard ပြမယ်
+            const uid = doc.data().uid;
+            console.log("Welcome back! UID: " + uid);
+            showDashboard();
         } else {
-            // ၂။ အသစ်ဆိုရင် Anonymous Login ဝင်ပြီး အချက်အလက်သိမ်းပါ
-            auth.signInAnonymously().then((user) => {
-                db.collection("users").doc(user.user.uid).set({ phone: phoneNo });
-                db.collection("phone_to_uid").doc(phoneNo).set({ uid: user.user.uid });
+            // အကောင့်သစ်ဆိုရင် အသစ်ဆောက်မယ်
+            auth.signInAnonymously().then((userCredential) => {
+                const uid = userCredential.user.uid;
+
+                // 1. users collection အသစ်ထဲမှာ သိမ်းမယ်
+                db.collection("users").doc(uid).set({
+                    phone: phoneNo,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                // 2. phone_mapping ထဲမှာ UID နဲ့ တွဲမှတ်မယ်
+                phoneRef.set({ uid: uid });
+
                 alert("မှတ်ပုံတင်ခြင်း အောင်မြင်ပါသည်။");
+                showDashboard();
             });
         }
     });
