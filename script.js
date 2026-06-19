@@ -1,31 +1,34 @@
-// Variable တွေကို တစ်ခါပဲ ကြေညာပါ
+// Variable တွေကို တစ်နေရာတည်းမှာပဲ ထားပါ
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Login Function တစ်ခုတည်းကိုပဲ အသုံးပြုပါ (နှစ်ခုကို ရောမသုံးပါနဲ့)
+// Login Function
 function registerOrLogin(phoneNo) {
     if (!phoneNo || phoneNo.length < 9) {
-        alert("ဖုန်းနံပါတ် မှားယွင်းနေပါသည်။");
+        alert("ကျေးဇူးပြု၍ ဖုန်းနံပါတ်ကို မှန်ကန်စွာ ထည့်သွင်းပေးပါ။");
         return;
     }
 
     auth.signInAnonymously().then((userCredential) => {
         const uid = userCredential.user.uid;
         
-        // ဒီမှာ Collection နာမည်ကို "users" လို့ ပေးလိုက်ရင် 
-        // registrations ထဲကို ဘာမှ ရောက်မသွားတော့ပါဘူး။
+        // "users" collection ထဲကို ထည့်ခြင်း
         db.collection("users").doc(uid).set({
             phone: phoneNo,
-            uid: uid, // ဒီမှာ ID ကိုပါ ထည့်သိမ်းပေးလိုက်ပါ
+            uid: uid,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         })
         .then(() => {
-            alert("အောင်မြင်ပါသည်။");
-            showDashboard();
+            alert("Login အောင်မြင်ပါပြီ!");
+            // Dashboard ပြတဲ့ Function ကို ဒီမှာ ခေါ်ပါ
+            showDashboard(); 
         })
         .catch((error) => {
-            console.error("Error adding document: ", error);
+            console.error("Error: ", error);
+            alert("Error: " + error.message);
         });
+    }).catch((error) => {
+        alert("Auth Error: " + error.message);
     });
 }
 // --- DATA & STATE ---
