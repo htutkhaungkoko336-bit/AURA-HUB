@@ -19,32 +19,45 @@ function getDeviceId() {
 }
 function registerOrLogin(phoneNo) {
     const currentDeviceId = getDeviceId();
+    
     auth.signInAnonymously().then((userCredential) => {
         const userRef = db.collection("users").doc(phoneNo);
 
-        userRef.get().then((doc) => {
-            if (doc.exists) {
-                if (doc.data().deviceId !== currentDeviceId) {
-                    alert("အမှား - ဤဖုန်းနံပါတ်ကို တခြား Device တွင် အသုံးပြုထားပါသည်။");
-                    auth.signOut();
-                } else {
-                    showDashboard();
-                }
-            } else {
-                // အကောင့်အသစ်ဆောက်ခြင်း
-                userRef.set({
-                    phone: phoneNo,
-                    deviceId: currentDeviceId,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                }).then(() => {
-                    showDashboard();
-                }).catch((error) => {
-                    // Security Rule ကြောင့် မရတာဆိုရင် ဒီမှာ အလုပ်လုပ်မယ်
-                    if (error.code === 'permission-denied') {
-                        alert("ခွင့်ပြုချက်မရှိပါ။ တခြား Device တွင် အသုံးပြုထားပုံရသည်။");
-                    }
-                });
+        // အရေးကြီးဆုံး: ဒီ Device ID ကို တခြားဖုန်းနံပါတ်တွေမှာ သုံးထားလား အရင်စစ်မယ်
+        db.collection("users").where("deviceId", "==", currentDeviceId).get()
+        .then((querySnapshot) => {
+            
+            // ၁။ တခြားဖုန်းနံပါတ်မှာ ဒီ Device ID ရှိနေပြီး၊ အဲ့ဒီဖုန်းက လက်ရှိရိုက်လိုက်တဲ့ဖုန်းနဲ့ မတူရင်
+            if (!querySnapshot.empty && querySnapshot.docs[0].id !== phoneNo) {
+                alert("အမှား - ဤ Device ကို တခြားဖုန်းနံပါတ်တစ်ခုဖြင့် အသုံးပြုထားပါသည်။");
+                auth.signOut();
+                return;
             }
+
+            // ၂။ ဖုန်းနံပါတ်ကို စစ်မယ်
+            userRef.get().then((doc) => {
+                if (doc.exists) {
+                    if (doc.data().deviceId !== currentDeviceId) {
+                        alert("အမှား - ဤဖုန်းနံပါတ်ကို တခြား Device တွင် အသုံးပြုထားပါသည်။");
+                        auth.signOut();
+                    } else {
+                        showDashboard();
+                    }
+                } else {
+                    // အကောင့်အသစ်ဆောက်ခြင်း
+                    userRef.set({
+                        phone: phoneNo,
+                        deviceId: currentDeviceId,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                    }).then(() => {
+                        showDashboard();
+                    }).catch((error) => {
+                        if (error.code === 'permission-denied') {
+                            alert("ခွင့်ပြုချက်မရှိပါ။");
+                        }
+                    });
+                }
+            });
         });
     });
 }
