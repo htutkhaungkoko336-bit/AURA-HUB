@@ -9,29 +9,29 @@
 const db = firebase.firestore();
 
 function registerOrLogin(phoneNo) {
-    if (!phoneNo || phoneNo.length < 9) {
-        alert("ဖုန်းနံပါတ် မှားယွင်းနေပါသည်။");
-        return;
-    }
-
     auth.signInAnonymously().then((userCredential) => {
         const uid = userCredential.user.uid;
-        
-        // ဖုန်းနံပါတ်ကို ID အဖြစ်သုံးလိုက်ပါမယ်
         const userRef = db.collection("users").doc(phoneNo);
 
-        userRef.set({
-            phone: phoneNo,
-            uid: uid, // ဒီ UID က ပိုင်ရှင်အစစ်ရဲ့ UID ဖြစ်နေမယ်
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }, { merge: true }) // merge: true ဆိုတာက ရှိပြီးသားဆိုရင် update ပဲလုပ်မယ်
-        .then(() => {
-            alert("Login အောင်မြင်ပါပြီ!");
-            // Dashboard ကို ပြပါ
-            showDashboard();
-        })
-        .catch((error) => {
-            alert("Database Error: " + error.message);
+        userRef.get().then((doc) => {
+            if (doc.exists) {
+                // အကယ်၍ ဒီဖုန်းနံပါတ်က အရင်ကတည်းက ရှိနေတယ်ဆိုရင်
+                if (doc.data().uid !== uid) {
+                    // UID မတူဘူး (တခြား Device က ဝင်ဖို့ကြိုးစားနေတာ)
+                    alert("ဤဖုန်းနံပါတ်ကို တခြား Device တစ်ခုတွင် အသုံးပြုထားပါသည်။");
+                    auth.signOut(); // ဝင်ခွင့်မပေးဘူး
+                } else {
+                    // UID တူတယ် (ပိုင်ရှင်အစစ်ပဲ)
+                    showDashboard();
+                }
+            } else {
+                // အကောင့်အသစ်ဆိုရင် UID အသစ်နဲ့ အရင်ဆုံး မှတ်သားလိုက်မယ်
+                userRef.set({
+                    phone: phoneNo,
+                    uid: uid,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                }).then(() => showDashboard());
+            }
         });
     });
 }
