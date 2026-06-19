@@ -29,6 +29,22 @@ function registerOrLogin(phoneNo) {
         });
     });
 }
+function showDashboard() {
+    // ၁။ Login page ကို ဖျောက်မည်
+    const loginPage = document.getElementById("page-login");
+    if (loginPage) {
+        loginPage.style.display = "none";
+    }
+    
+    // ၂။ Dashboard ကို ပြမည်
+    const dashboard = document.getElementById("main-dashboard");
+    if (dashboard) {
+        dashboard.style.display = "flex"; // သို့မဟုတ် block
+        dashboard.style.flexDirection = "column";
+        dashboard.style.opacity = "1";
+        dashboard.style.pointerEvents = "auto";
+    }
+}
 // --- DATA & STATE ---
 let currentListener = null;
 let currentMatchTab = 'waiting'; // ဒါကိုထည့်လိုက်ရင် "currentMatchTab is not defined" error ပျောက်သွားပါမယ်။
