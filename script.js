@@ -2,17 +2,16 @@
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// Login Function
 function registerOrLogin(phoneNo) {
     if (!phoneNo || phoneNo.length < 9) {
-        alert("ကျေးဇူးပြု၍ ဖုန်းနံပါတ်ကို မှန်ကန်စွာ ထည့်သွင်းပေးပါ။");
+        alert("ဖုန်းနံပါတ် မှားယွင်းနေပါသည်။");
         return;
     }
 
     auth.signInAnonymously().then((userCredential) => {
         const uid = userCredential.user.uid;
         
-        // "users" collection ထဲကို ထည့်ခြင်း
+        // Data သိမ်းခြင်း
         db.collection("users").doc(uid).set({
             phone: phoneNo,
             uid: uid,
@@ -20,12 +19,23 @@ function registerOrLogin(phoneNo) {
         })
         .then(() => {
             alert("Login အောင်မြင်ပါပြီ!");
-            // Dashboard ပြတဲ့ Function ကို ဒီမှာ ခေါ်ပါ
-            showDashboard(); 
+            
+            // --- DASHBOARD ပြသခြင်း (အရေးကြီးဆုံးအပိုင်း) ---
+            
+            // ၁။ Login page ကို ဖျောက်မည်
+            document.getElementById("page-login").style.display = "none";
+            
+            // ၂။ Dashboard ကို ပြမည်
+            const dashboard = document.getElementById("main-dashboard");
+            if (dashboard) {
+                dashboard.style.display = "flex"; // သို့မဟုတ် block
+                dashboard.style.opacity = "1";
+                dashboard.style.pointerEvents = "auto";
+            }
         })
         .catch((error) => {
-            console.error("Error: ", error);
-            alert("Error: " + error.message);
+            console.error("Error adding document: ", error);
+            alert("Database Error: " + error.message);
         });
     }).catch((error) => {
         alert("Auth Error: " + error.message);
