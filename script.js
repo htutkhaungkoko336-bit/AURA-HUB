@@ -1,10 +1,11 @@
-// အပေါ်က code နေရာမှာ ဒါကိုသုံးပါ
-if (firebase.appCheck && !window.appCheckInitialized) {
-    const appCheck = firebase.appCheck();
-    appCheck.activate('YOUR_RECAPTCHA_SITE_KEY_HERE', true);
-    window.appCheckInitialized = true; // တစ်ခါလုပ်ပြီးပြီလို့ မှတ်ထားလိုက်တာ
-}
-const auth = firebase.auth();
+// ၁။ Initialize အရင်လုပ်ပါ
+  firebase.initializeApp(firebaseConfig);
+
+  // ၂။ App Check ကို တစ်နေရာတည်းမှာပဲ Activate လုပ်ပါ
+  if (firebase.appCheck) {
+    firebase.appCheck().activate('6LdF9B4tAAAAKfx9TTjuhz1ypf3Tl7UtCnPvGB3', true);
+  }
+  const auth = firebase.auth();
 const db = firebase.firestore();
 
 function registerOrLogin(phoneNo) {
