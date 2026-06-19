@@ -18,29 +18,32 @@ function getDeviceId() {
     return deviceId;
 }
 function registerOrLogin(phoneNo) {
-    const currentDeviceId = getDeviceId(); // localStorage ထဲက device ID ကိုယူ
-
+    const currentDeviceId = getDeviceId();
     auth.signInAnonymously().then((userCredential) => {
         const userRef = db.collection("users").doc(phoneNo);
 
         userRef.get().then((doc) => {
             if (doc.exists) {
-                const storedDeviceId = doc.data().deviceId;
-                
-                // ဒီနေရာမှာ အဓိက စစ်ဆေးချက် (Logic)
-                if (storedDeviceId !== currentDeviceId) {
+                if (doc.data().deviceId !== currentDeviceId) {
                     alert("အမှား - ဤဖုန်းနံပါတ်ကို တခြား Device တွင် အသုံးပြုထားပါသည်။");
-                    auth.signOut(); // ဝင်ခွင့်မပေးဘဲ Logout လုပ်ပစ်လိုက်မယ်
+                    auth.signOut();
                 } else {
-                    showDashboard(); // အကုန်တူရင်ပဲ ဝင်ခွင့်ပေးမယ်
+                    showDashboard();
                 }
             } else {
-                // အကောင့်အသစ်ဆိုရင် Device ID ပါမှတ်သားပြီး သိမ်းမယ်
+                // အကောင့်အသစ်ဆောက်ခြင်း
                 userRef.set({
                     phone: phoneNo,
-                    deviceId: currentDeviceId, // ဝင်လာတဲ့ Device ကို မှတ်လိုက်ပြီ
+                    deviceId: currentDeviceId,
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                }).then(() => showDashboard());
+                }).then(() => {
+                    showDashboard();
+                }).catch((error) => {
+                    // Security Rule ကြောင့် မရတာဆိုရင် ဒီမှာ အလုပ်လုပ်မယ်
+                    if (error.code === 'permission-denied') {
+                        alert("ခွင့်ပြုချက်မရှိပါ။ တခြား Device တွင် အသုံးပြုထားပုံရသည်။");
+                    }
+                });
             }
         });
     });
