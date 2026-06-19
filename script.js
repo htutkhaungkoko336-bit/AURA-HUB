@@ -8,27 +8,38 @@
   const auth = firebase.auth();
 const db = firebase.firestore();
 
+function getDeviceId() {
+    let deviceId = localStorage.getItem('my_device_id');
+    if (!deviceId) {
+        // Random ID တစ်ခုထုတ်ပေးခြင်း
+        deviceId = 'dev_' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('my_device_id', deviceId);
+    }
+    return deviceId;
+}
 function registerOrLogin(phoneNo) {
+    const deviceId = getDeviceId(); // Device ID ကို အရင်ယူမယ်
+
     auth.signInAnonymously().then((userCredential) => {
         const uid = userCredential.user.uid;
         const userRef = db.collection("users").doc(phoneNo);
 
         userRef.get().then((doc) => {
             if (doc.exists) {
-                // အကယ်၍ ဒီဖုန်းနံပါတ်က အရင်ကတည်းက ရှိနေတယ်ဆိုရင်
-                if (doc.data().uid !== uid) {
-                    // UID မတူဘူး (တခြား Device က ဝင်ဖို့ကြိုးစားနေတာ)
+                const data = doc.data();
+                // ဒီနေရာမှာ UID နဲ့ Device ID နှစ်ခုစလုံးကို စစ်မယ်
+                if (data.deviceId !== deviceId) {
                     alert("ဤဖုန်းနံပါတ်ကို တခြား Device တစ်ခုတွင် အသုံးပြုထားပါသည်။");
-                    auth.signOut(); // ဝင်ခွင့်မပေးဘူး
+                    auth.signOut();
                 } else {
-                    // UID တူတယ် (ပိုင်ရှင်အစစ်ပဲ)
                     showDashboard();
                 }
             } else {
-                // အကောင့်အသစ်ဆိုရင် UID အသစ်နဲ့ အရင်ဆုံး မှတ်သားလိုက်မယ်
+                // အကောင့်အသစ်ဆိုရင် Device ID ပါ တစ်ခါတည်းသိမ်းမယ်
                 userRef.set({
                     phone: phoneNo,
                     uid: uid,
+                    deviceId: deviceId, // <--- Device ID အသစ်သိမ်းမယ်
                     createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 }).then(() => showDashboard());
             }
