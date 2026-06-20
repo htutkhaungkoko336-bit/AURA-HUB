@@ -61,28 +61,6 @@ function registerOrLogin(phoneNo) {
         });
     });
 }
-window.onload = function() {
-    if (!localStorage.getItem('guide_seen')) {
-        showGuide();
-    }
-};
-const swiper = new Swiper('.swiper', {
-  loop: true,
-  navigation: {
-    nextEl: '.swiper-button-next',
-    prevEl: '.swiper-button-prev',
-  },
-});
-
-function showGuide() {
-    document.getElementById("user-guide-overlay").style.display = "block";
-    swiper.update(); // Guide ပေါ်လာတိုင်း update လုပ်ပေးပါ
-}
-
-function hideGuide() {
-    document.getElementById("user-guide-overlay").style.display = "none";
-    localStorage.setItem('guide_seen', 'true'); // တစ်ခါကြည့်ပြီးရင် နောက်တစ်ခါမပေါ်အောင်
-}
 function showDashboard() {
     // ၁။ Login page ကို ဖျောက်မည်
     const loginPage = document.getElementById("page-login");

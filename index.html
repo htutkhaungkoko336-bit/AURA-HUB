@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aura Hub | MLBB Tournament</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css"/>
-    <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
 </head>
 <body>
 <div id="page-login" class="sub-page" style="display: flex; flex-direction: column; align-items: center; gap: 20px;">
@@ -29,31 +27,12 @@
     </button>
     </div>
 </div>
-<!-- user guide--> >
-<div id="user-guide-overlay" class="swiper" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 9999;">
-    <div class="swiper-wrapper">
-        <div class="swiper-slide">
-            <img src="guide1.jpg" style="width: 80%;">
-            <h1>Welcome to Aura Hub</h1>
-        </div>
-        <div class="swiper-slide">
-            <h1>Safe & Secure</h1>
-            <p>သင်၏ Device ဖြင့်သာ အသုံးပြုနိုင်ပါသည်။</p>
-        </div>
-    </div>
-    <div class="swiper-button-next" style="color: #c9a66b;"></div>
-    <div class="swiper-button-prev" style="color: #c9a66b;"></div>
-    <button onclick="hideGuide()" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); background: #c9a66b; border: none; padding: 10px 20px;">Get Started</button>
-</div>
-
         <!-- 2. DASHBOARD PAGE -->
     <div class="app-container" id="main-dashboard" style="opacity: 0.5; pointer-events: none;">
         <div class="header-box">
             <h1>AURA HUB</h1>
             <p>MLBB ELITE TOURNAMENT</p>
         </div>
-        <div class="help-icon" onclick="showGuide()" style="cursor: pointer; position: fixed; bottom: 20px; right: 20px;">
-    <img src="help-icon.png" width="50px"> </div>
 
         <div class="map-carousel">
             <div class="map-display" onclick="goToRooms()">
