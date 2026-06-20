@@ -554,29 +554,28 @@ swiper-slide img {
     font-weight: bold;
     z-index: 10000;
 }
-/* Modern Swiper Arrow Design */
+/* ရွှေရောင်ဘောင်ခတ်ထားသော အကြည်ရောင် Arrow ဒီဇိုင်း */
 .swiper-button-next, 
 .swiper-button-prev {
-    color: #c9a66b !important;
-    background: rgba(255, 255, 255, 0.1) !important; /* အနည်းငယ် ကြည်လင်သော နောက်ခံ */
-    backdrop-filter: blur(10px); /* Glassmorphism effect */
-    border: 2px solid #c9a66b !important; /* ထူထဲသော Border */
-    width: 50px !important; 
-    height: 50px !important;
-    border-radius: 12px !important; /* အဝိုင်းအစား Square ပုံစံ (Modern ဆန်အောင်) */
+    color: #c9a66b !important; /* Arrow အရောင်ကို ရွှေရောင် */
+    background: transparent !important; /* နောက်ခံ အကြည် */
+    border: 3px solid #c9a66b !important; /* အထူ ရွှေရောင်ဘောင် */
+    width: 55px !important; 
+    height: 55px !important;
+    border-radius: 12px !important; /* လေးထောင့်ပုံစံ */
     transition: all 0.3s ease !important;
 }
 
-/* Arrow icon ကို ထူထဲအောင် ပြုလုပ်ခြင်း */
+/* Arrow icon အထူ */
 .swiper-button-next::after, 
 .swiper-button-prev::after {
     font-size: 20px !important;
     font-weight: 900 !important; /* အထူဆုံးဖြစ်စေရန် */
 }
 
-/* Hover လုပ်တဲ့အခါ ပိုလှစေရန် */
+/* Hover လုပ်ရင် ပိုလှသွားရန် */
 .swiper-button-next:hover, 
 .swiper-button-prev:hover {
-    background: rgba(201, 166, 107, 0.2) !important;
+    background: rgba(201, 166, 107, 0.15) !important; /* အနည်းငယ်အရောင်တင်ပေးခြင်း */
     transform: scale(1.1);
 }
