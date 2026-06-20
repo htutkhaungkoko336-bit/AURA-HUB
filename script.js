@@ -77,6 +77,68 @@ function showDashboard() {
         dashboard.style.pointerEvents = "auto";
     }
 }
+// ၁။ Swiper ကို loop: false နဲ့ စတင်ပါ
+let guideSwiper = new Swiper('.swiper', {
+    loop: false, // နောက်ဆုံးပုံရောက်ရင် ရပ်ဖို့ loop ကို false လုပ်ပါ
+    navigation: {
+        nextEl: '.swiper-button-next',
+        prevEl: '.swiper-button-prev',
+    },
+    on: {
+        // Slide ရွှေ့တိုင်း ခလုတ် အခြေအနေကို စစ်ဆေးခြင်း
+        slideChange: function () {
+            checkButtons(this);
+        }
+    }
+});
+
+function openGuide() {
+    const overlay = document.getElementById("user-guide-overlay");
+    const currentMode = mapData[currentIndex].mode; 
+
+    const images = (currentMode === '5vs5') ? 
+        ['user guide.jpg', 'Kpay QR.jpg', '5v5_3.jpg', '5v5_4.jpg', '5v5_5.jpg'] : 
+        ['1vs1.png', '1v1_2.jpg', '1v1_3.jpg', '1v1_4.jpg', '1v1_5.jpg'];
+
+    guideSwiper.removeAllSlides(); 
+    images.forEach(src => {
+        guideSwiper.appendSlide(`<div class="swiper-slide"><img src="${src}" style="width:100%"></div>`);
+    });
+
+    overlay.style.display = "flex";
+    
+    // ပုံအသစ်ထည့်ပြီးတိုင်း ပထမဆုံး slide ကို ပြန်စပါ
+    guideSwiper.slideTo(0);
+    checkButtons(guideSwiper);
+}
+
+// ခလုတ်တွေကို ထိန်းချုပ်မည့် Function
+function checkButtons(swiper) {
+    const nextBtn = document.querySelector('.swiper-button-next');
+    const prevBtn = document.querySelector('.swiper-button-prev');
+    
+    // နောက်ဆုံးပုံရောက်ရင် Next ခလုတ်ကို ပိတ်ပါ
+    if (swiper.isEnd) {
+        nextBtn.style.opacity = '0.3';
+        nextBtn.style.pointerEvents = 'none';
+    } else {
+        nextBtn.style.opacity = '1';
+        nextBtn.style.pointerEvents = 'auto';
+    }
+
+    // ပထမဆုံးပုံရောက်ရင် Prev ခလုတ်ကို ပိတ်ပါ
+    if (swiper.isBeginning) {
+        prevBtn.style.opacity = '0.3';
+        prevBtn.style.pointerEvents = 'none';
+    } else {
+        prevBtn.style.opacity = '1';
+        prevBtn.style.pointerEvents = 'auto';
+    }
+}
+
+function toggleGuide() {
+    document.getElementById("user-guide-overlay").style.display = "none";
+}
 // --- DATA & STATE ---
 let currentListener = null;
 let currentMatchTab = 'waiting'; // ဒါကိုထည့်လိုက်ရင် "currentMatchTab is not defined" error ပျောက်သွားပါမယ်။

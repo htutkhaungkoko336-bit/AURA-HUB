@@ -14,8 +14,8 @@ body {
 
 /* Header & Modal Styles */
 .header-box { width: 100%; border: 1px solid #c9a66b; border-radius: 8px; text-align: center; padding: 8px; background: linear-gradient(180deg, #1a1e2e 0%, #000 100%); margin-bottom: 10px; }
-.header-box h1 { font-size: 1.1rem; color: #c9a66b; margin: 0 0 4px 0; }
-.header-box p { font-size: 0.6rem; color: #aaa; margin: 0; }
+.header-box h1 { font-size: 1.1rem; color: #c9a66b; margin: 0 0 4px 0; padding-right: 120px;}
+.header-box p { font-size: 0.6rem; color: #aaa; margin: 0;padding-right: 120px; }
 
 /* Map Section */
 .map-carousel { display: flex; align-items: center; gap: 10px; width: 100%; height: 190px; margin-bottom: 10px; padding-left: 45px; }
@@ -527,4 +527,56 @@ body {
 
 .login-gold-btn:hover {
     transform: scale(1.02);
+}
+/* ပုံကို အလယ်တည့်တည့်မှာ ထားပေးခြင်း */
+.swiper-slide {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+swiper-slide img {
+    width: 100%;
+    border-radius: 12px;
+    border: 2px solid #c9a66b; /* ပုံကို border ခတ်ပေးခြင်း */
+    box-shadow: 0 4px 15px rgba(201, 166, 107, 0.3); /* အရိပ်ထည့်ခြင်း */
+}
+/* Close Button Design */
+.close-guide-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: #000;
+    color: #c9a66b;
+    border: 1px solid #c9a66b;
+    padding: 8px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    z-index: 10000;
+}
+/* Modern Swiper Arrow Design */
+.swiper-button-next, 
+.swiper-button-prev {
+    color: #c9a66b !important;
+    background: rgba(255, 255, 255, 0.1) !important; /* အနည်းငယ် ကြည်လင်သော နောက်ခံ */
+    backdrop-filter: blur(10px); /* Glassmorphism effect */
+    border: 2px solid #c9a66b !important; /* ထူထဲသော Border */
+    width: 50px !important; 
+    height: 50px !important;
+    border-radius: 12px !important; /* အဝိုင်းအစား Square ပုံစံ (Modern ဆန်အောင်) */
+    transition: all 0.3s ease !important;
+}
+
+/* Arrow icon ကို ထူထဲအောင် ပြုလုပ်ခြင်း */
+.swiper-button-next::after, 
+.swiper-button-prev::after {
+    font-size: 20px !important;
+    font-weight: 900 !important; /* အထူဆုံးဖြစ်စေရန် */
+}
+
+/* Hover လုပ်တဲ့အခါ ပိုလှစေရန် */
+.swiper-button-next:hover, 
+.swiper-button-prev:hover {
+    background: rgba(201, 166, 107, 0.2) !important;
+    transform: scale(1.1);
 }
