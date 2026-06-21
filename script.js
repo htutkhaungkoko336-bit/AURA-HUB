@@ -236,6 +236,21 @@ function leaveRoom() {
     document.getElementById('page-1vs1').style.display = 'none';
     document.getElementById('page-room-select').style.display = 'flex';
 }
+function previewLogo1vs1(event) {
+    const reader = new FileReader();
+    const preview = document.getElementById('logoPreview1vs1');
+    const plusSign = document.getElementById('plusSign'); // ➕ စာသားပါတဲ့ div
+
+    reader.onload = function() {
+        preview.src = reader.result;
+        preview.style.display = 'block'; // ပုံကိုပြမယ်
+        plusSign.style.display = 'none'; // ➕ စာသားကို ဖျောက်မယ်
+    }
+
+    if (event.target.files[0]) {
+        reader.readAsDataURL(event.target.files[0]);
+    }
+}
 function goToPayment() {
     const mode = mapData[currentIndex].mode;
     let isValid = true;

@@ -182,14 +182,15 @@
     </div>
     
     <div class="registration-area">
-        <div class="sq-header" style="justify-content: center; margin-bottom: 20px;">
-            <div class="logo-box">
-                <input type="file" id="sqLogo1vs1" hidden accept="image/*" onchange="previewLogo1vs1(event)">
-                <label for="sqLogo1vs1" id="logoLabel1vs1" style="cursor: pointer;">➕<br>Logo</label>
-                <img id="logoPreview1vs1" src="#" style="display:none; width:100%; height:100%; object-fit:cover; border-radius: 0;">         
-            </div>
+    <div class="sq-header" style="justify-content: center; margin-bottom: 20px;">
+        <div class="logo-box">
+            <input type="file" id="sqLogo1vs1" hidden accept="image/*" onchange="previewLogo1vs1(event)">
+            <label for="sqLogo1vs1" id="logoLabel1vs1" style="cursor: pointer; display: block; width: 100%; height: 100%;">
+                <div id="plusSign" style="text-align: center; margin-top: 10px;">➕<br>Logo</div>
+                <img id="logoPreview1vs1" src="#" style="display:none; width:100%; height:100%; object-fit:cover; border-radius: 0;"> 
+            </label>
         </div>
-
+    </div>
         <div class="player-row">
             <input type="text" placeholder="Solo Player Name">
             <input type="number" placeholder="MLBB ID">
