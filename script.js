@@ -798,44 +798,51 @@ async function showMatchDetail(matchId, teamAName, teamBName) {
 
         regs.forEach(doc => {
             const data = doc.data();
-            const pList = data.players.map(p => `
-                <div style="background: #1a1a1a; border: 1px solid #333; border-radius: 4px; padding: 6px; margin-bottom: 5px; font-size: 0.75rem; text-align: center; color: #fff;">
-                    ${p.name}
-                </div>
-            `).join("");
-            
-            if (data.squadName === teamAName) teamAPlayersHTML = pList;
-            else if (data.squadName === teamBName) teamBPlayersHTML = pList;
+            let pList = "";
+
+            // 1. 5vs5 အတွက် players array ရှိမရှိ စစ်ပါ
+            if (data.players && Array.isArray(data.players)) {
+                pList = data.players.map(p => `
+                    <div style="background: #1a1a1a; border: 1px solid #333; border-radius: 4px; padding: 6px; margin-bottom: 5px; font-size: 0.75rem; text-align: center; color: #fff;">
+                        ${p.name}
+                    </div>
+                `).join("");
+            } 
+            // 2. 1vs1 အတွက် playerName field ကို စစ်ပါ
+            else if (data.playerName) {
+                pList = `
+                    <div style="background: #1a1a1a; border: 1px solid #333; border-radius: 4px; padding: 6px; margin-bottom: 5px; font-size: 0.75rem; text-align: center; color: #fff;">
+                        ${data.playerName}
+                    </div>
+                `;
+            }
+
+            // squadName သို့မဟုတ် 1vs1 အတွက် playerName ကို အခြေခံပြီး ခွဲပါ
+            if (data.squadName === teamAName || data.playerName === teamAName) teamAPlayersHTML = pList;
+            else if (data.squadName === teamBName || data.playerName === teamBName) teamBPlayersHTML = pList;
         });
 
+        // ... (body.innerHTML အပိုင်းကို ဆက်လက်ဖော်ပြပါ)
         body.innerHTML = `
             <div style="width: 100%; color: #fff; padding: 10px;">
                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;">
                     <div style="flex: 1;">
-                        <div style="text-align: center; font-weight: 500; font-size: 1.2rem; color: #fff; margin-bottom: 20px;">
-                            🚩 ${teamAName}
-                        </div>
+                        <div style="text-align: center; font-weight: 500; font-size: 1.2rem; color: #fff; margin-bottom: 20px;">🚩 ${teamAName}</div>
                         ${teamAPlayersHTML || '<div style="color:#555; text-align:center; font-size:0.75rem;">-</div>'}
                     </div>
-
-                    <div style="display: flex; flex-direction: column; justify-content: center; height: 265px; color: #c9a66b; font-weight: 900; font-size: 0.9rem;">
-                        VS
-                    </div>
-
+                    <div style="display: flex; flex-direction: column; justify-content: center; height: 265px; color: #c9a66b; font-weight: 900; font-size: 0.9rem;">VS</div>
                     <div style="flex: 1;">
-                        <div style="text-align: center; font-weight: 500; font-size: 1.2rem; color: #fff; margin-bottom: 20px;">
-                            🚩 ${teamBName}
-                        </div>
+                        <div style="text-align: center; font-weight: 500; font-size: 1.2rem; color: #fff; margin-bottom: 20px;">🚩 ${teamBName}</div>
                         ${teamBPlayersHTML || '<div style="color:#555; text-align:center; font-size:0.75rem;">-</div>'}
                     </div>
                 </div>
             </div>
         `;
     } catch (e) {
+        console.error(e);
         body.innerHTML = "Error loading data.";
     }
 }
-
 // showResultTab() function ကို ဖျက်ပစ်ပါ (မလိုအပ်တော့ပါ)
 // ✨ မိမိဖွင့်ထားသော အခန်းအား ဖျက်သိမ်းပြီး ပြန်ထွက်သည့် Function
 async function cancelMyRoom() {
