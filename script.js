@@ -698,29 +698,26 @@ else if (currentMatchTab === 'result') {
                 const isTeamAWinner = data.winner === 'teamA';
                 const dateStr = data.timestamp ? data.timestamp.toDate().toLocaleDateString('en-GB') : "";
 
-        // --- WAITING TAB တွင် အစားထိုးရန် ---
-        container.innerHTML += `
-        <div class="match-card" style="${isMyTeam ? 'border: 1px solid #c9a66b; background: rgba(201,166,107,0.05);' : 'border: 1px solid #333;'} margin-bottom:10px; padding: 10px; border-radius: 8px;">
-            <div class="match-header" style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                <span style="color:#c9a66b; font-size: 10px; font-weight:bold;">💰 ${data.fee}ks.</span>
-                <span style="opacity:0.7; font-size: 10px;">${data.mode}</span>
-            </div>
-            
-            <div class="match-body" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 5px;">
-                
-                <div style="display:flex; align-items:center; gap:8px; flex: 1; min-width: 0;">
-                    <img src="${data.squadLogo || 'https://i.ibb.co/4pGm0Zf/default-logo.png'}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333; flex-shrink: 0;">
-                    <div style="color: #fff; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${name}</div>
-                </div>
-
-                <div style="color: #c9a66b; font-weight:bold; font-style:italic; padding: 0 5px; flex-shrink: 0;">Vs</div>
-
-                <div style="display:flex; align-items:center; gap:8px; flex-shrink: 0;">
-                    <div style="width:28px; height:28px; border-radius:50%; border:1px dashed #444; display:flex; align-items:center; justify-content:center; color:#444; font-size:0.7rem;">?</div>
-                    ${actionUI}
-                </div>
-            </div>
-        </div>`;
+                container.innerHTML += `
+                    <div style="background: #1a1a1a; border: 1px solid #333; padding: 12px; border-radius: 8px; margin-bottom: 10px; cursor: pointer;" 
+                        onclick="showMatchDetail('${data.matchId}', '${data.teamA}', '${data.teamB}')">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-size: 0.75rem; color: #c9a66b; font-weight: bold;">💰 ${data.fee} Ks</span>
+                            <span style="font-size: 0.75rem; color: #666;">${dateStr}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div style="text-align: center; flex: 1;">
+                                <div style="color: #fff; font-weight: 600; font-size: 0.95rem;">${data.teamA}</div>
+                                <div style="color: #d4af37; font-size: 0.75rem; font-weight:bold; margin-top: 6px;">${isTeamAWinner ? 'WINNER' : 'LOSER'}</div>
+                            </div>
+                            <div style="color: #444; font-size: 0.7rem; font-weight: bold; margin: 0 10px;">VS</div>
+                            <div style="text-align: center; flex: 1;">
+                                <div style="color: #fff; font-weight: 600; font-size: 0.95rem;">${data.teamB}</div>
+                                <div style="color: #d4af37; font-size: 0.75rem; font-weight:bold; margin-top: 6px;">${!isTeamAWinner ? 'WINNER' : 'LOSER'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
             });
 
             // 4. Navigation ခလုတ်များ
@@ -769,24 +766,29 @@ else {
                     ? `<button class="cancel-room-btn" onclick="cancelMyRoom()" style="background:#cc0000; color:#fff; border:none; padding:4px 10px; border-radius:4px; font-size:0.7rem; cursor:pointer; font-weight:bold;">CANCEL</button>`
                     : `<button class="plus-join-btn" onclick="challengeTeam('${doc.id}')" style="background:#c9a66b; border:none; padding:5px 10px; border-radius:4px; font-weight:bold;">+</button>`;
                 
-                container.innerHTML += `
-                <div class="match-card" style="${isMyTeam ? 'border: 1px solid #c9a66b; background: rgba(201,166,107,0.05);' : 'border: 1px solid #333;'} margin-bottom:10px;">
-                    <div class="match-header">
-                        <span>💰 ${data.fee}ks.</span>
-                        <span style="opacity:0.7; font-size: 10px;">${data.mode}</span>
+            // --- WAITING TAB တွင် အစားထိုးရန် ---
+            container.innerHTML += `
+            <div class="match-card" style="${isMyTeam ? 'border: 1px solid #c9a66b; background: rgba(201,166,107,0.05);' : 'border: 1px solid #333;'} margin-bottom:10px; padding: 10px; border-radius: 8px;">
+                <div class="match-header" style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span style="color:#c9a66b; font-size: 10px; font-weight:bold;">💰 ${data.fee}ks.</span>
+                    <span style="opacity:0.7; font-size: 10px;">${data.mode}</span>
+                </div>
+                
+                <div class="match-body" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: nowrap; gap: 5px;">
+                    
+                    <div style="display:flex; align-items:center; gap:8px; flex: 1; min-width: 0;">
+                        <img src="${data.squadLogo || 'https://i.ibb.co/4pGm0Zf/default-logo.png'}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333; flex-shrink: 0;">
+                        <div style="color: #fff; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${name}</div>
                     </div>
-                    <div class="match-body">
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <img src="${data.squadLogo || 'https://i.ibb.co/4pGm0Zf/default-logo.png'}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
-                            <div style="color: #fff; font-size: 0.9rem;">${name}</div>
-                        </div>
-                        <div style="color: #c9a66b; font-weight:bold; font-style:italic;">Vs</div>
-                        <div style="display:flex; align-items:center; gap:10px;">
-                            <div style="width:28px; height:28px; border-radius:50%; border:1px dashed #444; display:flex; align-items:center; justify-content:center; color:#444; font-size:0.7rem;">?</div>
-                            ${actionUI}
-                        </div>
+
+                    <div style="color: #c9a66b; font-weight:bold; font-style:italic; padding: 0 5px; flex-shrink: 0;">Vs</div>
+
+                    <div style="display:flex; align-items:center; gap:8px; flex-shrink: 0;">
+                        <div style="width:28px; height:28px; border-radius:50%; border:1px dashed #444; display:flex; align-items:center; justify-content:center; color:#444; font-size:0.7rem;">?</div>
+                        ${actionUI}
                     </div>
-                </div>`;
+                </div>
+            </div>`;
             });
         });
 }}
