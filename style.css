@@ -16,8 +16,8 @@ body {
 .header-box { width: 100%; border: 1px solid #c9a66b; border-radius: 8px; text-align: center; padding: 8px; background: linear-gradient(180deg, #1a1e2e 0%, #000 100%); margin-bottom: 10px; }
 .header-box h1 { font-size: 1.1rem; color: #c9a66b; margin: 0 0 4px 0; padding-left: 10px;}
 .header-box p { font-size: 0.6rem; color: #aaa; margin: 0;padding-right: 10px; }
-.dashH1,.dashP{padding-right: 120px;}
-
+.dashH1{padding-right: 120px;}
+.dashP{width: 230px;padding-right:120px;}
 /* Map Section */
 .map-carousel { display: flex; align-items: center; gap: 10px; width: 100%; height: 190px; margin-bottom: 10px; padding-left: 45px; }
 .map-display { flex: 1; position: relative; border: 2px solid #c9a66b; border-radius: 12px; height: 100%; background: #111; overflow: hidden; cursor: pointer; }
