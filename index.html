@@ -305,10 +305,17 @@
         <p>CONFIRM TO GET TELEGRAM LINK</p>
     </div>
 
-    <div style="flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 20px;">
-        
-        <div style="display: flex; justify-content: space-around; align-items: flex-start; padding: 20px 10px; background: rgba(201,166,107,0.03); border-radius: 15px; border: 1px solid #333;">
-            
+<div style="
+    flex: 1; 
+    display: flex; 
+    flex-direction: column; 
+    justify-content: flex-start; /* အပေါ်ကို တင်ပေးခြင်း */
+    margin-top: 20px;          /* အပေါ်ဆုံး Header နဲ့ ကွာအောင် နည်းနည်းချပေးခြင်း */
+    gap: 20px;
+">
+    <div style="display: flex; justify-content: space-around; align-items: flex-start; padding: 20px 10px; background: rgba(201,166,107,0.03); border-radius: 15px; border: 1px solid #333;">
+        </div>
+
             <div id="team-a-side" style="text-align: center; width: 45%;">
                 <div style="position: relative; display: inline-block;">
                     <img id="p-team-a-logo" src="https://i.ibb.co/4pGm0Zf/default-logo.png" style="width: 75px; height: 75px; border-radius: 50%; border: 2px solid #c9a66b; padding: 3px;">
@@ -332,7 +339,7 @@
             </div>
         </div>
 
-        <div id="match-status-msg" style="text-align: center; color: #c9a66b; font-size: 0.8rem; font-style: italic;">
+    <div id="match-status-msg" style="text-align: center; color: #c9a66b; font-size: 0.8rem; font-style: italic;">
             Waiting for both teams to confirm...
         </div>
     </div>
