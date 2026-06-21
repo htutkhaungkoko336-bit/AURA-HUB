@@ -580,8 +580,3 @@ swiper-slide img {
     background: rgba(201, 166, 107, 0.15) !important; /* အနည်းငယ်အရောင်တင်ပေးခြင်း */
     transform: scale(1.1);
 }
-.create-room-card {
-    /* လက်ရှိမှာ ရှိနေတဲ့ style တွေအပြင် အောက်ပါ line ကို ထည့်ပေးပါ */
-    margin-top: -20px; /* -20px ကနေ -50px ကြား စမ်းကြည့်ပါ */
-    margin-bottom: 20px;
-}
