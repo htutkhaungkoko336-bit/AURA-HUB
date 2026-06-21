@@ -171,7 +171,7 @@ bot.start(async (ctx) => {
         const matchDoc = await db.collection("matches").doc(matchId).get();
         if (!matchDoc.exists) return ctx.reply("❌ ပွဲစဉ်အချက်အလက် ရှာမတွေ့ပါ။");
         const matchData = matchDoc.data();
-        // matchTimestamp ကို 12-hour format ဖြစ်အောင် ပြောင်းခြင်း
+        
         const matchTime = matchData.matchTimestamp 
             ? matchData.matchTimestamp.toDate().toLocaleString('en-US', { 
                 timeZone: 'Asia/Yangon',
@@ -183,18 +183,34 @@ bot.start(async (ctx) => {
                 hour12: true 
             }) 
             : "N/A";
-                const [leaderADoc, leaderBDoc] = await Promise.all([
+
+        const [leaderADoc, leaderBDoc] = await Promise.all([
             db.collection("registrations").doc(matchData.teamA_LeaderId).get(),
             db.collection("registrations").doc(matchData.teamB_LeaderId).get()
         ]);
+        
         const dataA = leaderADoc.data() || { players: [], kpayPhone: "မရှိပါ" };
         const dataB = leaderBDoc.data() || { players: [], kpayPhone: "မရှိပါ" };
-        const renderPlayers = (players) => players.map(p => `👤 ${p.name} (ID: ${p.id})`).join('\n');
-        
-        const msg = `<b>🔍 MATCH DETAILS</b>\n\n🕒 <b>Time:</b> ${matchTime}\n💰 <b>Fee:</b> ${matchData.fee || 0}\n━━━━━━━━━━━━━━\n<b>🏆 TEAM A: ${matchData.teamA}</b>\n📞 Ph: ${dataA.kpayPhone}\n${renderPlayers(dataA.players)}\n\n<b>🏆 TEAM B: ${matchData.teamB}</b>\n📞 Ph: ${dataB.kpayPhone}\n${renderPlayers(dataB.players)}\n━━━━━━━━━━━━━━\n🎲 <b>First Pick:</b> ${matchData.firstPickWinner || 'N/A'}\n\n💡 * ID ချင်းဖလှယ်ကာ fri add ကာ 5vs5 ကစားမည့်သူများသည် Custom Draft Pick တွင် ဆော့ကစားရမည်။ First pick သည် spin wheel တွင်တခါတည်းဆုံးဖြတ်ပြီးသားဖြစ်သည်။ 1vs1 ဆော့ကစားမည့်သူသည် vs A.I.mode အတွင်းမှ 1vs1 room တွင်ဆော့ကစားရမည်။ အနိုင်ရရှိသည့် Team သည်  Result Screenshot ကို ပို့ပေးရမည်။ Bo 3 ဆော့ကစားသူများသည် 2:1ဖြစ်လျှင် screenshot 3 ခုလုံးပို့ပေးရမည်။ အနိုင်ရရှိသည့်တိုင် screenshot မပို့ပေးနိုင်လျှင် ငွေလွှဲပေးမည်မဟုတ်ပါ။ အငြင်းပွားဖွယ်ရာ အကြောင်းကိစ္စတစ်စုံတစ်ရာပေါ်လာပါက Admin ၏ ဆုံးဖြတ်ချက်သာ အတည်ဖြစ်သည်။ကျေးဇူးတင်ပါသည်။*`;        ctx.reply(msg, { parse_mode: 'HTML' });
-    } catch (e) { ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။"); }
-});
 
+        // အဆင့်မြှင့်တင်ထားသော Player Rendering Logic
+        const renderPlayers = (players) => {
+            if (!players || players.length === 0) return "👤 အချက်အလက်မရှိပါ";
+            // အကယ်၍ Player 1 ယောက်ပဲရှိရင် (1vs1) တစ်ယောက်ပဲပြမယ်
+            // Player များရင် (5vs5) အကုန်ပြမယ်
+            if (players.length === 1) {
+                return `👤 ${players[0].name} (ID: ${players[0].id})`;
+            }
+            return players.map(p => `👤 ${p.name} (ID: ${p.id})`).join('\n');
+        };
+        
+        const msg = `<b>🔍 MATCH DETAILS</b>\n\n🕒 <b>Time:</b> ${matchTime}\n💰 <b>Fee:</b> ${matchData.fee || 0}\n━━━━━━━━━━━━━━\n<b>🏆 TEAM A: ${matchData.teamA}</b>\n📞 Ph: ${dataA.kpayPhone}\n${renderPlayers(dataA.players)}\n\n<b>🏆 TEAM B: ${matchData.teamB}</b>\n📞 Ph: ${dataB.kpayPhone}\n${renderPlayers(dataB.players)}\n━━━━━━━━━━━━━━\n🎲 <b>First Pick:</b> ${matchData.firstPickWinner || 'N/A'}\n\n💡 * ID ချင်းဖလှယ်ကာ fri add ကာ 5vs5 ကစားမည့်သူများသည် Custom Draft Pick တွင် ဆော့ကစားရမည်။ First pick သည် spin wheel တွင်တခါတည်းဆုံးဖြတ်ပြီးသားဖြစ်သည်။ 1vs1 ဆော့ကစားမည့်သူသည် vs A.I.mode အတွင်းမှ 1vs1 room တွင်ဆော့ကစားရမည်။ အနိုင်ရရှိသည့် Team သည်  Result Screenshot ကို ပို့ပေးရမည်။ Bo 3 ဆော့ကစားသူများသည် 2:1ဖြစ်လျှင် screenshot 3 ခုလုံးပို့ပေးရမည်။ အနိုင်ရရှိသည့်တိုင် screenshot မပို့ပေးနိုင်လျှင် ငွေလွှဲပေးမည်မဟုတ်ပါ။ အငြင်းပွားဖွယ်ရာ အကြောင်းကိစ္စတစ်စုံတစ်ရာပေါ်လာပါက Admin ၏ ဆုံးဖြတ်ချက်သာ အတည်ဖြစ်သည်။ကျေးဇူးတင်ပါသည်။*`; 
+        
+        ctx.reply(msg, { parse_mode: 'HTML' });
+    } catch (e) { 
+        console.error(e);
+        ctx.reply("❌ စနစ်အမှားအယွင်းရှိပါသည်။"); 
+    }
+});
 bot.on('photo', async (ctx) => {
     if (ctx.chat.id.toString() === ADMIN_GROUP_ID && ctx.message.reply_to_message) {
         const sessionSnapshot = await db.collection("sessions").where("adminMessageId", "==", ctx.message.reply_to_message.message_id).get();
