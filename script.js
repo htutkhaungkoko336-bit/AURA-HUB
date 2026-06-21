@@ -236,21 +236,7 @@ function leaveRoom() {
     document.getElementById('page-1vs1').style.display = 'none';
     document.getElementById('page-room-select').style.display = 'flex';
 }
-function previewLogo1vs1(event) {
-    const reader = new FileReader();
-    const preview = document.getElementById('logoPreview1vs1');
-    const plusSign = document.getElementById('plusSign'); // ➕ စာသားပါတဲ့ div
 
-    reader.onload = function() {
-        preview.src = reader.result;
-        preview.style.display = 'block'; // ပုံကိုပြမယ်
-        plusSign.style.display = 'none'; // ➕ စာသားကို ဖျောက်မယ်
-    }
-
-    if (event.target.files[0]) {
-        reader.readAsDataURL(event.target.files[0]);
-    }
-}
 function goToPayment() {
     const mode = mapData[currentIndex].mode;
     let isValid = true;
@@ -356,6 +342,16 @@ document.body.addEventListener('click', function(e) {
     if (e.target && e.target.id === 'logoPreview') {
         const sqLogoInput = document.getElementById('sqLogo');
         if (sqLogoInput) sqLogoInput.click();
+    }
+});
+document.body.addEventListener('click', function(e) {
+    // ပုံပေါ်နေတဲ့ img ကို နှိပ်မိတဲ့အခါ
+    if (e.target && e.target.id === 'logoPreview1vs1') {
+        // file input (sqLogo1vs1) ကို trigger လုပ်ပေးမယ်
+        const sqLogoInput1vs1 = document.getElementById('sqLogo1vs1');
+        if (sqLogoInput1vs1) {
+            sqLogoInput1vs1.click();
+        }
     }
 });
 
