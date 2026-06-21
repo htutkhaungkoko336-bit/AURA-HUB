@@ -337,10 +337,22 @@
         </div>
     </div>
 
-    <div style="margin-top: auto; padding-bottom: 20px;">
-        <button id="ready-btn" class="rule-btn gold-btn" style="width: 100%; margin-bottom: 10px;" onclick="setReady()">CONFIRM (READY)</button>
-        <button id="cancel-match-btn" class="rule-btn" style="width: 100%; border-color: #444; color: #888;" onclick="cancelMatch()">CANCEL MATCH</button>
-    </div>
+<div style="
+    position: fixed; 
+    bottom: 20px; 
+    left: 0; 
+    right: 0; 
+    padding: 0 20px 20px 20px; 
+    background: linear-gradient(to top, #000 80%, transparent); 
+    z-index: 1000;
+">
+    <button id="ready-btn" class="rule-btn gold-btn" style="width: 100%; margin-bottom: 10px; padding: 12px; border-radius: 8px;" onclick="setReady()">
+        CONFIRM (READY)
+    </button>
+    <button id="cancel-match-btn" class="rule-btn" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #444; color: #888; background: transparent;" onclick="cancelMatch()">
+        CANCEL MATCH
+    </button>
+</div>
 </div>
 <div id="spin-container" style="display:none; text-align:center;">
     <div class="pointer"></div>
