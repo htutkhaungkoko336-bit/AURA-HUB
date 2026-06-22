@@ -611,25 +611,9 @@ document.getElementById('back-to-form-btn').addEventListener('click', async () =
 });
 
 function switchTab(tabName, element) {
-    // 1. Current Tab ကို အပ်ဒိတ်လုပ်ခြင်း
     currentMatchTab = tabName;
-
-    // 2. Tab buttons များ၏ active class ကို ပြောင်းလဲခြင်း
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
     element.classList.add('active');
-
-    // 3. Bottom Action Bar ကို စစ်ဆေးပြီး ဖျောက်/ပြ လုပ်ခြင်း
-    // သင့် HTML ထဲက fixed div ကို id="bottom-action-bar" လို့ ပေးထားရပါမယ်
-    const actionBar = document.getElementById('bottom-action-bar');
-    if (actionBar) {
-        if (tabName === 'waiting') {
-            actionBar.style.display = 'block'; // Waiting tab မှာပဲ ပြမယ်
-        } else {
-            actionBar.style.display = 'none';  // Playing နဲ့ Result မှာ ဖျောက်မယ်
-        }
-    }
-
-    // 4. Match room များကို ပြန်တင်ခြင်း
     loadMatchRooms();
 }
 function increaseLimit() {
