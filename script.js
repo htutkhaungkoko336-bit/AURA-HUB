@@ -733,7 +733,7 @@ else if (currentMatchTab === 'result') {
 
             // 4. Navigation ခလုတ်များ
             container.innerHTML += `
-                <div id="navigationWrapper" style="display: flex; gap: 10px; margin-top: 10px;padding-top:100px;">
+                <div id="navigationWrapper" style="display: flex; gap: 10px; margin-top: 10px;padding-bottom:100px;">
                     ${resultLimit > 10 ? `
                         <button onclick="decreaseLimit()" style="flex: 1; padding: 10px; background: #333; border: 1px solid #c9a66b; color: #c9a66b; border-radius: 5px; cursor: pointer;">
                             PREVIOUS
