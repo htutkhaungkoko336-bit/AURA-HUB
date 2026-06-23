@@ -358,21 +358,35 @@ document.body.addEventListener('click', function(e) {
 // --- IMGBB UPLOAD FUNCTION ---
 async function uploadToImgBB(file) {
     const apiKey = "cfd35057610d4211c9b28055943596a8"; 
+    
+    // file က အမှန်တကယ် File object ဟုတ်မဟုတ် စစ်ဆေးပါ
+    if (!file) {
+        throw new Error("No file selected");
+    }
+
     const formData = new FormData();
     formData.append("image", file);
 
-    const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-        method: "POST",
-        body: formData
-    });
-    const result = await response.json();
-    if (result.success) {
-        return result.data.url;
-    } else {
-        throw new Error("ImgBB Upload Failed");
+    try {
+        const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+            method: "POST",
+            body: formData
+            // headers ကို ထည့်မရေးပါနှင့် (Browser က အလိုအလျောက် handle လုပ်ပါလိမ့်မယ်)
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+            return result.data.url;
+        } else {
+            console.error("ImgBB Error:", result); // Error အသေးစိတ်ကြည့်ရန်
+            throw new Error(result.error.message || "ImgBB Upload Failed");
+        }
+    } catch (error) {
+        console.error("Upload Error:", error);
+        throw error;
     }
 }
-
 // --- SUBMIT TO FIRESTORE ---
 async function submitRegistration(formData) {
     // ၁။ Firebase ကို အချက်အလက်ပို့ပါ
