@@ -669,26 +669,34 @@ const container = document.getElementById('match-content');
                     container.innerHTML = `<p style="text-align:center; color:#333; margin-top:30px; font-size:0.8rem;">No matches running.</p>`;
                     return;
                 }
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
-                    container.innerHTML += `
-                    <div class="match-card" style="border: 1px solid #333; margin-bottom:10px;">
-                        <div class="match-header" style="justify-content: center;">
-                            <span style="color:#c9a66b; font-weight:bold; font-size: 11px;">🎮 LIVE MATCHING</span>
-                        </div>
-                        <div class="match-body">
-                            <div style="display:flex; align-items:center; gap:10px; width: 40%;">
-                                <img src="${data.teamALogo || ''}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
-                                <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${data.teamA}</div>
-                            </div>
-                            <div style="color: #c9a66b; font-weight:bold; font-style:italic; width: 10%; text-align:center;">Vs</div>
-                            <div style="display:flex; align-items:center; gap:10px; justify-content:flex-end; width: 40%; text-align: right;">
-                                <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${data.teamB}</div>
-                                <img src="${data.teamBLogo || ''}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
-                            </div>
-                        </div>
-                    </div>`;
-                });
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            
+            // 1vs1 ဖြစ်လျှင် players array မှ data ယူရန်၊ 5vs5 ဆိုရင်တော့ ရှိတဲ့အတိုင်းသုံးရန်
+            let teamAName = data.teamA || (data.players && data.players[0] ? data.players[0].name : "Unknown");
+            let teamALogo = data.teamALogo || (data.players && data.players[0] ? data.players[0].squadLogo : "");
+            
+            let teamBName = data.teamB || (data.players && data.players[1] ? data.players[1].name : "Unknown");
+            let teamBLogo = data.teamBLogo || (data.players && data.players[1] ? data.players[1].squadLogo : "");
+
+            container.innerHTML += `
+            <div class="match-card" style="border: 1px solid #333; margin-bottom:10px;">
+                <div class="match-header" style="justify-content: center;">
+                    <span style="color:#c9a66b; font-weight:bold; font-size: 11px;">🎮 LIVE MATCHING</span>
+                </div>
+                <div class="match-body" style="display:flex; justify-content:space-between; align-items:center; padding: 10px;">
+                    <div style="display:flex; align-items:center; gap:10px; width: 40%;">
+                        <img src="${teamALogo}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
+                        <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${teamAName}</div>
+                    </div>
+                    <div style="color: #c9a66b; font-weight:bold; font-style:italic; width: 10%; text-align:center;">Vs</div>
+                    <div style="display:flex; align-items:center; gap:10px; justify-content:flex-end; width: 40%; text-align: right;">
+                        <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${teamBName}</div>
+                        <img src="${teamBLogo}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
+                    </div>
+                </div>
+            </div>`;
+        });
             });
     } 
 else if (currentMatchTab === 'result') {
