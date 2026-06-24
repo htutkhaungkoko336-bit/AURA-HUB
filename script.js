@@ -417,10 +417,10 @@ async function submitProof() {
 
     try {
 const [paymentURL, squadLogoURL] = await Promise.all([
-            uploadToImgBB(ssFile),
-            sqLogoFile ? uploadToImgBB(sqLogoFile) : Promise.resolve("https://i.ibb.co/4pGm0Zf/default-logo.png")
+            uploadToFirebase(ssFile),
+            sqLogoFile ? uploadToFirebase(sqLogoFile) : Promise.resolve("https://i.ibb.co/4pGm0Zf/default-logo.png")
         ]);
-        const mode = mapData[currentIndex].mode;
+                const mode = mapData[currentIndex].mode;
         let registrationData = {
             mode: mode,
             fee: selectedFee,
