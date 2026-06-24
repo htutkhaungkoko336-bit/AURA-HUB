@@ -357,22 +357,30 @@ document.body.addEventListener('click', function(e) {
 
 // --- IMGBB UPLOAD FUNCTION ---
 async function uploadToImgBB(file) {
-    const apiKey = "50fec3492b0ac7b74b39498cfb45b6e4"; 
+    const apiKey = "cfd35057610d4211c9b28055943596a8"; 
+    
+    // 1. FormData ကို အသုံးပြု၍ ပုံထည့်ပါ
     const formData = new FormData();
     formData.append("image", file);
 
+    // 2. Fetch ကိုသုံးပြီး API ခေါ်ပါ
+    // သတိပြုရန်: headers မထည့်ပါနှင့်
     const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
         method: "POST",
         body: formData
     });
+
     const result = await response.json();
+
+    // 3. ရလာတဲ့ Result ကို စစ်ဆေးပါ
     if (result.success) {
         return result.data.url;
     } else {
-        throw new Error("ImgBB Upload Failed");
+        // API error တက်ရင် error အကြောင်းရင်းကို console မှာ ဖော်ပြပေးမယ်
+        console.error("ImgBB API Error:", result.error.message);
+        throw new Error(result.error.message || "ImgBB Upload Failed");
     }
 }
-
 // --- SUBMIT TO FIRESTORE ---
 async function submitRegistration(formData) {
     // ၁။ Firebase ကို အချက်အလက်ပို့ပါ
@@ -446,17 +454,14 @@ async function submitProof() {
             }));
             registrationData.kpayName = document.getElementById('kpay-name').value;
             registrationData.kpayPhone = document.getElementById('kpay-no').value;
-// အရင်က 1vs1 အပိုင်းကို ဒီလို အစားထိုးလိုက်ပါ
         } else {
             const soloRow = document.querySelector('#page-1vs1 .player-row');
-            // 5vs5 လိုမျိုး Array format နဲ့ သိမ်းမယ်
-            registrationData.players = [{
-                name: soloRow.querySelectorAll('input')[0].value,
-                id: soloRow.querySelectorAll('input')[1].value
-            }];
+            registrationData.playerName = soloRow.querySelectorAll('input')[0].value;
+            registrationData.mlbbId = soloRow.querySelectorAll('input')[1].value;
             registrationData.kpayName = document.getElementById('kpay-name-solo').value;
             registrationData.kpayPhone = document.getElementById('kpay-no-solo').value;
         }
+
         let docRefId;
 
         // Logic: Resubmit ဆိုရင် update, အသစ်ဆိုရင် add
@@ -658,50 +663,39 @@ const container = document.getElementById('match-content');
 
     container.innerHTML = '<p style="text-align:center; color:#444; font-size:0.8rem;">Loading...</p>';
     // --- PLAYING TAB ---
-// --- PLAYING TAB ---
-if (currentMatchTab === 'playing') {
-    currentListener = db.collection("matches")
-        .where("status", "!=", "finished")
-        .orderBy("status")
+    if (currentMatchTab === 'playing') {
+        currentListener = db.collection("matches")
+        .where("status", "!=", "finished") 
+        .orderBy("status") // .where() တွင် inequality (!=) သုံးပါက orderBy တွင် ထို field ကို ထည့်ရပါမည်
         .orderBy("matchTimestamp", "desc")
-        .onSnapshot((querySnapshot) => {
-            container.innerHTML = "";
-            if (querySnapshot.empty) {
-                container.innerHTML = `<p style="text-align:center; color:#333; margin-top:30px; font-size:0.8rem;">No matches running.</p>`;
-                return;
-            }
-
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                
-                // 1vs1 အတွက် ဖြစ်စေ၊ 5vs5 အတွက် ဖြစ်စေ data ရှိမရှိ စစ်ဆေးခြင်း
-                // အကယ်၍ teamA/B မရှိရင် players array ထဲကနေ ဆွဲထုတ်ပါမယ်
-                const teamAName = data.teamA || (data.players && data.players[0] ? data.players[0].name : "Unknown");
-                const teamALogo = data.teamALogo || (data.players && data.players[0] ? data.players[0].squadLogo : "https://i.ibb.co/4pGm0Zf/default-logo.png");
-                
-                const teamBName = data.teamB || (data.players && data.players[1] ? data.players[1].name : "Unknown");
-                const teamBLogo = data.teamBLogo || (data.players && data.players[1] ? data.players[1].squadLogo : "https://i.ibb.co/4pGm0Zf/default-logo.png");
-
-                container.innerHTML += `
-                <div class="match-card" style="border: 1px solid #333; margin-bottom:10px; padding:10px; border-radius:8px;">
-                    <div class="match-header" style="text-align:center; margin-bottom:10px;">
-                        <span style="color:#c9a66b; font-weight:bold; font-size: 11px;">🎮 LIVE MATCHING</span>
-                    </div>
-                    <div class="match-body" style="display:flex; justify-content:space-between; align-items:center;">
-                        <div style="display:flex; align-items:center; gap:10px; width: 45%;">
-                            <img src="${teamALogo}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
-                            <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${teamAName}</div>
+        .onSnapshot((querySnapshot) => {    
+                    container.innerHTML = "";
+                if (querySnapshot.empty) {
+                    container.innerHTML = `<p style="text-align:center; color:#333; margin-top:30px; font-size:0.8rem;">No matches running.</p>`;
+                    return;
+                }
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    container.innerHTML += `
+                    <div class="match-card" style="border: 1px solid #333; margin-bottom:10px;">
+                        <div class="match-header" style="justify-content: center;">
+                            <span style="color:#c9a66b; font-weight:bold; font-size: 11px;">🎮 LIVE MATCHING</span>
                         </div>
-                        <div style="color: #c9a66b; font-weight:bold; font-style:italic;">Vs</div>
-                        <div style="display:flex; align-items:center; gap:10px; justify-content:flex-end; width: 45%; text-align: right;">
-                            <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${teamBName}</div>
-                            <img src="${teamBLogo}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
+                        <div class="match-body">
+                            <div style="display:flex; align-items:center; gap:10px; width: 40%;">
+                                <img src="${data.teamALogo || ''}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
+                                <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${data.teamA}</div>
+                            </div>
+                            <div style="color: #c9a66b; font-weight:bold; font-style:italic; width: 10%; text-align:center;">Vs</div>
+                            <div style="display:flex; align-items:center; gap:10px; justify-content:flex-end; width: 40%; text-align: right;">
+                                <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${data.teamB}</div>
+                                <img src="${data.teamBLogo || ''}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
+                            </div>
                         </div>
-                    </div>
-                </div>`;
+                    </div>`;
+                });
             });
-        });
-}
+    } 
 else if (currentMatchTab === 'result') {
     if (typeof resultLimit === 'undefined') resultLimit = 10;
 
