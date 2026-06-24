@@ -399,9 +399,8 @@ module.exports = async (req, res) => {
         try {
             const { regId, data } = req.body;
             let playersList = data.mode === "5vs5" && data.players ? data.players.map(p => `👤 ${p.name}`).join('\n') : `👤 ${data.playerName || 'Solo'}`;
-// data ထဲက playerName နဲ့ mlbbId ကို တိုက်ရိုက်ယူပါ
-            const msg = `🚨 <b>New Registration Request</b>\n\n🎮 Mode: ${data.mode}\n🏆 Squad: ${data.squadName || 'Solo'}\n📞 K-Pay: ${data.kpayPhone}\n💰 Fee: ${data.fee}\n\n👤 <b>Player:</b> ${data.playerName || 'N/A'}\n🆔 <b>ID:</b> ${data.mlbbId || 'N/A'}`;
-                await bot.telegram.sendMessage(REG_GROUP_ID, msg, {
+            const msg = `🚨 <b>New Registration Request</b>\n\n🎮 Mode: ${data.mode}\n🏆 Squad: ${data.squadName || 'Solo'}\n📞 K-Pay: ${data.kpayPhone}\n💰 Fee: ${data.fee}\n👥 Players:\n${playersList}`;
+            await bot.telegram.sendMessage(REG_GROUP_ID, msg, {
                 parse_mode: 'HTML',
                 reply_markup: { inline_keyboard: [[{ text: '✅ Confirm', callback_data: `regConfirm_${regId}` }, { text: '❌ Reject', callback_data: `regReject_${regId}` }]] }
             });
