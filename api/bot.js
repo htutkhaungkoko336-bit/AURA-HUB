@@ -159,6 +159,17 @@ bot.action(/rj_(.+)_(.+)/, async (ctx) => {
     }
     ctx.answerCbQuery("Reject လုပ်ပြီးပါပြီ");
 });
+const renderPlayers = (players, playerName, mlbbId) => {
+    // 5vs5 (players array ရှိရင်)
+    if (players && players.length > 0) {
+        return players.map(p => `👤 ${p.name} (ID: ${p.id})`).join('\n');
+    }
+    // 1vs1 (သီးသန့် field တွေနဲ့ သိမ်းထားရင်)
+    if (playerName && mlbbId) {
+        return `👤 ${playerName} (ID: ${mlbbId})`;
+    }
+    return "👤 အချက်အလက်မရှိပါ";
+};
 // --- Start, Photo, Selection, View, Confirm ---
 bot.start(async (ctx) => {
     const userId = ctx.from.id.toString();
