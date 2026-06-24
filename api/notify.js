@@ -57,10 +57,17 @@ export default async function handler(req, res) {
             hour: '2-digit', minute: '2-digit', hour12: true 
         });
 
-        let playerDetails = data.mode === "5vs5" 
-            ? data.players.map((p, i) => `${i+1}. ${p.name} (ID: ${p.id})`).join('\n')
-            : `Player: ${data.playerName}\nID: ${data.mlbbId}`;
-
+        let playerDetails;
+        if (data.mode === "5vs5" && data.players && data.players.length > 0) {
+            // 5vs5 (Array အသစ်)
+            playerDetails = data.players.map((p, i) => `${i+1}. ${p.name || 'N/A'} (ID: ${p.id || 'N/A'})`).join('\n');
+        } else if (data.playerName || data.mlbbId) {
+            // 1vs1 (Data အဟောင်း သို့မဟုတ် Solo format)
+            playerDetails = `Player: ${data.playerName || 'N/A'}\nID: ${data.mlbbId || 'N/A'}`;
+        } else {
+            // Data မရှိရင်
+            playerDetails = "👤 Player အချက်အလက်မရှိပါ";
+        }
         const logoSection = data.squadLogo ? `\n🖼️ [View Squad Logo](${data.squadLogo})` : "";
 
         const regMessage = `${resubTag}🔔 *New Registration Received!*\n\n` +
