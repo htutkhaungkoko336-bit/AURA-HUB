@@ -203,7 +203,7 @@ bot.start(async (ctx) => {
             return players.map(p => `👤 ${p.name} (ID: ${p.id})`).join('\n');
         };
         
-        const msg = `<b>🔍 MATCH DETAILS</b>\n\n🕒 <b>Time:</b> ${matchTime}\n💰 <b>Fee:</b> ${matchData.fee || 0}\n━━━━━━━━━━━━━━\n<b>🏆 TEAM A: ${matchData.teamA}</b>\n📞 Ph: ${dataA.kpayPhone}\n${renderPlayers(dataA.players)}\n\n<b>🏆 TEAM B: ${matchData.teamB}</b>\n📞 Ph: ${dataB.kpayPhone}\n${renderPlayers(dataB.players)}\n━━━━━━━━━━━━━━\n🎲 <b>First Pick:</b> ${matchData.firstPickWinner || 'N/A'}\n\n💡 * ID ချင်းဖလှယ်ကာ fri add ကာ 5vs5 ကစားမည့်သူများသည် Custom Draft Pick တွင် ဆော့ကစားရမည်။ First pick သည် spin wheel တွင်တခါတည်းဆုံးဖြတ်ပြီးသားဖြစ်သည်။ 1vs1 ဆော့ကစားမည့်သူသည် vs A.I.mode အတွင်းမှ 1vs1 room တွင်ဆော့ကစားရမည်။ အနိုင်ရရှိသည့် Team သည်  Result Screenshot ကို ပို့ပေးရမည်။ Bo 3 ဆော့ကစားသူများသည် 2:1ဖြစ်လျှင် screenshot 3 ခုလုံးပို့ပေးရမည်။ အနိုင်ရရှိသည့်တိုင် screenshot မပို့ပေးနိုင်လျှင် ငွေလွှဲပေးမည်မဟုတ်ပါ။ အငြင်းပွားဖွယ်ရာ အကြောင်းကိစ္စတစ်စုံတစ်ရာပေါ်လာပါက Admin ၏ ဆုံးဖြတ်ချက်သာ အတည်ဖြစ်သည်။ကျေးဇူးတင်ပါသည်။*`; 
+        const msg = `<b>🔍 MATCH DETAILS</b>\n\n🕒 <b>Time:</b> ${matchTime}\n💰 <b>Fee:</b> ${matchData.fee || 0}\n━━━━━━━━━━━━━━\n<b>🏆 TEAM A: ${matchData.teamA}</b>\n📞 Ph: ${dataA.kpayPhone}\n${renderPlayers(dataA.players, dataA.playerName, dataA.mlbbId)}\n\n<b>🏆 TEAM B: ${matchData.teamB}</b>\n📞 Ph: ${dataB.kpayPhone}\n${renderPlayers(dataB.players, dataB.playerName, dataB.mlbbId)}\n━━━━━━━━━━━━━━\n🎲 <b>First Pick:</b> ${matchData.firstPickWinner || 'N/A'}\n\n💡 * ID ချင်းဖလှယ်ကာ fri add ကာ 5vs5 ကစားမည့်သူများသည် Custom Draft Pick တွင် ဆော့ကစားရမည်။ First pick သည် spin wheel တွင်တခါတည်းဆုံးဖြတ်ပြီးသားဖြစ်သည်။ 1vs1 ဆော့ကစားမည့်သူသည် vs A.I.mode အတွင်းမှ 1vs1 room တွင်ဆော့ကစားရမည်။ အနိုင်ရရှိသည့် Team သည်  Result Screenshot ကို ပို့ပေးရမည်။ Bo 3 ဆော့ကစားသူများသည် 2:1ဖြစ်လျှင် screenshot 3 ခုလုံးပို့ပေးရမည်။ အနိုင်ရရှိသည့်တိုင် screenshot မပို့ပေးနိုင်လျှင် ငွေလွှဲပေးမည်မဟုတ်ပါ။ အငြင်းပွားဖွယ်ရာ အကြောင်းကိစ္စတစ်စုံတစ်ရာပေါ်လာပါက Admin ၏ ဆုံးဖြတ်ချက်သာ အတည်ဖြစ်သည်။ကျေးဇူးတင်ပါသည်။*`; 
         
         ctx.reply(msg, { parse_mode: 'HTML' });
     } catch (e) { 
@@ -389,15 +389,7 @@ bot.action(/confirmQuit_(.+)/, async (ctx) => {
         ctx.answerCbQuery("Error ဖြစ်နေပါသည်။");
     }
 });
-// Bot ထဲက renderPlayers အပိုင်း
-const renderPlayers = (players, playerName, mlbbId) => {
-    // အကယ်၍ players array မရှိရင် (ဒေတာအဟောင်းအတွက်) အဟောင်းကနေ ပြန်ဖတ်မယ်
-    if (!players || players.length === 0) {
-        if (playerName && mlbbId) return `👤 ${playerName} (ID: ${mlbbId})`;
-        return "👤 အချက်အလက်မရှိပါ";
-    }
-    return players.map(p => `👤 ${p.name} (ID: ${p.id})`).join('\n');
-};
+
 // --- Export ---
 module.exports = async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(200).end();
