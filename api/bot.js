@@ -389,6 +389,15 @@ bot.action(/confirmQuit_(.+)/, async (ctx) => {
         ctx.answerCbQuery("Error ဖြစ်နေပါသည်။");
     }
 });
+// Bot ထဲက renderPlayers အပိုင်း
+const renderPlayers = (players, playerName, mlbbId) => {
+    // အကယ်၍ players array မရှိရင် (ဒေတာအဟောင်းအတွက်) အဟောင်းကနေ ပြန်ဖတ်မယ်
+    if (!players || players.length === 0) {
+        if (playerName && mlbbId) return `👤 ${playerName} (ID: ${mlbbId})`;
+        return "👤 အချက်အလက်မရှိပါ";
+    }
+    return players.map(p => `👤 ${p.name} (ID: ${p.id})`).join('\n');
+};
 // --- Export ---
 module.exports = async (req, res) => {
     if (req.method === 'OPTIONS') return res.status(200).end();
