@@ -446,14 +446,17 @@ async function submitProof() {
             }));
             registrationData.kpayName = document.getElementById('kpay-name').value;
             registrationData.kpayPhone = document.getElementById('kpay-no').value;
+// အရင်က 1vs1 အပိုင်းကို ဒီလို အစားထိုးလိုက်ပါ
         } else {
             const soloRow = document.querySelector('#page-1vs1 .player-row');
-            registrationData.playerName = soloRow.querySelectorAll('input')[0].value;
-            registrationData.mlbbId = soloRow.querySelectorAll('input')[1].value;
+            // 5vs5 လိုမျိုး Array format နဲ့ သိမ်းမယ်
+            registrationData.players = [{
+                name: soloRow.querySelectorAll('input')[0].value,
+                id: soloRow.querySelectorAll('input')[1].value
+            }];
             registrationData.kpayName = document.getElementById('kpay-name-solo').value;
             registrationData.kpayPhone = document.getElementById('kpay-no-solo').value;
         }
-
         let docRefId;
 
         // Logic: Resubmit ဆိုရင် update, အသစ်ဆိုရင် add
