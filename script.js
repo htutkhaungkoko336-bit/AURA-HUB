@@ -430,9 +430,10 @@ async function submitProof() {
     document.getElementById('waiting-msg').innerText = "Processing...";
 
     try {
-        const paymentURL = await uploadToImgBB(ssFile);
-        let squadLogoURL = sqLogoFile ? await uploadToImgBB(sqLogoFile) : "https://i.ibb.co/4pGm0Zf/default-logo.png";
-
+const [paymentURL, squadLogoURL] = await Promise.all([
+            uploadToImgBB(ssFile),
+            sqLogoFile ? uploadToImgBB(sqLogoFile) : Promise.resolve("https://i.ibb.co/4pGm0Zf/default-logo.png")
+        ]);
         const mode = mapData[currentIndex].mode;
         let registrationData = {
             mode: mode,
