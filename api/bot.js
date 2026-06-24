@@ -159,17 +159,7 @@ bot.action(/rj_(.+)_(.+)/, async (ctx) => {
     }
     ctx.answerCbQuery("Reject လုပ်ပြီးပါပြီ");
 });
-const renderPlayers = (players, playerName, mlbbId) => {
-    // 5vs5 (players array ရှိရင်)
-    if (players && players.length > 0) {
-        return players.map(p => `👤 ${p.name} (ID: ${p.id})`).join('\n');
-    }
-    // 1vs1 (သီးသန့် field တွေနဲ့ သိမ်းထားရင်)
-    if (playerName && mlbbId) {
-        return `👤 ${playerName} (ID: ${mlbbId})`;
-    }
-    return "👤 အချက်အလက်မရှိပါ";
-};
+
 // --- Start, Photo, Selection, View, Confirm ---
 bot.start(async (ctx) => {
     const userId = ctx.from.id.toString();
@@ -409,8 +399,9 @@ module.exports = async (req, res) => {
         try {
             const { regId, data } = req.body;
             let playersList = data.mode === "5vs5" && data.players ? data.players.map(p => `👤 ${p.name}`).join('\n') : `👤 ${data.playerName || 'Solo'}`;
-            const msg = `🚨 <b>New Registration Request</b>\n\n🎮 Mode: ${data.mode}\n🏆 Squad: ${data.squadName || 'Solo'}\n📞 K-Pay: ${data.kpayPhone}\n💰 Fee: ${data.fee}\n👥 Players:\n${playersList}`;
-            await bot.telegram.sendMessage(REG_GROUP_ID, msg, {
+// data ထဲက playerName နဲ့ mlbbId ကို တိုက်ရိုက်ယူပါ
+            const msg = `🚨 <b>New Registration Request</b>\n\n🎮 Mode: ${data.mode}\n🏆 Squad: ${data.squadName || 'Solo'}\n📞 K-Pay: ${data.kpayPhone}\n💰 Fee: ${data.fee}\n\n👤 <b>Player:</b> ${data.playerName || 'N/A'}\n🆔 <b>ID:</b> ${data.mlbbId || 'N/A'}`;
+                await bot.telegram.sendMessage(REG_GROUP_ID, msg, {
                 parse_mode: 'HTML',
                 reply_markup: { inline_keyboard: [[{ text: '✅ Confirm', callback_data: `regConfirm_${regId}` }, { text: '❌ Reject', callback_data: `regReject_${regId}` }]] }
             });
