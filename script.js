@@ -357,7 +357,7 @@ document.body.addEventListener('click', function(e) {
 
 // --- IMGBB UPLOAD FUNCTION ---
 async function uploadToImgBB(file) {
-    const apiKey = "cfd35057610d4211c9b28055943596a8"; 
+    const apiKey = "50fec3492b0ac7b74b39498cfb45b6e4"; 
     
     // 1. FormData ကို အသုံးပြု၍ ပုံထည့်ပါ
     const formData = new FormData();
