@@ -58,14 +58,11 @@ export default async function handler(req, res) {
         });
 
         let playerDetails;
-        if (data.mode === "5vs5" && data.players && data.players.length > 0) {
-            // 5vs5 (Array အသစ်)
+        if (data.players && Array.isArray(data.players)) {
+            // Array ထဲက player တစ်ယောက်ချင်းစီကို loop ပတ်ပြီး ထုတ်ပေးခြင်း
             playerDetails = data.players.map((p, i) => `${i+1}. ${p.name || 'N/A'} (ID: ${p.id || 'N/A'})`).join('\n');
-        } else if (data.playerName || data.mlbbId) {
-            // 1vs1 (Data အဟောင်း သို့မဟုတ် Solo format)
-            playerDetails = `Player: ${data.playerName || 'N/A'}\nID: ${data.mlbbId || 'N/A'}`;
         } else {
-            // Data မရှိရင်
+            // တစ်စုံတစ်ခုကြောင့် data မရှိခဲ့ရင် fallback
             playerDetails = "👤 Player အချက်အလက်မရှိပါ";
         }
         const logoSection = data.squadLogo ? `\n🖼️ [View Squad Logo](${data.squadLogo})` : "";
