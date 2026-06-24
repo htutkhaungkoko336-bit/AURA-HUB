@@ -658,47 +658,50 @@ const container = document.getElementById('match-content');
 
     container.innerHTML = '<p style="text-align:center; color:#444; font-size:0.8rem;">Loading...</p>';
     // --- PLAYING TAB ---
-    if (currentMatchTab === 'playing') {
-        currentListener = db.collection("matches")
-        .where("status", "!=", "finished") 
-        .orderBy("status") // .where() တွင် inequality (!=) သုံးပါက orderBy တွင် ထို field ကို ထည့်ရပါမည်
+// --- PLAYING TAB ---
+if (currentMatchTab === 'playing') {
+    currentListener = db.collection("matches")
+        .where("status", "!=", "finished")
+        .orderBy("status")
         .orderBy("matchTimestamp", "desc")
-        .onSnapshot((querySnapshot) => {    
-                    container.innerHTML = "";
-                if (querySnapshot.empty) {
-                    container.innerHTML = `<p style="text-align:center; color:#333; margin-top:30px; font-size:0.8rem;">No matches running.</p>`;
-                    return;
-                }
-        querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            
-            // 1vs1 ဖြစ်လျှင် players array မှ data ယူရန်၊ 5vs5 ဆိုရင်တော့ ရှိတဲ့အတိုင်းသုံးရန်
-            let teamAName = data.teamA || (data.players && data.players[0] ? data.players[0].name : "Unknown");
-            let teamALogo = data.teamALogo || (data.players && data.players[0] ? data.players[0].squadLogo : "");
-            
-            let teamBName = data.teamB || (data.players && data.players[1] ? data.players[1].name : "Unknown");
-            let teamBLogo = data.teamBLogo || (data.players && data.players[1] ? data.players[1].squadLogo : "");
+        .onSnapshot((querySnapshot) => {
+            container.innerHTML = "";
+            if (querySnapshot.empty) {
+                container.innerHTML = `<p style="text-align:center; color:#333; margin-top:30px; font-size:0.8rem;">No matches running.</p>`;
+                return;
+            }
 
-            container.innerHTML += `
-            <div class="match-card" style="border: 1px solid #333; margin-bottom:10px;">
-                <div class="match-header" style="justify-content: center;">
-                    <span style="color:#c9a66b; font-weight:bold; font-size: 11px;">🎮 LIVE MATCHING</span>
-                </div>
-                <div class="match-body" style="display:flex; justify-content:space-between; align-items:center; padding: 10px;">
-                    <div style="display:flex; align-items:center; gap:10px; width: 40%;">
-                        <img src="${teamALogo}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
-                        <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${teamAName}</div>
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                
+                // 1vs1 အတွက် ဖြစ်စေ၊ 5vs5 အတွက် ဖြစ်စေ data ရှိမရှိ စစ်ဆေးခြင်း
+                // အကယ်၍ teamA/B မရှိရင် players array ထဲကနေ ဆွဲထုတ်ပါမယ်
+                const teamAName = data.teamA || (data.players && data.players[0] ? data.players[0].name : "Unknown");
+                const teamALogo = data.teamALogo || (data.players && data.players[0] ? data.players[0].squadLogo : "https://i.ibb.co/4pGm0Zf/default-logo.png");
+                
+                const teamBName = data.teamB || (data.players && data.players[1] ? data.players[1].name : "Unknown");
+                const teamBLogo = data.teamBLogo || (data.players && data.players[1] ? data.players[1].squadLogo : "https://i.ibb.co/4pGm0Zf/default-logo.png");
+
+                container.innerHTML += `
+                <div class="match-card" style="border: 1px solid #333; margin-bottom:10px; padding:10px; border-radius:8px;">
+                    <div class="match-header" style="text-align:center; margin-bottom:10px;">
+                        <span style="color:#c9a66b; font-weight:bold; font-size: 11px;">🎮 LIVE MATCHING</span>
                     </div>
-                    <div style="color: #c9a66b; font-weight:bold; font-style:italic; width: 10%; text-align:center;">Vs</div>
-                    <div style="display:flex; align-items:center; gap:10px; justify-content:flex-end; width: 40%; text-align: right;">
-                        <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${teamBName}</div>
-                        <img src="${teamBLogo}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
+                    <div class="match-body" style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="display:flex; align-items:center; gap:10px; width: 45%;">
+                            <img src="${teamALogo}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
+                            <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${teamAName}</div>
+                        </div>
+                        <div style="color: #c9a66b; font-weight:bold; font-style:italic;">Vs</div>
+                        <div style="display:flex; align-items:center; gap:10px; justify-content:flex-end; width: 45%; text-align: right;">
+                            <div style="color: #fff; font-size: 0.9rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${teamBName}</div>
+                            <img src="${teamBLogo}" style="width:30px; height:30px; border-radius:50%; border:1px solid #333;">
+                        </div>
                     </div>
-                </div>
-            </div>`;
-        });
+                </div>`;
             });
-    } 
+        });
+}
 else if (currentMatchTab === 'result') {
     if (typeof resultLimit === 'undefined') resultLimit = 10;
 
