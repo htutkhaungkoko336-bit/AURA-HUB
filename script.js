@@ -97,7 +97,7 @@ function openGuide() {
     const currentMode = mapData[currentIndex].mode; 
 
     const images = (currentMode === '5vs5') ? 
-        ['51.jpg', '52.jpg', '53.jpg', '54.jpg', '55.jpg',"56.jpg","57.jpg"] : 
+        ['user guide.jpg', 'Kpay QR.jpg', '5v5_3.jpg', '5v5_4.jpg', '5v5_5.jpg'] : 
         ['1vs1.png', '1v1_2.jpg', '1v1_3.jpg', '1v1_4.jpg', '1v1_5.jpg'];
 
     guideSwiper.removeAllSlides(); 
@@ -358,29 +358,21 @@ document.body.addEventListener('click', function(e) {
 // --- IMGBB UPLOAD FUNCTION ---
 async function uploadToImgBB(file) {
     const apiKey = "50fec3492b0ac7b74b39498cfb45b6e4"; 
-    
-    // 1. FormData ကို အသုံးပြု၍ ပုံထည့်ပါ
     const formData = new FormData();
     formData.append("image", file);
 
-    // 2. Fetch ကိုသုံးပြီး API ခေါ်ပါ
-    // သတိပြုရန်: headers မထည့်ပါနှင့်
     const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
         method: "POST",
         body: formData
     });
-
     const result = await response.json();
-
-    // 3. ရလာတဲ့ Result ကို စစ်ဆေးပါ
     if (result.success) {
         return result.data.url;
     } else {
-        // API error တက်ရင် error အကြောင်းရင်းကို console မှာ ဖော်ပြပေးမယ်
-        console.error("ImgBB API Error:", result.error.message);
-        throw new Error(result.error.message || "ImgBB Upload Failed");
+        throw new Error("ImgBB Upload Failed");
     }
 }
+
 // --- SUBMIT TO FIRESTORE ---
 async function submitRegistration(formData) {
     // ၁။ Firebase ကို အချက်အလက်ပို့ပါ
