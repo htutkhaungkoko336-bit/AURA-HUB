@@ -358,29 +358,21 @@ document.body.addEventListener('click', function(e) {
 // --- IMGBB UPLOAD FUNCTION ---
 async function uploadToImgBB(file) {
     const apiKey = "50fec3492b0ac7b74b39498cfb45b6e4"; 
-    
-    // 1. FormData ကို အသုံးပြု၍ ပုံထည့်ပါ
     const formData = new FormData();
     formData.append("image", file);
 
-    // 2. Fetch ကိုသုံးပြီး API ခေါ်ပါ
-    // သတိပြုရန်: headers မထည့်ပါနှင့်
     const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
         method: "POST",
         body: formData
     });
-
     const result = await response.json();
-
-    // 3. ရလာတဲ့ Result ကို စစ်ဆေးပါ
     if (result.success) {
         return result.data.url;
     } else {
-        // API error တက်ရင် error အကြောင်းရင်းကို console မှာ ဖော်ပြပေးမယ်
-        console.error("ImgBB API Error:", result.error.message);
-        throw new Error(result.error.message || "ImgBB Upload Failed");
+        throw new Error("ImgBB Upload Failed");
     }
 }
+
 // --- SUBMIT TO FIRESTORE ---
 async function submitRegistration(formData) {
     // ၁။ Firebase ကို အချက်အလက်ပို့ပါ
@@ -430,10 +422,9 @@ async function submitProof() {
     document.getElementById('waiting-msg').innerText = "Processing...";
 
     try {
-const [paymentURL, squadLogoURL] = await Promise.all([
-            uploadToImgBB(ssFile),
-            sqLogoFile ? uploadToImgBB(sqLogoFile) : Promise.resolve("https://i.ibb.co/4pGm0Zf/default-logo.png")
-        ]);
+        const paymentURL = await uploadToImgBB(ssFile);
+        let squadLogoURL = sqLogoFile ? await uploadToImgBB(sqLogoFile) : "https://i.ibb.co/4pGm0Zf/default-logo.png";
+
         const mode = mapData[currentIndex].mode;
         let registrationData = {
             mode: mode,
