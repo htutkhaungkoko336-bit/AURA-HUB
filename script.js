@@ -355,31 +355,17 @@ document.body.addEventListener('click', function(e) {
     }
 });
 
-// --- IMGBB UPLOAD FUNCTION ---
-async function uploadToImgBB(file) {
-    const apiKey = "cfd35057610d4211c9b28055943596a8"; 
+// Firebase Storage ကိုသုံးပြီး ပုံတင်ခြင်း
+async function uploadToFirebase(file) {
+    // ပုံကို 'payments/' ဆိုတဲ့ folder ထဲမှာ သိမ်းပါမယ်
+    const storageRef = firebase.storage().ref('payments/' + Date.now() + '_' + file.name);
     
-    // 1. FormData ကို အသုံးပြု၍ ပုံထည့်ပါ
-    const formData = new FormData();
-    formData.append("image", file);
-
-    // 2. Fetch ကိုသုံးပြီး API ခေါ်ပါ
-    // သတိပြုရန်: headers မထည့်ပါနှင့်
-    const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
-        method: "POST",
-        body: formData
-    });
-
-    const result = await response.json();
-
-    // 3. ရလာတဲ့ Result ကို စစ်ဆေးပါ
-    if (result.success) {
-        return result.data.url;
-    } else {
-        // API error တက်ရင် error အကြောင်းရင်းကို console မှာ ဖော်ပြပေးမယ်
-        console.error("ImgBB API Error:", result.error.message);
-        throw new Error(result.error.message || "ImgBB Upload Failed");
-    }
+    // ပုံတင်ခြင်း
+    const snapshot = await storageRef.put(file);
+    
+    // တင်ပြီးရင် ရလာတဲ့ URL ကို ပြန်ယူခြင်း
+    const downloadURL = await snapshot.ref.getDownloadURL();
+    return downloadURL;
 }
 // --- SUBMIT TO FIRESTORE ---
 async function submitRegistration(formData) {
