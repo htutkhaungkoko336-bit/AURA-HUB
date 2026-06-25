@@ -422,11 +422,19 @@ async function submitProof() {
     document.getElementById('waiting-msg').innerText = "Processing...";
 
     try {
-        const paymentURL = await uploadToImgBB(ssFile);
-        let squadLogoURL = sqLogoFile ? await uploadToImgBB(sqLogoFile) : "https://i.ibb.co/4pGm0Zf/default-logo.png";
+const paymentURL = await uploadToImgBB(ssFile);
+    
+    // User တင်တဲ့ပုံ ရှိမရှိ သေချာစစ်ပါ (Input element ကနေ file ကို ရယူပါ)
+    const logoInput = document.getElementById('squadLogoInput'); // မင်းရဲ့ file input id ကိုထည့်ပါ
+    let squadLogoURL = "https://i.ibb.co/4pGm0Zf/default-logo.png"; // Default
 
-        const mode = mapData[currentIndex].mode;
-        let registrationData = {
+    if (logoInput && logoInput.files && logoInput.files.length > 0) {
+        squadLogoURL = await uploadToImgBB(logoInput.files[0]);
+    } else if (sqLogoFile) {
+        squadLogoURL = await uploadToImgBB(sqLogoFile);
+    }
+
+    const mode = mapData[currentIndex].mode;        let registrationData = {
             mode: mode,
             fee: selectedFee,
             paymentURL: paymentURL,
