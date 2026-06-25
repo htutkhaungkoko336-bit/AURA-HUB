@@ -410,8 +410,7 @@ async function submitProof() {
     if (window.event) window.event.preventDefault();
 
     const ssFile = document.getElementById('ssFile').files[0];
-    const sqLogoFile = document.getElementById('sqLogo').files[0];
-
+    const sqLogoFile = document.getElementById('sqLogo1vs1')?.files[0] || document.getElementById('sqLogo')?.files[0];
     if (!ssFile) {
         alert("ကျေးဇူးပြု၍ Screenshot တင်ပေးပါ။");
         return;
@@ -422,19 +421,11 @@ async function submitProof() {
     document.getElementById('waiting-msg').innerText = "Processing...";
 
     try {
-const paymentURL = await uploadToImgBB(ssFile);
-    
-    // User တင်တဲ့ပုံ ရှိမရှိ သေချာစစ်ပါ (Input element ကနေ file ကို ရယူပါ)
-    const logoInput = document.getElementById('squadLogoInput'); // မင်းရဲ့ file input id ကိုထည့်ပါ
-    let squadLogoURL = "https://i.ibb.co/4pGm0Zf/default-logo.png"; // Default
+        const paymentURL = await uploadToImgBB(ssFile);
+        let squadLogoURL = sqLogoFile ? await uploadToImgBB(sqLogoFile) : "https://i.ibb.co/4pGm0Zf/default-logo.png";
 
-    if (logoInput && logoInput.files && logoInput.files.length > 0) {
-        squadLogoURL = await uploadToImgBB(logoInput.files[0]);
-    } else if (sqLogoFile) {
-        squadLogoURL = await uploadToImgBB(sqLogoFile);
-    }
-
-    const mode = mapData[currentIndex].mode;        let registrationData = {
+        const mode = mapData[currentIndex].mode;
+        let registrationData = {
             mode: mode,
             fee: selectedFee,
             paymentURL: paymentURL,
