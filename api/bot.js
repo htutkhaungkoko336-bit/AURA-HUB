@@ -189,22 +189,27 @@ bot.start(async (ctx) => {
             db.collection("registrations").doc(matchData.teamB_LeaderId).get()
         ]);
         
-        const dataA = leaderADoc.data() || { players: [], kpayPhone: "မရှိပါ" };
-        const dataB = leaderBDoc.data() || { players: [], kpayPhone: "မရှိပါ" };
+// အရင်ဆုံး Data ဆွဲတဲ့နေရာမှာ ဒီလိုပြင်ပါ
+const dataA = leaderADoc.data() || { players: [], kpayPhone: "မရှိပါ" };
+const dataB = leaderBDoc.data() || { players: [], kpayPhone: "မရှိပါ" };
 
-        // အဆင့်မြှင့်တင်ထားသော Player Rendering Logic
-        const renderPlayers = (players) => {
-            if (!players || players.length === 0) return "👤 အချက်အလက်မရှိပါ";
-            // အကယ်၍ Player 1 ယောက်ပဲရှိရင် (1vs1) တစ်ယောက်ပဲပြမယ်
-            // Player များရင် (5vs5) အကုန်ပြမယ်
-            if (players.length === 1) {
-                return `👤 ${players[0].name} (ID: ${players[0].id})`;
-            }
-            return players.map(p => `👤 ${p.name} (ID: ${p.id})`).join('\n');
-        };
-        
-        const msg = `<b>🔍 MATCH DETAILS</b>\n\n🕒 <b>Time:</b> ${matchTime}\n💰 <b>Fee:</b> ${matchData.fee || 0}\n━━━━━━━━━━━━━━\n<b>🏆 TEAM A: ${matchData.teamA}</b>\n📞 Ph: ${dataA.kpayPhone}\n${renderPlayers(dataA.players)}\n\n<b>🏆 TEAM B: ${matchData.teamB}</b>\n📞 Ph: ${dataB.kpayPhone}\n${renderPlayers(dataB.players)}\n━━━━━━━━━━━━━━\n🎲 <b>First Pick:</b> ${matchData.firstPickWinner || 'N/A'}\n\n💡 * ID ချင်းဖလှယ်ကာ fri add ကာ 5vs5 ကစားမည့်သူများသည် Custom Draft Pick တွင် ဆော့ကစားရမည်။ First pick သည် spin wheel တွင်တခါတည်းဆုံးဖြတ်ပြီးသားဖြစ်သည်။ 1vs1 ဆော့ကစားမည့်သူသည် vs A.I.mode အတွင်းမှ 1vs1 room တွင်ဆော့ကစားရမည်။ အနိုင်ရရှိသည့် Team သည်  Result Screenshot ကို ပို့ပေးရမည်။ Bo 3 ဆော့ကစားသူများသည် 2:1ဖြစ်လျှင် screenshot 3 ခုလုံးပို့ပေးရမည်။ အနိုင်ရရှိသည့်တိုင် screenshot မပို့ပေးနိုင်လျှင် ငွေလွှဲပေးမည်မဟုတ်ပါ။ အငြင်းပွားဖွယ်ရာ အကြောင်းကိစ္စတစ်စုံတစ်ရာပေါ်လာပါက Admin ၏ ဆုံးဖြတ်ချက်သာ အတည်ဖြစ်သည်။ကျေးဇူးတင်ပါသည်။*`; 
-        
+// အဆင့်မြှင့်တင်ထားသော Player Rendering Logic
+const renderPlayers = (data) => {
+    // 5vs5 အတွက် (players array ရှိရင်)
+    if (data.players && data.players.length > 0) {
+        return data.players.map(p => `👤 ${p.name} (ID: ${p.id})`).join('\n');
+    }
+    
+    // 1vs1 အတွက် (mlbbId နဲ့ playerName ရှိရင်)
+    if (data.mlbbId && data.playerName) {
+        return `👤 ${data.playerName} (ID: ${data.mlbbId})`;
+    }
+    
+    return "👤 အချက်အလက်မရှိပါ";
+};
+
+// Message တည်ဆောက်တဲ့နေရာမှာ renderPlayers(dataA) လို့ပဲ သုံးတော့မယ်
+const msg = `<b>🔍 MATCH DETAILS</b>\n\n🕒 <b>Time:</b> ${matchTime}\n💰 <b>Fee:</b> ${matchData.fee || 0}\n━━━━━━━━━━━━━━\n<b>🏆 TEAM A: ${matchData.teamA}</b>\n📞 Ph: ${dataA.kpayPhone}\n${renderPlayers(dataA)})}\n\n<b>🏆 TEAM B: ${matchData.teamB}</b>\n📞 Ph: ${dataB.kpayPhone}\n${renderPlayers(dataB)}\n━━━━━━━━━━━━━━\n🎲 <b>First Pick:</b> ${matchData.firstPickWinner || 'N/A'}\n\n💡 * ID ချင်းဖလှယ်ကာ fri add ကာ 5vs5 ကစားမည့်သူများသည် Custom Draft Pick တွင် ဆော့ကစားရမည်။ First pick သည် spin wheel တွင်တခါတည်းဆုံးဖြတ်ပြီးသားဖြစ်သည်။ 1vs1 ဆော့ကစားမည့်သူသည် vs A.I.mode အတွင်းမှ 1vs1 room တွင်ဆော့ကစားရမည်။ အနိုင်ရရှိသည့် Team သည်  Result Screenshot ကို ပိုပေးရမည်။ Bo 3 ဆော့ကစားသူများသည် 2:1ဖြစ်လျှင် screenshot 3 ခုလုံးပိုပေးရမည်။ အနိုင်ရရှိသည့်တိုင် screenshot မပိုပေးနိုင်လျှင် ငွေလွှပေးမည်မဟုတ်ပါ။ အငြင်းပွားဖွယ်ရာ အကြောင်းကိစ္စတစ်စုံတစ်ရာပေါ်လာပါက Admin ၏ ဆုံးဖြတ်ချက်သာ အတည်ဖြစ်သည်။ကျေးဇူးတင်ပါသည် *`;        
         ctx.reply(msg, { parse_mode: 'HTML' });
     } catch (e) { 
         console.error(e);
