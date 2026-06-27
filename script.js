@@ -97,7 +97,7 @@ function openGuide() {
     const currentMode = mapData[currentIndex].mode; 
 
     const images = (currentMode === '5vs5') ? 
-        ['user guide.jpg', 'Kpay QR.jpg', '5v5_3.jpg', '5v5_4.jpg', '5v5_5.jpg'] : 
+        ['51.jpg', '52.jpg', '5v5_3.jpg', '5v5_4.jpg', '5v5_5.jpg'] : 
         ['1vs1.png', '1v1_2.jpg', '1v1_3.jpg', '1v1_4.jpg', '1v1_5.jpg'];
 
     guideSwiper.removeAllSlides(); 
