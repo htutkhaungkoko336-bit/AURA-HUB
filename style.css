@@ -561,7 +561,7 @@ swiper-slide img {
     color: #c9a66b !important; /* Arrow အရောင်ကို ရွှေရောင် */
     background: transparent !important; /* နောက်ခံ အကြည် */
     border: 3px solid #c9a66b !important; /* အထူ ရွှေရောင်ဘောင် */
-    width: 350px !important; 
+    width: 35px !important; 
     height: 35px !important;
     border-radius: 12px !important; /* လေးထောင့်ပုံစံ */
     transition: all 0.3s ease !important;
