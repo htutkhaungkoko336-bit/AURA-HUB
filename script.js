@@ -98,7 +98,7 @@ function openGuide() {
 
     const images = (currentMode === '5vs5') ? 
         ['51.jpg', '52.jpg', '5v5_3.jpg', '5v5_4.jpg', '5v5_5.jpg'] : 
-        ['1vs1.png', '1v1_2.jpg', '1v1_3.jpg', '1v1_4.jpg', '1v1_5.jpg'];
+        ['51.jpg', '1v1_2.jpg', '1v1_3.jpg', '1v1_4.jpg', '1v1_5.jpg'];
 
     guideSwiper.removeAllSlides(); 
     images.forEach(src => {
