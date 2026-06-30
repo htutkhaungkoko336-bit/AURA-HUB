@@ -64,15 +64,15 @@ export default async function handler(req, res) {
         const logoSection = data.squadLogo ? `\n🖼️ [View Squad Logo](${data.squadLogo})` : "";
 
         const regMessage = `${resubTag}🔔 *New Registration Received!*\n\n` +
-                          `🕒 *Time:* ${timestamp}\n` +
-                          `🎮 *Mode:* ${data.mode}\n` +
-                          `💰 *Fee:* ${data.fee} Ks\n\n` +
-                          `👤 *Identity:*\n${data.squadName ? `Squad: ${data.squadName}\n${playerDetails}` : playerDetails}\n` +
-                          logoSection + `\n\n` + 
-                          `💳 *Payment Info:*\nName: ${data.kpayName}\nPhone: ${data.kpayPhone}\n\n` +
-                          `🖼️ [View Payment Proof](${data.paymentURL})\n` +
-                          `🆔 *Reg ID:* ${regId}`;
-
+                                `🕒 *Time:* ${timestamp}\n` +
+                                `🎮 *Mode:* ${data.mode}\n` +
+                                `💰 *Fee:* ${data.fee} Ks\n\n` +
+                                `👤 *Identity:*\n${data.squadName ? `Squad: ${data.squadName}\n${playerDetails}` : playerDetails}\n` +
+                                (data.heroName ? `🦸‍♂️ *Hero Name:* ${data.heroName}\n` : "") + // ဒီနေရာမှာ Hero Name ထည့်လိုက်ပါ
+                                logoSection + `\n\n` + 
+                                `💳 *Payment Info:*\nName: ${data.kpayName}\nPhone: ${data.kpayPhone}\n\n` +
+                                `🖼️ [View Payment Proof](${data.paymentURL})\n` +
+                                `🆔 *Reg ID:* ${regId}`;
         const regKeyboard = [[
             { text: '✅ Confirm', callback_data: `regConfirm_${regId}` },
             { text: '❌ Reject', callback_data: `regReject_${regId}` }
