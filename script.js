@@ -447,6 +447,7 @@ async function submitProof() {
             registrationData.kpayPhone = document.getElementById('kpay-no').value;
         } else {
             const soloRow = document.querySelector('#page-1vs1 .player-row');
+            registrationData.heroName = document.getElementById('hero-name-input').value;
             registrationData.playerName = soloRow.querySelectorAll('input')[0].value;
             registrationData.mlbbId = soloRow.querySelectorAll('input')[1].value;
             registrationData.kpayName = document.getElementById('kpay-name-solo').value;
