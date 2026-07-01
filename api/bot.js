@@ -256,13 +256,11 @@ bot.action(/view_(.+)/, async (ctx) => {
     const isInfoVisible = (message.caption || "").includes("🔍 MATCH DETAILS");
 
     if (isInfoVisible) {
-        // အကယ်၍ အချက်အလက်တွေ ပြထားပြီးသားဆိုရင် Screenshot ပြန်ပြမယ်
         await ctx.editMessageCaption("📸 *ရလဒ် Screenshot*", { 
             parse_mode: 'Markdown', 
             reply_markup: message.reply_markup 
         });
     } else {
-        // အချက်အလက် မပြရသေးရင် Database ကနေ Data လှမ်းယူမယ်
         const doc = await db.collection("pending_photos").doc(docId).get();
         if (!doc.exists) return ctx.answerCbQuery("❌ အချက်အလက်မရှိပါ။");
         const data = doc.data();
@@ -270,18 +268,11 @@ bot.action(/view_(.+)/, async (ctx) => {
         const matchDoc = await db.collection("matches").doc(data.matchId).get();
         const matchData = matchDoc.data();
         
-        // သင် Database မှာတွေ့တဲ့အတိုင်း matchTimestamp ကို သုံးပေးပါ
         const matchTime = matchData.matchTimestamp 
             ? matchData.matchTimestamp.toDate().toLocaleString('en-US', { 
-                timeZone: 'Asia/Yangon',
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: true 
-            }) 
-            : "N/A";
+                timeZone: 'Asia/Yangon', year: 'numeric', month: 'short', day: 'numeric',
+                hour: '2-digit', minute: '2-digit', hour12: true 
+            }) : "N/A";
 
         const [leaderA, leaderB] = await Promise.all([
             db.collection("registrations").doc(matchData.teamA_LeaderId).get(),
@@ -291,33 +282,34 @@ bot.action(/view_(.+)/, async (ctx) => {
         const dataA = leaderA.data() || { players: [], kpayPhone: 'မပါရှိပါ' };
         const dataB = leaderB.data() || { players: [], kpayPhone: 'မပါရှိပါ' };
         
-    // info ထဲတွင် K-Pay Name နှင့် Hero Name ကို ထပ်ထည့်ခြင်း
-    const info = `<b>🔍 MATCH DETAILS</b>
-    🕒 <b>Time:</b> ${matchTime}
-    💰 <b>Fee:</b> ${matchData.fee || 0}
-    ━━━━━━━━━━━━━━
-    <b>🏆 TEAM A: ${matchData.teamA}</b>
-    👤 <b>Leader:</b> ${dataA.playerName || 'N/A'}
-    🦸‍♂️ <b>Hero:</b> ${dataA.heroName || 'N/A'}
-    💳 <b>K-Pay Name:</b> ${dataA.kpayName || 'မပါရှိပါ'}
-    📞 <b>K-Pay No:</b> <code>${dataA.kpayPhone || 'မပါရှိပါ'}</code>
-    ${(dataA.players || []).map(p => `👤 ${p.name}`).join('\n')}
+        // Mode ကို စစ်ဆေးခြင်း
+        const is5vs5 = matchData.mode === "5vs5";
 
-    <b>🏆 TEAM B: ${matchData.teamB}</b>
-    👤 <b>Leader:</b> ${dataB.playerName || 'N/A'}
-    🦸‍♂️ <b>Hero:</b> ${dataB.heroName || 'N/A'}
-    💳 <b>K-Pay Name:</b> ${dataB.kpayName || 'မပါရှိပါ'}
-    📞 <b>K-Pay No:</b> <code>${dataB.kpayPhone || 'မပါရှိပါ'}</code>
-    ${(dataB.players || []).map(p => `👤 ${p.name}`).join('\n')}
-    ━━━━━━━━━━━━━━
-    🎲 <b>First Pick:</b> ${matchData.firstPickWinner || 'N/A'}`;
+        // Team A နှင့် B အတွက် Dynamic အချက်အလက်တည်ဆောက်ခြင်း
+        const teamInfo = (teamData, teamName) => {
+            let info = `<b>🏆 TEAM ${teamName}: ${teamName}</b>\n`;
+            
+            // 5vs5 မဟုတ်မှသာ Leader နှင့် Hero ကို ပြမည်
+            if (!is5vs5) {
+                info += `👤 <b>Leader:</b> ${teamData.playerName || 'N/A'}\n`;
+                info += `🦸‍♂️ <b>Hero:</b> ${teamData.heroName || 'N/A'}\n`;
+            }
+            
+            info += `💳 <b>K-Pay Name:</b> ${teamData.kpayName || 'မပါရှိပါ'}\n`;
+            info += `📞 <b>K-Pay No:</b> <code>${teamData.kpayPhone || 'မပါရှိပါ'}</code>\n`;
+            info += (teamData.players || []).map(p => `👤 ${p.name}`).join('\n') + `\n\n`;
+            return info;
+        };
 
-        // ဒီနေရာမှာပဲ edit လုပ်ပါ
+        const info = `<b>🔍 MATCH DETAILS</b>\n🕒 <b>Time:</b> ${matchTime}\n💰 <b>Fee:</b> ${matchData.fee || 0}\n━━━━━━━━━━━━━━\n` +
+                     teamInfo(dataA, matchData.teamA) + 
+                     teamInfo(dataB, matchData.teamB) +
+                     `━━━━━━━━━━━━━━\n🎲 <b>First Pick:</b> ${matchData.firstPickWinner || 'N/A'}`;
+        
         await ctx.editMessageCaption(info, { parse_mode: 'HTML', reply_markup: message.reply_markup });
     }
     ctx.answerCbQuery();
 });
-
 // Confirm Action တွင် Error Handling ထပ်မံထည့်သွင်းထားသည်
 bot.action(/confirm_(.+)/, async (ctx) => {
     const docId = ctx.match[1];
