@@ -78,13 +78,14 @@ export default async function handler(req, res) {
             { text: '❌ Reject', callback_data: `regReject_${regId}` }
         ]];
 
-        // Registration Group သို့ ပို့ခြင်း
-        await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-            chat_id: REG_GROUP_ID,
-            text: regMessage,
-            parse_mode: 'Markdown',
-            reply_markup: { inline_keyboard: regKeyboard }
-        });
+    // Registration Group သို့ ပို့ခြင်း (sendPhoto ကို သုံးပါ)
+    await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+        chat_id: REG_GROUP_ID,
+        photo: data.paymentURL, // ဒီနေရာမှာ ပုံလင့်ခ်ကို ထည့်လိုက်ရင် ပုံတန်းပေါ်ပါမယ်
+        caption: regMessage,     // မက်ဆေ့ခ်ျစာသားကို caption အနေနဲ့ ထည့်ပေးရပါမယ်
+        parse_mode: 'Markdown',
+        reply_markup: { inline_keyboard: regKeyboard }
+    });
 
         return res.status(200).json({ success: true });
 
