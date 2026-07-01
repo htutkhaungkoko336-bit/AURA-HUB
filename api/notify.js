@@ -50,47 +50,46 @@ export default async function handler(req, res) {
           return res.status(200).json({ success: true, message: 'Refund group notified' });
       }
         // --- ၂။ NEW REGISTRATION ACTION (Registration GP သို့ ပို့ရန်) ---
-        const resubTag = data.isResubmission ? "⚠️ *[Re-submission]*\n" : "";
-        const timestamp = new Date().toLocaleString('en-US', { 
-            timeZone: 'Asia/Yangon',
-            year: 'numeric', month: 'short', day: 'numeric',
-            hour: '2-digit', minute: '2-digit', hour12: true 
-        });
+        const resubTag = data.isResubmission ? "⚠️ *[Re-submission]*\n" : "";
+        const timestamp = new Date().toLocaleString('en-US', { 
+            timeZone: 'Asia/Yangon',
+            year: 'numeric', month: 'short', day: 'numeric',
+            hour: '2-digit', minute: '2-digit', hour12: true 
+        });
 
-        let playerDetails = data.mode === "5vs5" 
-            ? data.players.map((p, i) => `${i+1}. ${p.name} (ID: ${p.id})`).join('\n')
-            : `Player: ${data.playerName}\nID: ${data.mlbbId}`;
+        let playerDetails = data.mode === "5vs5" 
+            ? data.players.map((p, i) => `${i+1}. ${p.name} (ID: ${p.id})`).join('\n')
+            : `Player: ${data.playerName}\nID: ${data.mlbbId}`;
 
-        const logoSection = data.squadLogo ? `\n🖼️ [View Squad Logo](${data.squadLogo})` : "";
+        const logoSection = data.squadLogo ? `\n🖼️ [View Squad Logo](${data.squadLogo})` : "";
 
-        const regMessage = `${resubTag}🔔 *New Registration Received!*\n\n` +
-                                `🕒 *Time:* ${timestamp}\n` +
-                                `🎮 *Mode:* ${data.mode}\n` +
-                                `💰 *Fee:* ${data.fee} Ks\n\n` +
-                                `👤 *Identity:*\n${data.squadName ? `Squad: ${data.squadName}\n${playerDetails}` : playerDetails}\n` +
-                                (data.heroName ? `🦸‍♂️ *Hero Name:* ${data.heroName}\n` : "") + // ဒီနေရာမှာ Hero Name ထည့်လိုက်ပါ
-                                logoSection + `\n\n` + 
-                                `💳 *Payment Info:*\nName: ${data.kpayName}\nPhone: ${data.kpayPhone}\n\n` +
-                                `🖼️ [View Payment Proof](${data.paymentURL})\n` +
-                                `🆔 *Reg ID:* ${regId}`;
-        const regKeyboard = [[
-            { text: '✅ Confirm', callback_data: `regConfirm_${regId}` },
-            { text: '❌ Reject', callback_data: `regReject_${regId}` }
-        ]];
+        const regMessage = `${resubTag}🔔 *New Registration Received!*\n\n` +
+                                `🕒 *Time:* ${timestamp}\n` +
+                                `🎮 *Mode:* ${data.mode}\n` +
+                                `💰 *Fee:* ${data.fee} Ks\n\n` +
+                                `👤 *Identity:*\n${data.squadName ? `Squad: ${data.squadName}\n${playerDetails}` : playerDetails}\n` +
+                                (data.heroName ? `🦸‍♂️ *Hero Name:* ${data.heroName}\n` : "") + // ဒီနေရာမှာ Hero Name ထည့်လိုက်ပါ
+                                logoSection + `\n\n` + 
+                                `💳 *Payment Info:*\nName: ${data.kpayName}\nPhone: ${data.kpayPhone}\n\n` +
+                                `🖼️ [View Payment Proof](${data.paymentURL})\n` +
+                                `🆔 *Reg ID:* ${regId}`;
+        const regKeyboard = [[
+            { text: '✅ Confirm', callback_data: `regConfirm_${regId}` },
+            { text: '❌ Reject', callback_data: `regReject_${regId}` }
+        ]];
 
-    // Registration Group သို့ ပို့ခြင်း (sendPhoto ကို သုံးပါ)
-    await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-        chat_id: REG_GROUP_ID,
-        photo: data.paymentURL, // ဒီနေရာမှာ ပုံလင့်ခ်ကို ထည့်လိုက်ရင် ပုံတန်းပေါ်ပါမယ်
-        caption: regMessage,     // မက်ဆေ့ခ်ျစာသားကို caption အနေနဲ့ ထည့်ပေးရပါမယ်
-        parse_mode: 'Markdown',
-        reply_markup: { inline_keyboard: regKeyboard }
-    });
+        // Registration Group သို့ ပို့ခြင်း
+        await axios.post(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+            chat_id: REG_GROUP_ID,
+            text: regMessage,
+            parse_mode: 'Markdown',
+            reply_markup: { inline_keyboard: regKeyboard }
+        });
 
-        return res.status(200).json({ success: true });
+        return res.status(200).json({ success: true });
 
-    } catch (error) {
-        console.error("Error in notify API:", error);
-        return res.status(500).json({ error: error.message });
-    }
-}
+    } catch (error) {
+        console.error("Error in notify API:", error);
+        return res.status(500).json({ error: error.message });
+    }
+} 
