@@ -291,8 +291,27 @@ bot.action(/view_(.+)/, async (ctx) => {
         const dataA = leaderA.data() || { players: [], kpayPhone: 'မပါရှိပါ' };
         const dataB = leaderB.data() || { players: [], kpayPhone: 'မပါရှိပါ' };
         
-        const info = `<b>🔍 MATCH DETAILS</b>\n🕒 <b>Time:</b> ${matchTime}\n💰 <b>Fee:</b> ${matchData.fee || 0}\n━━━━━━━━━━━━━━\n<b>🏆 TEAM A: ${matchData.teamA}</b>\n📞 K-Pay: <code>${dataA.kpayPhone || 'မပါရှိပါ'}</code>\n${(dataA.players || []).map(p => `👤 ${p.name}`).join('\n')}\n\n<b>🏆 TEAM B: ${matchData.teamB}</b>\n📞 K-Pay: <code>${dataB.kpayPhone || 'မပါရှိပါ'}</code>\n${(dataB.players || []).map(p => `👤 ${p.name}`).join('\n')}\n━━━━━━━━━━━━━━\n🎲 <b>First Pick:</b> ${matchData.firstPickWinner || 'N/A'}`;
-        
+    // info ထဲတွင် K-Pay Name နှင့် Hero Name ကို ထပ်ထည့်ခြင်း
+    const info = `<b>🔍 MATCH DETAILS</b>
+    🕒 <b>Time:</b> ${matchTime}
+    💰 <b>Fee:</b> ${matchData.fee || 0}
+    ━━━━━━━━━━━━━━
+    <b>🏆 TEAM A: ${matchData.teamA}</b>
+    👤 <b>Leader:</b> ${dataA.playerName || 'N/A'}
+    🦸‍♂️ <b>Hero:</b> ${dataA.heroName || 'N/A'}
+    💳 <b>K-Pay Name:</b> ${dataA.kpayName || 'မပါရှိပါ'}
+    📞 <b>K-Pay No:</b> <code>${dataA.kpayPhone || 'မပါရှိပါ'}</code>
+    ${(dataA.players || []).map(p => `👤 ${p.name}`).join('\n')}
+
+    <b>🏆 TEAM B: ${matchData.teamB}</b>
+    👤 <b>Leader:</b> ${dataB.playerName || 'N/A'}
+    🦸‍♂️ <b>Hero:</b> ${dataB.heroName || 'N/A'}
+    💳 <b>K-Pay Name:</b> ${dataB.kpayName || 'မပါရှိပါ'}
+    📞 <b>K-Pay No:</b> <code>${dataB.kpayPhone || 'မပါရှိပါ'}</code>
+    ${(dataB.players || []).map(p => `👤 ${p.name}`).join('\n')}
+    ━━━━━━━━━━━━━━
+    🎲 <b>First Pick:</b> ${matchData.firstPickWinner || 'N/A'}`;
+
         // ဒီနေရာမှာပဲ edit လုပ်ပါ
         await ctx.editMessageCaption(info, { parse_mode: 'HTML', reply_markup: message.reply_markup });
     }
