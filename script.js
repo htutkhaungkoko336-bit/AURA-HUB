@@ -980,32 +980,49 @@ function renderBattleUI(teams, matchId) {
     const myTeam = teams.find(t => t.id === myTeamInfo.id);
     const opponent = teams.find(t => t.id !== myTeamInfo.id);
     if (!myTeam || !opponent) return;
+
     document.getElementById('match-fee-display').innerText = myTeam.fee + " Ks";
+
+    // --- Helper function for Player/Hero Display ---
+    const getPlayersHTML = (team) => {
+        if (team.mode === "1vs1") {
+            // 1vs1 အတွက် Hero Name ကို ပေါ်လွင်အောင်ပြခြင်း
+            return `
+                <div style="text-align: center;">
+                    <div style="font-size: 0.9rem; color: #fff;">${team.playerName}</div>
+                    <div style="color: #c9a66b; font-weight: bold; font-size: 0.8rem; margin-top: 4px;">
+                        Hero: ${team.heroName || 'N/A'}
+                    </div>
+                </div>`;
+        } else {
+            // 5vs5 အတွက် Player list
+            return team.players ? team.players.map(p => `<div class="player-name" style="font-size:0.75rem;">👤 ${p.name}</div>`).join('') : "";
+        }
+    };
+
     // --- Team A (My Team) ---
     const teamAName = myTeam.squadName || myTeam.playerName;
     document.getElementById('p-team-a-name').innerText = teamAName;
-    document.getElementById('p-team-a-logo').src = myTeam.squadLogo;
-    const myPlayersHTML = myTeam.mode === "5vs5"
-        ? myTeam.players.map(p => `<div class="player-name">👤 ${p.name}</div>`).join('')
-        : `<div class="player-name">👤 ${myTeam.playerName}</div>`;
-    document.getElementById('p-team-a-players').innerHTML = myPlayersHTML;
+    document.getElementById('p-team-a-logo').src = myTeam.squadLogo || 'https://i.ibb.co/4pGm0Zf/default-logo.png';
+    document.getElementById('p-team-a-players').innerHTML = getPlayersHTML(myTeam);
     document.getElementById('p-team-a-ready-badge').style.display = myTeam.isReady ? 'block' : 'none';
+
     // --- Team B (Opponent Team) ---
     const teamBName = opponent.squadName || opponent.playerName;
     document.getElementById('p-team-b-name').innerText = teamBName;
-    document.getElementById('p-team-b-logo').src = opponent.squadLogo;
-    const opponentPlayersHTML = opponent.mode === "5vs5"
-        ? opponent.players.map(p => `<div class="player-name">👤 ${p.name}</div>`).join('')
-        : `<div class="player-name">👤 ${opponent.playerName}</div>`;
-    document.getElementById('p-team-b-players').innerHTML = opponentPlayersHTML;
+    document.getElementById('p-team-b-logo').src = opponent.squadLogo || 'https://i.ibb.co/4pGm0Zf/default-logo.png';
+    document.getElementById('p-team-b-players').innerHTML = getPlayersHTML(opponent);
     document.getElementById('p-team-b-ready-badge').style.display = opponent.isReady ? 'block' : 'none';
+
     // --- 🎮 Ready Button Toggling & Cancel Match Locking Logic ---
     const readyBtn = document.getElementById('ready-btn');
     const cancelMatchBtn = document.getElementById('cancel-match-btn');
+    
     readyBtn.onclick = () => toggleReady(myTeam.isReady);
     if (cancelMatchBtn) {
         cancelMatchBtn.onclick = () => cancelMatch(matchId, myTeam.id, opponent.id);
     }
+
     if (myTeam.isReady) {
         readyBtn.innerText = "CONFIRMED";
         readyBtn.style.background = "#c9a66b";
@@ -1025,23 +1042,26 @@ function renderBattleUI(teams, matchId) {
             cancelMatchBtn.style.pointerEvents = "auto";
         }
     }
+
     // --- 🚀 ပွဲစတင်ခြင်း (နှစ်ဖက်စလုံး Confirm ဖြစ်ပါက) ---
     if (myTeam.isReady && opponent.isReady) {
         if (!window.isMatchSetupInProgress) {
             window.isMatchSetupInProgress = true;
-            db.collection("matches").doc(matchId).get().then((matchDoc) => {
-                const randomWinnerName = Math.random() > 0.5 ? teamAName : teamBName;
-                // matches doc ရှိပြီးသားဆိုရင် firstPickWinner ကိုပဲ update သွားလုပ်ပေးခြင်း
-                db.collection("matches").doc(matchId).update({
-                    firstPickWinner: randomWinnerName
-                }).then(() => {
-                    const batch = db.batch();
-                    batch.update(db.collection("registrations").doc(myTeam.id), { matchStatus: 'playing' });
-                    batch.update(db.collection("registrations").doc(opponent.id), { matchStatus: 'playing' });
-                    batch.commit().then(() => {
-                        listenToWheelSpin(matchId, teamAName, teamBName);
-                    });
-                }).catch(() => {
+            
+            // First Pick ဆုံးဖြတ်ခြင်းနှင့် Match Status Update လုပ်ခြင်း
+            const randomWinnerName = Math.random() > 0.5 ? teamAName : teamBName;
+            
+            db.collection("matches").doc(matchId).set({
+                firstPickWinner: randomWinnerName,
+                status: "playing",
+                teamA: teamAName,
+                teamB: teamBName,
+                matchTimestamp: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true }).then(() => {
+                const batch = db.batch();
+                batch.update(db.collection("registrations").doc(myTeam.id), { matchStatus: 'playing' });
+                batch.update(db.collection("registrations").doc(opponent.id), { matchStatus: 'playing' });
+                batch.commit().then(() => {
                     listenToWheelSpin(matchId, teamAName, teamBName);
                 });
             });
