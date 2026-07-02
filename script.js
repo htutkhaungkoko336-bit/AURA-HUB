@@ -989,7 +989,7 @@ function renderBattleUI(teams, matchId) {
             // 1vs1 အတွက် Hero Name ကို ပေါ်လွင်အောင်ပြခြင်း
             return `
                 <div style="text-align: center;">
-                    <div style="font-size: 0.9rem; color: #fff;">${team.playerName}</div>
+                    <div style="font-size: 0.9rem; color: #fff;">👤${team.playerName}</div>
                     <div style="color: #c9a66b; font-weight: bold; font-size: 0.8rem; margin-top: 4px;">
                         Hero: ${team.heroName || 'N/A'}
                     </div>
